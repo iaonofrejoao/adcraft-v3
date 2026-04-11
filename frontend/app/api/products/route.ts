@@ -13,7 +13,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { generateEmbedding, embeddingToSql } from '../../../lib/embeddings/gemini-embeddings';
+import { generateSingleEmbedding, embeddingToSql } from '../../../../workers/lib/embeddings/gemini-embeddings';
 
 // ── Supabase service role (bypassa RLS para escrita server-side) ──────────────
 
@@ -108,7 +108,7 @@ async function classifyNicheAsync(
 ): Promise<void> {
   // 3. Gera embedding do produto (nome + URL como âncora semântica)
   const embeddingText = `${name} ${productUrl}`;
-  const { values: embeddingValues } = await generateEmbedding(embeddingText);
+  const embeddingValues = await generateSingleEmbedding(embeddingText, 'products', productId);
 
   // 4. Chama RPC find_nearest_niche (cosine similarity via pgvector)
   const { data: nicheMatch } = await supabase.rpc('find_nearest_niche', {

@@ -1,8 +1,8 @@
-// Worker de geração de embeddings em batch.
-// Lê a fila `embeddings WHERE embedding IS NULL`, gera em batch via Gemini,
-// e grava os vetores de volta. Roda a cada 30s via task-runner ou standalone.
+// Wrapper fino sobre callEmbedding do gemini-client.ts canônico.
+// Regra 18: toda chamada LLM (incluindo embeddings) passa por gemini-client.ts.
+// Skill: pgvector-search.md
 //
-// Lazy generation rules (Skill pgvector-search.md):
+// Lazy generation rules (mantidas):
 //   - niche_learnings: só processa se confidence >= 0.5
 //   - product_knowledge: sempre processa
 //   - niches: sempre processa (usa embedding_anchor)
@@ -10,14 +10,11 @@
 // Modelo: gemini-embedding-001, dim 768 (PRD seção 2 / schema padrão).
 // Fase 2.7.3
 
-import { GoogleGenAI } from '@google/genai';
+import { callEmbedding } from '../llm/gemini-client';
 import { db } from '../db';
 import { embeddings, nicheLearnings, productKnowledge } from '../../../frontend/lib/schema/index';
 import { eq, isNull, sql } from 'drizzle-orm';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-const MODEL = 'gemini-embedding-001';
 const OUTPUT_DIM = 768;
 const MAX_BATCH = 100;
 const MIN_CONFIDENCE_FOR_EMBEDDING = 0.5;
@@ -32,36 +29,54 @@ interface PendingEmbeddingRow {
 
 interface EmbeddingInput {
   embedding_id: string;
+  source_table: string;
+  source_id: string;
   text: string;
 }
 
 // ── Geração de embedding (single) ────────────────────────────────────────────
 
-export async function generateSingleEmbedding(text: string): Promise<number[]> {
-  const response = await ai.models.embedContent({
-    model: MODEL,
-    contents: text,
-    config: { outputDimensionality: OUTPUT_DIM },
-  });
-  return response.embeddings?.[0]?.values ?? [];
+/**
+ * Gera embedding para um único texto.
+ * O caller deve fornecer source_table e source_id para logging em llm_calls.
+ */
+export async function generateSingleEmbedding(
+  text: string,
+  source_table: string,
+  source_id: string,
+): Promise<number[]> {
+  const result = await callEmbedding({ texts: text, source_table, source_id });
+  return result[0] ?? [];
 }
 
 // ── Geração em batch ─────────────────────────────────────────────────────────
 
-export async function generateEmbeddingsBatch(texts: string[]): Promise<number[][]> {
+/**
+ * Gera embeddings para múltiplos textos em batches de até 100.
+ * O caller deve fornecer source_table e source_id para logging em llm_calls.
+ * Para batches mistos (múltiplos source_ids), prefira chamar callEmbedding diretamente
+ * ou usar batchEmbeddingsWorker que lida com a fila completa.
+ */
+export async function generateEmbeddingsBatch(
+  texts: string[],
+  source_table: string,
+  source_id: string,
+): Promise<number[][]> {
   if (texts.length === 0) return [];
-
-  // A API `embedContent` aceita múltiplos contents em uma chamada
-  const response = await ai.models.embedContent({
-    model: MODEL,
-    contents: texts,
-    config: { outputDimensionality: OUTPUT_DIM },
-  });
-
-  return (response.embeddings ?? []).map((e) => e.values ?? []);
+  return callEmbedding({ texts, source_table, source_id });
 }
 
-// ── Resolução de texto por source_table ─────────────────────────────────────
+// ── Serialização para pgvector ────────────────────────────────────────────────
+
+/**
+ * Converte um array de floats para a string que o pgvector aceita no INSERT.
+ * Exemplo: [0.1, 0.2, ...] → '[0.1,0.2,...]'
+ */
+export function embeddingToSql(values: number[]): string {
+  return `[${values.join(',')}]`;
+}
+
+// ── Resolução de texto por source_table ──────────────────────────────────────
 
 /**
  * Para cada row pendente, busca o texto que deve ser embeddado.
@@ -95,7 +110,7 @@ async function resolveTexts(
       const record = byId.get(row.source_id);
       if (!record) continue;
       const text = JSON.stringify(record.artifact_data ?? {});
-      result.push({ embedding_id: row.embedding_id, text });
+      result.push({ embedding_id: row.embedding_id, source_table: row.source_table, source_id: row.source_id, text });
     }
   }
 
@@ -114,7 +129,7 @@ async function resolveTexts(
       if (!record) continue;
       const confidence = parseFloat(record.confidence ?? '0');
       if (confidence < MIN_CONFIDENCE_FOR_EMBEDDING) continue; // lazy generation rule
-      result.push({ embedding_id: row.embedding_id, text: record.content ?? '' });
+      result.push({ embedding_id: row.embedding_id, source_table: row.source_table, source_id: row.source_id, text: record.content ?? '' });
     }
   }
 
@@ -130,7 +145,7 @@ async function resolveTexts(
     for (const row of nicheRows) {
       const record = byId.get(row.source_id);
       if (!record?.embedding_anchor) continue; // sem anchor text: não pode embeddizar
-      result.push({ embedding_id: row.embedding_id, text: record.embedding_anchor });
+      result.push({ embedding_id: row.embedding_id, source_table: row.source_table, source_id: row.source_id, text: record.embedding_anchor });
     }
   }
 
@@ -143,7 +158,7 @@ async function resolveTexts(
  * Roda um ciclo de batch embedding:
  * 1. Busca até MAX_BATCH rows com embedding IS NULL
  * 2. Resolve texto por source_table (aplicando lazy generation rules)
- * 3. Gera embeddings em batch via Gemini
+ * 3. Gera embeddings em batch via callEmbedding (Regra 18)
  * 4. Grava vetores de volta em `embeddings`
  *
  * Retorna número de embeddings gerados neste ciclo.
@@ -172,11 +187,17 @@ export async function batchEmbeddingsWorker(): Promise<number> {
 
   if (inputs.length === 0) return 0;
 
-  // 3. Gera embeddings em batch
+  // 3. Gera embeddings em batch via callEmbedding (Regra 18).
+  // source_table='embeddings_queue' representa a fila mista — o logging
+  // por item fica no campo source_id de cada row da tabela embeddings.
   const texts = inputs.map((i) => i.text);
   let vectors: number[][];
   try {
-    vectors = await generateEmbeddingsBatch(texts);
+    vectors = await callEmbedding({
+      texts,
+      source_table: 'embeddings_queue',
+      source_id:    'batch-worker',
+    });
   } catch (err) {
     console.error('[embeddings-worker] batch generation failed:', err);
     throw err;
@@ -190,7 +211,6 @@ export async function batchEmbeddingsWorker(): Promise<number> {
       console.warn(`[embeddings-worker] embedding ${inputs[i].embedding_id} returned ${vector?.length ?? 0} dims, expected ${OUTPUT_DIM} — skipping`);
       continue;
     }
-    const pgVector = `[${vector.join(',')}]`;
     await db
       .update(embeddings)
       .set({ embedding: vector })

@@ -278,6 +278,107 @@ async function logCall(
   });
 }
 
+// ── Embedding via fetch puro (sem SDK) ───────────────────────────────────────
+//
+// Deliberado: mantém gemini-client.ts livre de dependência no @google/genai.
+// Consistente com o que o frontend/lib/embeddings/gemini-embeddings.ts já fazia.
+
+const GEMINI_EMBED_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const EMBED_MODEL = 'gemini-embedding-001';
+const EMBED_DIM = 768;
+const EMBED_BATCH_SIZE = 100;
+const EMBED_PRICE_PER_1M = 0.025; // USD por 1M tokens de input (gemini-embedding-001)
+
+export interface CallEmbeddingParams {
+  texts: string | string[];
+  source_table: string;
+  source_id: string;
+  niche_id?: string;
+  product_id?: string;
+}
+
+interface BatchEmbedResponse {
+  embeddings: Array<{ values: number[] }>;
+  // Gemini pode retornar usageMetadata a nível de resposta (quando disponível)
+  usageMetadata?: { totalTokenCount?: number };
+}
+
+/**
+ * Gera embeddings via Gemini batchEmbedContents usando fetch puro.
+ * Regra 18: toda chamada LLM (incluindo embeddings) passa por gemini-client.ts.
+ *
+ * - Se texts é string: processa como batch de 1 elemento, retorna number[][]
+ * - Se texts é string[]: processa em batches de até 100 por chamada
+ * - Loga em llm_calls com agent_name='embedding'
+ * - source_table/source_id não têm colunas dedicadas em llm_calls; product_id
+ *   e niche_id são mapeados diretamente. Se precisar de rastreamento mais fino,
+ *   adicione coluna payload jsonb em llm_calls via migration.
+ */
+export async function callEmbedding(params: CallEmbeddingParams): Promise<number[][]> {
+  const isSingle = typeof params.texts === 'string';
+  const inputTexts: string[] = isSingle ? [params.texts as string] : (params.texts as string[]);
+
+  const allVectors: number[][] = [];
+  let totalInputTokens = 0;
+  const startedAt = Date.now();
+
+  for (let offset = 0; offset < inputTexts.length; offset += EMBED_BATCH_SIZE) {
+    const batch = inputTexts.slice(offset, offset + EMBED_BATCH_SIZE);
+
+    const url =
+      `${GEMINI_EMBED_BASE}/models/${EMBED_MODEL}:batchEmbedContents` +
+      `?key=${process.env.GEMINI_API_KEY!}`;
+
+    const requests = batch.map((text) => ({
+      model: `models/${EMBED_MODEL}`,
+      content: { parts: [{ text }] },
+      outputDimensionality: EMBED_DIM,
+    }));
+
+    const res = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ requests }),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`Gemini batchEmbedContents error ${res.status}: ${errBody}`);
+    }
+
+    const data = (await res.json()) as BatchEmbedResponse;
+
+    // Tokens: usa usageMetadata da resposta se disponível; senão estima pelo texto
+    if (typeof data.usageMetadata?.totalTokenCount === 'number') {
+      totalInputTokens += data.usageMetadata.totalTokenCount;
+    } else {
+      for (const text of batch) {
+        totalInputTokens += Math.ceil(text.length / 4);
+      }
+    }
+
+    for (const emb of data.embeddings ?? []) {
+      allVectors.push(emb.values ?? []);
+    }
+  }
+
+  const durationMs = Date.now() - startedAt;
+  const costUsd = (totalInputTokens / 1_000_000) * EMBED_PRICE_PER_1M;
+
+  await logCall(
+    'embedding',
+    null, // embeddings não têm pipeline_id
+    params.product_id,
+    params.niche_id,
+    EMBED_MODEL,
+    { input_tokens: totalInputTokens, cached_tokens: 0, output_tokens: 0 },
+    costUsd,
+    durationMs,
+  );
+
+  return allVectors;
+}
+
 // ── Função principal ──────────────────────────────────────────────────────────
 
 /**

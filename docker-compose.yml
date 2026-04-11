@@ -1,0 +1,119 @@
+version: '3.9'
+
+# =============================================================================
+# AdCraft — Docker Compose (Fase 1: backend apenas)
+# Frontend Next.js será adicionado na Fase 8.
+# Serviços externos (Supabase, Cloudflare R2) não são dockerizados.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Backend — FastAPI + Uvicorn
+  # Porta: 8000
+  # Hot reload via volume mount (development)
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=development
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Celery Worker — execução assíncrona dos agentes de IA
+  # Concorrência: 4 workers
+  # Filas: executions (alta prioridade) e default
+  # acks_late=True e reject_on_worker_lost=True garantem que jobs
+  # são re-enfileirados se o worker morrer durante uma execução
+  # ---------------------------------------------------------------------------
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    command: >
+      celery -A app.workers.celery_app worker
+      --loglevel=info
+      --concurrency=4
+      --queues=executions,default
+      --hostname=worker@%h
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=development
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Celery Beat — agendador de tarefas periódicas
+  # Dispara o Agente 17 (Performance) todos os dias às 5h (America/Sao_Paulo)
+  # Apenas uma instância deve rodar — não escalar este serviço
+  # ---------------------------------------------------------------------------
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    command: >
+      celery -A app.workers.celery_app beat
+      --loglevel=info
+      --schedule=/tmp/celerybeat-schedule
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=development
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Redis 7 — broker do Celery + backend de resultados
+  # Porta: 6379
+  # appendonly yes: persistência em disco (dados não perdidos em restart)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  redis_data:
+    driver: local

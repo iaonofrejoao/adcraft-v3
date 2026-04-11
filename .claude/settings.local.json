@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import youtube_transcript_api; print\\(dir\\(youtube_transcript_api.YouTubeTranscriptApi\\)\\)\")",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c \"from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound; print\\([m for m in dir\\(YouTubeTranscriptApi\\) if not m.startswith\\('_'\\)]\\)\")",
+      "Bash(python -c ':*)",
+      "Bash(python -m pytest tests/unit/tools/ -v)",
+      "Bash(../.venv/Scripts/pytest tests/unit/tools/ -v)",
+      "Bash(python -m pytest --version)",
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(../.venv/Scripts/pytest tests/unit/tools/test_read_page.py -v)",
+      "Bash(../.venv/Scripts/pytest tests/unit/tools/test_read_page.py::TestExecuteReadPage::test_structured_mode_parses_json_ld tests/unit/tools/test_search_youtube.py::TestExecuteSearchYoutubeVideos::test_placeholder_key_returns_mock tests/unit/tools/test_web_search.py::TestExecuteSearchWeb::test_placeholder_token_returns_mock_results -v)",
+      "Bash(../.venv/Scripts/pytest tests/unit/tools/test_transcribe_vsl.py -v)",
+      "Bash(../.venv/Scripts/pytest tests/unit/tools/test_read_page.py::TestExecuteReadPage::test_structured_mode_parses_json_ld -v -s)",
+      "Bash(.venv/Scripts/python -c ':*)",
+      "Bash(npx tsx:*)",
+      "Bash(grep -E \"^[A-Z_]+=.*$\" \"c:/Users/joao-/OneDrive/Documentos/Google Antigravity/AdCraft v2/.env\")",
+      "Bash(grep -E \"^[A-Z_]+=.*$\" \"c:/Users/joao-/OneDrive/Documentos/Google Antigravity/AdCraft v2/workers/.env\")",
+      "Bash(pnpm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm add:*)",
+      "Bash(node -e \"const p = require\\('./workers/node_modules/@supabase/supabase-js/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(node -e \"const p = require\\('c:/Users/joao-/OneDrive/Documentos/Google Antigravity/AdCraft v2/workers/node_modules/@supabase/supabase-js/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/api/products)",
+      "Bash(pnpm tsx:*)",
+      "Bash(curl -s -w '\\\\n---STATUS:%{http_code}---' -X POST http://localhost:3000/api/products -H 'Content-Type: application/json' -d '{\"user_id\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"Mitolyn – Metabolic Blend\",\"platform\":\"clickbank\",\"product_url\":\"https://mitolyn.com/\",\"affiliate_link\":\"https://mitolyn.com/?hop=test\",\"commission_percent\":75,\"ticket_price\":59,\"target_country\":\"US\",\"target_language\":\"en-US\",\"vsl_url\":null}')",
+      "Bash(DATABASE_URL=\"postgresql://postgres:2UhYCyYFJxZTn8hF@db.yocbgubxvxpqctbpgpfz.supabase.co:5432/postgres\" pnpm tsx scripts/apply-v2-migrations.ts)",
+      "Bash(DATABASE_PASSWORD=\"2UhYCyYFJxZTn8hF\" pnpm tsx scripts/apply-v2-migrations.ts)",
+      "Bash(xargs grep:*)"
+    ]
+  }
+}

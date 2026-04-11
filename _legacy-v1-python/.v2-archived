@@ -1,0 +1,1 @@
+# The backend/ is the legacy v1 kept for referencing chunks when necessary; v2 runs in workers/ + app/

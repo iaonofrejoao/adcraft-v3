@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Marca */
+  --brand-primary: #6D5BD0;
+  --brand-secondary: #8B7AE0;
+  --brand-subtle: #EEEDFE;
+
+  /* Superfícies */
+  --surface-page: #F8F7FF;
+  --surface-card: #FFFFFF;
+  --surface-sidebar: #F3F2FA;
+  --surface-input: #FAFAFA;
+
+  /* Texto */
+  --text-primary: #1A1830;
+  --text-secondary: #6B6880;
+  --text-muted: #A09DB8;
+
+  /* Bordas */
+  --border-default: #E8E6F0;
+  --border-focus: #6D5BD0;
+
+  /* Status */
+  --status-running: #7C3AED;
+  --status-success: #16A34A;
+  --status-warning: #D97706;
+  --status-error: #DC2626;
+  --status-idle: #9CA3AF;
+  --status-disabled: #D1D5DB;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-page: #0F0E1A;
+    --surface-card: #1A1830;
+    --surface-sidebar: #15132A;
+    --text-primary: #F0EFF8;
+    --text-secondary: #A09DB8;
+    --border-default: #2D2B45;
+  }
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--surface-page);
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Scrollbar fina em webkit */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

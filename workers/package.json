@@ -1,0 +1,29 @@
+{
+  "name": "adcraft-workers",
+  "version": "1.0.0",
+  "description": "Background workers for AdCraft v2",
+  "main": "dist/workers/task-runner.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/workers/task-runner.js",
+    "dev": "tsx task-runner.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^1.49.0",
+    "@google/generative-ai": "^0.21.0",
+    "@supabase/supabase-js": "2.103.0",
+    "aws-sdk": "^2.1643.0",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.45.2",
+    "fluent-ffmpeg": "^2.1.3",
+    "google-auth-library": "^9.15.1",
+    "postgres": "^3.4.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}

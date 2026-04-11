@@ -1,0 +1,49 @@
+# backend/Dockerfile.worker — Celery Worker e Beat
+# Mesmo ambiente base do backend, comando de inicialização diferente.
+# Usado por dois serviços no docker-compose.yml:
+#   celery_worker — executa agentes de IA de forma assíncrona
+#   celery_beat   — dispara tarefas agendadas (análise de performance às 5h)
+
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# ---------------------------------------------------------------------------
+# Dependências de sistema
+# ffmpeg — o Agente 12 (Diretor de Criativo) roda no worker, não no backend
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# Dependências Python
+# ---------------------------------------------------------------------------
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ---------------------------------------------------------------------------
+# Código da aplicação
+# ---------------------------------------------------------------------------
+COPY . .
+
+# ---------------------------------------------------------------------------
+# Segurança: usuário não-root
+# ---------------------------------------------------------------------------
+RUN useradd --create-home --shell /bin/bash appuser
+USER appuser
+
+# ---------------------------------------------------------------------------
+# Comando padrão: worker com 4 workers e filas priorizadas.
+# O serviço celery_beat no docker-compose.yml sobrescreve com o comando beat.
+#
+# Configurações de confiabilidade (definidas em app/workers/celery_app.py):
+#   acks_late=True              — só confirma o job após conclusão
+#   reject_on_worker_lost=True  — re-enfileira se o worker morrer
+#   worker_prefetch_multiplier=1 — um job por worker (jobs longos de agentes)
+# ---------------------------------------------------------------------------
+CMD ["celery", "-A", "app.workers.celery_app", "worker", \
+     "--loglevel=info", \
+     "--concurrency=4", \
+     "--queues=executions,default", \
+     "--hostname=worker@%h"]

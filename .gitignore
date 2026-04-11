@@ -1,0 +1,111 @@
+# ============================================================
+# Node.js + Next.js
+# ============================================================
+node_modules/
+.next/
+.vercel/
+build/
+dist/
+out/
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Cache
+.npm/
+.eslintcache
+.turbo/
+
+# ============================================================
+# Python (backend/ legado)
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+venv/
+.venv/
+env/
+.env_py/
+*.egg-info/
+dist/
+*.egg
+
+# ============================================================
+# Variáveis de ambiente
+# ============================================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+.env.development.local
+# .env.example é PERMITIDO (não listado aqui)
+
+# ============================================================
+# Credenciais e service accounts
+# ============================================================
+# Qualquer JSON cujo nome contenha: credentials, service-account,
+# gen-lang-client, gcp, firebase
+*credentials*.json
+*service-account*.json
+*service_account*.json
+*gen-lang-client*.json
+*gcp*.json
+*firebase*.json
+# Pasta .secrets/ inteira
+.secrets/
+
+# ============================================================
+# Sistema operacional
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ============================================================
+# Editores e IDEs
+# ============================================================
+.idea/
+*.swp
+*.swo
+*~
+# VSCode — ignora a pasta mas permite arquivos de time compartilháveis
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# ============================================================
+# Testes e cobertura
+# ============================================================
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+pytest_out.txt
+*.pytest_out
+.pytest_cache/
+
+# ============================================================
+# Drizzle (artefatos gerados temporariamente)
+# NÃO ignora migrations/ que é versionada
+# ============================================================
+drizzle/
+
+# ============================================================
+# Misc
+# ============================================================
+*.pem
+*.key
+*.p12
+*.pfx

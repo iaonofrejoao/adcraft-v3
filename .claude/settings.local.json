@@ -38,7 +38,17 @@
       "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
       "Bash(DATABASE_URL=\"postgresql://postgres:2UhYCyYFJxZTn8hF@db.yocbgubxvxpqctbpgpfz.supabase.co:5432/postgres\" pnpm drizzle-kit push)",
       "Bash(node -e ':*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(psql \"postgresql://postgres:2UhYCyYFJxZTn8hF@db.yocbgubxvxpqctbpgpfz.supabase.co:5432/postgres\" -c \"SELECT hash, created_at FROM drizzle.__drizzle_migrations WHERE hash LIKE '%gifted_lyja%' OR hash LIKE '%0000%';\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-0-us-east-1.pooler.supabase.com:6543/postgres\" pnpm drizzle-kit migrate --dry-run)",
+      "Bash(node -e \"require\\('postgres'\\)\")",
+      "Bash(node -e \"require\\('@vercel/postgres'\\)\")",
+      "Bash(grep -E \"postgres|pg$|@neondatabase\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres:2UhYCyYFJxZTn8hF@db.yocbgubxvxpqctbpgpfz.supabase.co:5432/postgres\" pnpm drizzle-kit check)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(DATABASE_URL=\"postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-0-us-east-1.pooler.supabase.com:5432/postgres\" npx drizzle-kit migrate)",
+      "Bash(ls prompts/)",
+      "Bash(ls workers/agents/prompts/)"
     ]
   }
 }

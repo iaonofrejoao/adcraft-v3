@@ -28,9 +28,13 @@ rm -f frontend/package-lock.json frontend/node_modules/.package-lock.json
 
 ## 3. MOVER (prompts arquivados)
 
+> **Nota:** o diretório `backend/` foi renomeado para `_legacy-v1-python/` durante a migração v2.
+> O caminho real dos prompts arquivados é:
+> `_legacy-v1-python/app/agents/prompts/_archive/v3-future/`
+
 ```bash
-mkdir -p backend/app/agents/prompts/_archive/v3-future
-cd backend/app/agents/prompts
+mkdir -p _legacy-v1-python/app/agents/prompts/_archive/v3-future
+cd _legacy-v1-python/app/agents/prompts
 
 mv script_writer.md character_generator.md keyframe_generator.md \
    video_generator.md campaign_strategist.md media_buyer_facebook.md \
@@ -39,7 +43,7 @@ mv script_writer.md character_generator.md keyframe_generator.md \
    _archive/v3-future/
 ```
 
-Ler `prompts/_archive/v3-future/README.md` (gerado junto desta entrega) que explica quando cada um volta.
+Ler `_legacy-v1-python/app/agents/prompts/_archive/v3-future/README.md` que explica quando cada um volta.
 
 ## 4. RENOMEAR
 

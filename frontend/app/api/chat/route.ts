@@ -27,6 +27,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import { resolveReferences, extractProduct, extractGoal } from '@/lib/jarvis/reference-resolver';
 import { planPipeline, type PipelinePlan } from '@/lib/jarvis/planner';
@@ -108,11 +110,26 @@ interface PersistedPipeline {
   task_count:  number;
 }
 
+async function getNextProductVersion(
+  product_id: string,
+  supabase: ReturnType<typeof getServiceClient>,
+): Promise<number> {
+  const { data } = await supabase
+    .from('pipelines')
+    .select('product_version')
+    .eq('product_id', product_id)
+    .order('product_version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data ? (data.product_version as number) + 1 : 1;
+}
+
 async function persistPipeline(
   plan: PipelinePlan,
   supabase: ReturnType<typeof getServiceClient>,
 ): Promise<PersistedPipeline> {
-  const pipelineId = randomUUID();
+  const pipelineId     = randomUUID();
+  const productVersion = await getNextProductVersion(plan.product_id, supabase);
 
   // Insere o pipeline com status plan_preview (aguarda aprovação do usuário)
   const { error: pipelineErr } = await supabase.from('pipelines').insert({
@@ -123,7 +140,7 @@ async function persistPipeline(
     plan:             { tasks: plan.tasks, checkpoints: plan.checkpoints },
     state:            {},
     status:           'plan_preview',
-    product_version:  1,   // TODO: ler do produto real
+    product_version:  productVersion,
     budget_usd:       plan.budget_usd,
     cost_so_far_usd:  '0',
   });
@@ -179,29 +196,10 @@ async function persistPipeline(
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const JARVIS_MODEL = 'gemini-2.5-flash';
 
-const JARVIS_SYSTEM_PROMPT = `Você é Jarvis, o orquestrador de IA da plataforma AdCraft.
-Você ajuda CMOs a criar criativos de marketing via linguagem natural.
-
-Suas capacidades:
-- Pesquisar avatar do cliente ideal
-- Pesquisar mercado e concorrência
-- Gerar ângulos de marketing
-- Gerar copy (hooks, bodies e CTAs)
-- Gerar vídeos com VEO 3
-
-Quando o usuário pedir um trabalho, guie-o a mencionar o produto com @SKU ou @nome
-e a ação com /copy, /avatar, /mercado, /angulos ou /video.
-
-## Aprovação: video_cap_exceeded
-
-Quando um pipeline for pausado com approval do tipo \`video_cap_exceeded\`, apresente ao usuário:
-1. Quantas combinações foram selecionadas e qual é o cap (5 vídeos).
-2. O custo total estimado (N × $5,50).
-3. Peça confirmação dupla: "Você selecionou N combinações. Custo total estimado: $X. Confirma a geração de todos os vídeos?"
-4. Se o usuário confirmar → informe que será necessário marcar \`confirmed_oversized=true\` na task e retomar o pipeline (ação via API).
-5. Se o usuário cancelar → sugira reduzir as combinações com \`selected_for_video=true\` e retomar o pipeline.
-
-Seja conciso, direto e útil. Responda em português do Brasil.`;
+const JARVIS_SYSTEM_PROMPT = fs.readFileSync(
+  path.join(process.cwd(), 'workers/agents/prompts/jarvis.md'),
+  'utf-8',
+).trim();
 
 async function callJarvisGemini(userMessage: string, context: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;

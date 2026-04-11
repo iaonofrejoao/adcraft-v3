@@ -138,7 +138,10 @@ export function CopyComponentBoard({ sku, pipelineId, productId }: CopyComponent
   const allApproved = (type: ColType) =>
     components.filter((c) => c.component_type === type).every((c) => c.approval_status === 'approved')
 
-  const canMaterialize = allApproved('hook') && allApproved('body') && allApproved('cta')
+  const hasApproved = (type: ColType) =>
+    components.filter((c) => c.component_type === type).some((c) => c.approval_status === 'approved')
+
+  const canMaterialize = hasApproved('hook') && hasApproved('body') && hasApproved('cta')
     && components.length > 0
 
   return (

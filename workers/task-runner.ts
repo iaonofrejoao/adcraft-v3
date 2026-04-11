@@ -61,10 +61,11 @@ export interface TaskRow {
   input_context: Record<string, unknown> | null;
   output:        Record<string, unknown> | null;
   error:         string | null;
-  retry_count:   number;
-  started_at:    Date | null;
-  completed_at:  Date | null;
-  created_at:    Date;
+  retry_count:         number;
+  started_at:          Date | null;
+  completed_at:        Date | null;
+  created_at:          Date;
+  confirmed_oversized: boolean | null;
 }
 
 // ── Polling ───────────────────────────────────────────────────────────────────

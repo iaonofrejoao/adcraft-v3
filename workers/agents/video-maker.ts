@@ -6,6 +6,7 @@ import {
     products,
     copyCombinations,
     copyComponents,
+    approvals,
 } from '../../frontend/lib/schema/index';
 import { callAgent } from '../lib/llm/gemini-client';
 import { saveArtifact } from '../lib/knowledge';
@@ -17,6 +18,11 @@ import {
 } from '../lib/ffmpeg/index';
 import { uploadToR2 } from '../lib/r2';
 import { type TaskRow } from '../task-runner';
+
+// ── Cap econômico ────────────────────────────────────────────────────────────
+// Cada vídeo VEO 3 custa ~$5,50. Acima de 5 vídeos por execução exige confirmação explícita.
+const MAX_VIDEOS_PER_RUN = 5;
+const COST_PER_VIDEO_USD = 5.5;
 
 // ── Tipos do storyboard ───────────────────────────────────────────────────────
 
@@ -88,6 +94,35 @@ export async function runVideoMaker(task: TaskRow): Promise<Record<string, unkno
             status: 'skipped',
             reason: 'Nenhuma copy_combination com selected_for_video=true encontrada.',
         };
+    }
+
+    // ── Cap econômico: máximo de 5 vídeos por execução sem confirmação ────────
+    if (combinations.length > MAX_VIDEOS_PER_RUN && !task.confirmed_oversized) {
+        const estimatedCost = Number((combinations.length * COST_PER_VIDEO_USD).toFixed(2));
+
+        await db.insert(approvals).values({
+            id:            randomUUID(),
+            pipeline_id:   pipelineId,
+            task_id:       task.id,
+            approval_type: 'video_cap_exceeded',
+            payload: {
+                requested:          combinations.length,
+                cap:                MAX_VIDEOS_PER_RUN,
+                estimated_cost_usd: estimatedCost,
+            },
+            status: 'pending',
+        });
+
+        await db
+            .update(pipelines)
+            .set({ status: 'paused' })
+            .where(eq(pipelines.id, pipelineId));
+
+        console.warn(
+            `[video-maker] cap excedido: ${combinations.length} combinações > ${MAX_VIDEOS_PER_RUN}. Pipeline pausado para aprovação.`,
+        );
+
+        return { status: 'awaiting_approval', reason: 'video_cap_exceeded' };
     }
 
     const videoAssets: Record<string, unknown>[] = [];

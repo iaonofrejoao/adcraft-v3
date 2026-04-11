@@ -62,6 +62,7 @@ export const tasks = pgTable("tasks", {
   started_at: timestamp("started_at"),
   completed_at: timestamp("completed_at"),
   created_at: timestamp("created_at").defaultNow(),
+  confirmed_oversized: boolean("confirmed_oversized").default(false), // usuário confirmou execução acima do cap econômico (video_maker)
 });
 
 export const approvals = pgTable("approvals", {

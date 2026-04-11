@@ -262,6 +262,7 @@ async function logCall(
   usage: LLMUsage,
   costUsd: number,
   durationMs: number,
+  payload?: Record<string, unknown>,
 ): Promise<void> {
   await db.insert(llmCalls).values({
     id:                  randomUUID(),
@@ -275,6 +276,7 @@ async function logCall(
     output_tokens:       usage.output_tokens,
     cost_usd:            costUsd.toFixed(6),
     duration_ms:         durationMs,
+    payload:             payload ?? null,
   });
 }
 
@@ -310,9 +312,9 @@ interface BatchEmbedResponse {
  * - Se texts é string: processa como batch de 1 elemento, retorna number[][]
  * - Se texts é string[]: processa em batches de até 100 por chamada
  * - Loga em llm_calls com agent_name='embedding'
- * - source_table/source_id não têm colunas dedicadas em llm_calls; product_id
- *   e niche_id são mapeados diretamente. Se precisar de rastreamento mais fino,
- *   adicione coluna payload jsonb em llm_calls via migration.
+ * - source_table/source_id são gravados em llm_calls.payload como
+ *   { source_table, source_id } para rastreamento fino de custo.
+ * - product_id e niche_id são mapeados diretamente em colunas dedicadas.
  */
 export async function callEmbedding(params: CallEmbeddingParams): Promise<number[][]> {
   const isSingle = typeof params.texts === 'string';
@@ -374,6 +376,7 @@ export async function callEmbedding(params: CallEmbeddingParams): Promise<number
     { input_tokens: totalInputTokens, cached_tokens: 0, output_tokens: 0 },
     costUsd,
     durationMs,
+    { source_table: params.source_table, source_id: params.source_id },
   );
 
   return allVectors;

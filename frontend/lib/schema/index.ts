@@ -183,5 +183,6 @@ export const llmCalls = pgTable("llm_calls", {
   output_tokens: integer("output_tokens"),
   cost_usd: numeric("cost_usd", { precision: 10, scale: 6 }),
   duration_ms: integer("duration_ms"),
+  payload: jsonb("payload"),
   created_at: timestamp("created_at").defaultNow(),
 });

@@ -18,7 +18,8 @@ export type AgentName =
   | 'angle_generator'
   | 'copy_hook_generator'
   | 'anvisa_compliance'
-  | 'video_maker';
+  | 'video_maker'
+  | 'niche_curator';
 
 export type CopyMode = 'full' | 'hooks_only' | 'bodies_only' | 'ctas_only';
 
@@ -78,6 +79,13 @@ export const AGENT_REGISTRY: Record<AgentName, AgentCapability> = {
     cacheable: false,
     model: 'gemini-2.5-flash',
     max_input_tokens: 4000,
+  },
+  niche_curator: {
+    requires: ['compliance_results'],
+    produces: [],
+    cacheable: false,
+    model: 'gemini-2.5-flash',
+    max_input_tokens: 6000,
   },
 };
 

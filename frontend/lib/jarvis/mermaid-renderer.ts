@@ -12,6 +12,7 @@ const AGENT_LABELS: Record<AgentName, string> = {
   copy_hook_generator: 'Copy',
   anvisa_compliance: 'Compliance',
   video_maker: 'Video',
+  niche_curator: 'Niche',
 };
 
 const COLOR_REUSED = '#1a5f3f';

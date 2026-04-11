@@ -196,10 +196,17 @@ async function persistPipeline(
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const JARVIS_MODEL = 'gemini-2.5-flash';
 
-const JARVIS_SYSTEM_PROMPT = fs.readFileSync(
-  path.join(process.cwd(), 'workers/agents/prompts/jarvis.md'),
-  'utf-8',
-).trim();
+// Leitura lazy: evita ENOENT no top-level quando Next.js carrega o módulo.
+// process.cwd() em Next.js dev = frontend/ → sobe um nível para chegar em workers/.
+let _jarvisPrompt: string | null = null;
+function getJarvisPrompt(): string {
+  if (_jarvisPrompt) return _jarvisPrompt;
+  _jarvisPrompt = fs.readFileSync(
+    path.join(process.cwd(), '..', 'workers', 'agents', 'prompts', 'jarvis.md'),
+    'utf-8',
+  ).trim();
+  return _jarvisPrompt;
+}
 
 async function callJarvisGemini(userMessage: string, context: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -208,7 +215,7 @@ async function callJarvisGemini(userMessage: string, context: string): Promise<s
   const url = `${GEMINI_BASE}/models/${JARVIS_MODEL}:generateContent?key=${apiKey}`;
 
   const body = {
-    system_instruction: { parts: [{ text: JARVIS_SYSTEM_PROMPT }] },
+    system_instruction: { parts: [{ text: getJarvisPrompt() }] },
     contents: [
       ...(context ? [{ role: 'user', parts: [{ text: `Contexto: ${context}` }] }] : []),
       { role: 'user', parts: [{ text: userMessage }] },

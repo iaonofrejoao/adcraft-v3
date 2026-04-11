@@ -48,7 +48,17 @@
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
       "Bash(DATABASE_URL=\"postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-0-us-east-1.pooler.supabase.com:5432/postgres\" npx drizzle-kit migrate)",
       "Bash(ls prompts/)",
-      "Bash(ls workers/agents/prompts/)"
+      "Bash(ls workers/agents/prompts/)",
+      "Bash(npm run:*)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s -X POST http://localhost:3001/api/products -H 'Content-Type: application/json' -d '{\"name\":\"teste\",\"url\":\"https://example.com\"}' -w '\\\\n---HTTP_STATUS: %{http_code}---')",
+      "Bash(curl -s -X POST http://localhost:3001/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"oi\"}' -w '\\\\n---HTTP_STATUS: %{http_code}---')",
+      "Bash(ls \"c:/Users/joao-/OneDrive/Documentos/Google Antigravity/AdCraft v2/frontend/.env\"*)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(echo \"started PID $!\")",
+      "Bash(break)",
+      "Bash(curl -s -X POST http://localhost:3000/api/products -H 'Content-Type: application/json' -d '{\"name\":\"teste\",\"url\":\"https://example.com\"}' -w '\\\\n---HTTP_STATUS: %{http_code}---')",
+      "Bash(curl -s -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"oi\"}' -w '\\\\n---HTTP_STATUS: %{http_code}---')"
     ]
   }
 }

@@ -209,7 +209,10 @@ export const AGENT_REGISTRY = {
 | `copy_hook_generator` | `copy_writer.md` v1 | Refatorado — output 3+3+3 + 4 modos de execução |
 | `anvisa_compliance` | `compliance_checker.md` v1 | Nenhuma — reaproveita íntegro |
 | `video_maker` | novo orquestrador | Novo — internamente usa lógica de `character_generator`, `keyframe_generator`, `video_generator` da v1 (arquivados, reaproveitados como sub-rotinas) |
-| `niche_curator` | novo | Novo — processa sinais de aprovação/rejeição em learnings |
+
+### 4.5 Jobs agendados
+
+`niche_curator` é um job agendado (cron diário às 4h), não um agente de pipeline. Ele consome sinais de aprovação/rejeição de componentes e produz `niche_learnings` consolidados. Não entra no `agent-registry` nem é orquestrado pelo planner. O cron (`workers/cron/niche-curator-cron.ts`) enfileira tasks com `pipeline_id = NULL`; o task-runner as executa normalmente via `callAgent`, garantindo logging em `llm_calls` (Regra 18).
 
 ---
 

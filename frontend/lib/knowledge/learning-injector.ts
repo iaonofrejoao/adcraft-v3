@@ -216,6 +216,4 @@ export const AGENT_LEARNING_TYPES: Record<string, LearningType[]> = {
   angle_generator:    ['angle_winner', 'angle_loser', 'hook_pattern', 'objection'],
   copy_hook_generator: ['hook_pattern', 'language_pattern', 'creative_format', 'angle_winner', 'angle_loser'],
   anvisa_compliance:  ['compliance_violation'],
-  niche_curator:      ['angle_winner', 'angle_loser', 'hook_pattern', 'creative_format',
-                       'objection', 'language_pattern', 'avatar_insight', 'compliance_violation'],
 };

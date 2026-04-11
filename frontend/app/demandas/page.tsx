@@ -35,7 +35,6 @@ const AGENT_ICONS: Record<string, string> = {
   copy_hook_generator:'✍️',
   anvisa_compliance:  '⚖️',
   video_maker:        '🎬',
-  niche_curator:      '🏷️',
 }
 
 // ── Página ─────────────────────────────────────────────────────────────────────

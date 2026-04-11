@@ -15,20 +15,42 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import {
-  GoogleGenerativeAI,
-  type Content,
-  type Part,
-  type Tool,
-  type FunctionDeclaration,
-} from '@google/generative-ai';
-import { eq, and, gt } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db, supabase } from '../db';
-import { llmCalls, promptCaches, pipelines, approvals } from '../../../frontend/lib/schema/index';
+import { llmCalls, pipelines, approvals } from '../../../frontend/lib/schema/index';
 import { AGENT_REGISTRY, type AgentName, type CopyMode } from '../../../frontend/lib/agent-registry';
 import { injectLearnings, AGENT_LEARNING_TYPES } from '../../../frontend/lib/knowledge/learning-injector';
 import { executeSearchWeb, WEB_SEARCH_TOOL } from '../../../frontend/lib/tools/web-search';
 import { executeReadPage, READ_PAGE_TOOL } from '../../../frontend/lib/tools/read-page';
+import { createOrGetCache } from './prompt-cache';
+
+// ── Tipos Gemini REST API ─────────────────────────────────────────────────────
+
+interface GeminiPart {
+  text?: string;
+  functionCall?: { name: string; args: Record<string, unknown> };
+  functionResponse?: { name: string; response: unknown };
+}
+
+interface GeminiContent {
+  role: string;
+  parts: GeminiPart[];
+}
+
+interface GeminiFunctionDeclaration {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+}
+
+interface GeminiGenerateResponse {
+  candidates?: Array<{ content: GeminiContent }>;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    cachedContentTokenCount?: number;
+  };
+}
 
 // ── Tabela de preços (Gemini, abril 2026) ─────────────────────────────────────
 const PRICE_INPUT_PER_1M: Record<string, number> = {
@@ -113,22 +135,16 @@ function loadPrompt(agentName: string): string {
 
 // ── Ferramentas Gemini ────────────────────────────────────────────────────────
 
-function toFunctionDeclaration(
-  toolDef: typeof WEB_SEARCH_TOOL | typeof READ_PAGE_TOOL,
-): FunctionDeclaration {
-  return {
-    name:        toolDef.name,
-    description: toolDef.description,
-    parameters:  toolDef.input_schema as any,
-  };
-}
-
-const GEMINI_TOOLS: Tool[] = [
+const FUNCTION_DECLARATIONS: GeminiFunctionDeclaration[] = [
   {
-    functionDeclarations: [
-      toFunctionDeclaration(WEB_SEARCH_TOOL),
-      toFunctionDeclaration(READ_PAGE_TOOL),
-    ],
+    name:        WEB_SEARCH_TOOL.name,
+    description: WEB_SEARCH_TOOL.description,
+    parameters:  WEB_SEARCH_TOOL.input_schema as Record<string, unknown>,
+  },
+  {
+    name:        READ_PAGE_TOOL.name,
+    description: READ_PAGE_TOOL.description,
+    parameters:  READ_PAGE_TOOL.input_schema as Record<string, unknown>,
   },
 ];
 
@@ -149,62 +165,6 @@ async function executeTool(
       );
     default:
       throw new Error(`Unknown tool: ${name}`);
-  }
-}
-
-// ── Prompt caching ────────────────────────────────────────────────────────────
-
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora
-
-async function findValidCache(cacheKey: string): Promise<string | null> {
-  const row = await db.query.promptCaches.findFirst({
-    where: and(
-      eq(promptCaches.cache_key, cacheKey),
-      gt(promptCaches.expires_at, new Date()),
-    ),
-  });
-  return row?.gemini_cache_name ?? null;
-}
-
-async function upsertCacheRecord(cacheKey: string, geminiCacheName: string): Promise<void> {
-  const expiresAt = new Date(Date.now() + CACHE_TTL_MS);
-  await db
-    .insert(promptCaches)
-    .values({
-      id:                randomUUID(),
-      cache_key:         cacheKey,
-      gemini_cache_name: geminiCacheName,
-      expires_at:        expiresAt,
-    })
-    .onConflictDoUpdate({
-      target: promptCaches.cache_key,
-      set: {
-        gemini_cache_name: geminiCacheName,
-        expires_at:        expiresAt,
-      },
-    });
-}
-
-/**
- * Tenta criar um cache de sistema via GoogleAICacheManager (Node.js only).
- * Retorna null se o SDK não suportar caching nesta versão.
- */
-async function createGeminiCache(
-  model: string,
-  systemInstruction: string,
-): Promise<string | null> {
-  try {
-    // GoogleAICacheManager disponível em @google/generative-ai/server
-    const { GoogleAICacheManager } = await import('@google/generative-ai/server' as any);
-    const manager = new GoogleAICacheManager(process.env.GEMINI_API_KEY!);
-    const cache = await manager.create({
-      model:             `models/${model}`,
-      systemInstruction: systemInstruction,
-      ttlSeconds:        CACHE_TTL_MS / 1000,
-    });
-    return (cache.name ?? null) as string | null;
-  } catch {
-    return null;
   }
 }
 
@@ -285,7 +245,7 @@ async function logCall(
 // Deliberado: mantém gemini-client.ts livre de dependência no @google/genai.
 // Consistente com o que o frontend/lib/embeddings/gemini-embeddings.ts já fazia.
 
-const GEMINI_EMBED_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const EMBED_MODEL = 'gemini-embedding-001';
 const EMBED_DIM = 768;
 const EMBED_BATCH_SIZE = 100;
@@ -328,7 +288,7 @@ export async function callEmbedding(params: CallEmbeddingParams): Promise<number
     const batch = inputTexts.slice(offset, offset + EMBED_BATCH_SIZE);
 
     const url =
-      `${GEMINI_EMBED_BASE}/models/${EMBED_MODEL}:batchEmbedContents` +
+      `${GEMINI_API_BASE}/models/${EMBED_MODEL}:batchEmbedContents` +
       `?key=${process.env.GEMINI_API_KEY!}`;
 
     const requests = batch.map((text) => ({
@@ -387,11 +347,11 @@ export async function callEmbedding(params: CallEmbeddingParams): Promise<number
 /**
  * Chama um agente via Gemini API com function calling loop e prompt caching.
  * Regra 18: único ponto de entrada — nunca chame o SDK Gemini diretamente.
+ * Usa fetch puro para generateContent; cache gerenciado por prompt-cache.ts.
  */
 export async function callAgent(params: CallAgentParams): Promise<CallAgentResult> {
   const cap   = AGENT_REGISTRY[params.agent_name];
   const model = cap.model;
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
   // ── 1. System prompt base ─────────────────────────────────────────────────
   let basePrompt = loadPrompt(params.agent_name);
@@ -416,22 +376,20 @@ export async function callAgent(params: CallAgentParams): Promise<CallAgentResul
     }
   }
 
+  // Conteúdo estático: system prompt + learnings (estável por agente+nicho)
   const systemInstruction = learningsBlock
     ? `${basePrompt}\n\n${learningsBlock}`
     : basePrompt;
 
   // ── 3. Prompt cache ───────────────────────────────────────────────────────
   const cacheKey = `${params.agent_name}:${params.niche_slug ?? 'global'}`;
-  let cachedName = await findValidCache(cacheKey);
-  if (!cachedName) {
-    cachedName = await createGeminiCache(model, systemInstruction);
-    if (cachedName) {
-      await upsertCacheRecord(cacheKey, cachedName);
-    }
-  }
+  const cacheResult = await createOrGetCache({
+    cache_key: cacheKey,
+    content:   systemInstruction,
+    model,
+  });
 
   // ── 4. Estimativa de custo e circuit breaker ──────────────────────────────
-  // ~4 chars/token como heurística conservadora
   const estimatedIn  = Math.ceil(systemInstruction.length / 4) +
                        Math.ceil(params.dynamic_input.length / 4);
   const estimatedOut = 1500;
@@ -441,52 +399,88 @@ export async function callAgent(params: CallAgentParams): Promise<CallAgentResul
     await checkBudget(params.pipeline_id, estimatedCost);
   }
 
-  // ── 5. Configura modelo ───────────────────────────────────────────────────
-  const geminiModel = genAI.getGenerativeModel({
-    model,
-    systemInstruction: systemInstruction,
-    tools: GEMINI_TOOLS,
-    generationConfig: { temperature: 1.0 },
-  });
+  // ── 5. Inicializa conversa ────────────────────────────────────────────────
+  const messages: GeminiContent[] = [
+    { role: 'user', parts: [{ text: params.dynamic_input }] },
+  ];
 
-  const chat = geminiModel.startChat();
-
-  // ── 6. Loop de function calling ───────────────────────────────────────────
+  // ── 6. Loop de function calling via fetch puro ────────────────────────────
   const startedAt = Date.now();
   let totalInput  = 0;
   let totalCached = 0;
   let totalOutput = 0;
   let finalText   = '';
 
-  let result = await chat.sendMessage(params.dynamic_input);
   const MAX_ROUNDS = 12;
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
-    const meta = result.response.usageMetadata;
+    const reqBody: Record<string, unknown> = {
+      contents:         messages,
+      tools:            [{ functionDeclarations: FUNCTION_DECLARATIONS }],
+      generationConfig: { temperature: 1.0 },
+    };
+
+    if (cacheResult) {
+      // Cache contém o conteúdo estático — não duplicar inline
+      reqBody.cachedContent = cacheResult.cache_name;
+    } else {
+      reqBody.systemInstruction = { parts: [{ text: systemInstruction }] };
+    }
+
+    const res = await fetch(
+      `${GEMINI_API_BASE}/models/${model}:generateContent`,
+      {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'x-goog-api-key': process.env.GEMINI_API_KEY!,
+        },
+        body: JSON.stringify(reqBody),
+      },
+    );
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`Gemini generateContent error ${res.status}: ${errBody}`);
+    }
+
+    const data = (await res.json()) as GeminiGenerateResponse;
+
+    // Acumula tokens — cached_input_tokens vem de cachedContentTokenCount
+    const meta = data.usageMetadata;
     totalInput  += meta?.promptTokenCount       ?? 0;
     totalCached += meta?.cachedContentTokenCount ?? 0;
     totalOutput += meta?.candidatesTokenCount    ?? 0;
 
-    const calls = result.response.functionCalls();
-    if (!calls || calls.length === 0) {
-      finalText = result.response.text();
+    const candidate = data.candidates?.[0];
+    if (!candidate) break;
+
+    // Adiciona resposta do modelo à conversa
+    messages.push(candidate.content);
+
+    // Verifica se há function calls
+    const functionCallParts = candidate.content.parts.filter(
+      (p) => p.functionCall !== undefined,
+    );
+
+    if (functionCallParts.length === 0) {
+      finalText = candidate.content.parts.find((p) => p.text)?.text ?? '';
       break;
     }
 
     // Executa tools em paralelo
-    const toolParts: Part[] = await Promise.all(
-      calls.map(async (fc) => {
-        const toolResult = await executeTool(
-          fc.name,
-          fc.args as Record<string, unknown>,
-        );
+    const toolParts: GeminiPart[] = await Promise.all(
+      functionCallParts.map(async (part) => {
+        const fc = part.functionCall!;
+        const toolResult = await executeTool(fc.name, fc.args);
         return {
           functionResponse: { name: fc.name, response: toolResult },
-        } as Part;
+        } as GeminiPart;
       }),
     );
 
-    result = await chat.sendMessage(toolParts);
+    // Adiciona respostas das tools como mensagem do usuário
+    messages.push({ role: 'user', parts: toolParts });
   }
 
   const durationMs = Date.now() - startedAt;

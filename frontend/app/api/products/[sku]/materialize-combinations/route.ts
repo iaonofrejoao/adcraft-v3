@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
+import { buildCombinationTag } from '@/lib/tagging';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -119,7 +120,7 @@ export async function POST(
     for (const bodyComp of bodyComponents) {
       for (const cta of ctas) {
         // Regra 16: tag determinística
-        const tag = `${sku.toUpperCase()}_v${version}_H${hook.slot_number}_B${bodyComp.slot_number}_C${cta.slot_number}`;
+        const tag = buildCombinationTag(sku.toUpperCase(), version, hook.slot_number, bodyComp.slot_number, cta.slot_number);
         if (existingTags.has(tag)) continue;
 
         const full_text = [hook.content, bodyComp.content, cta.content]

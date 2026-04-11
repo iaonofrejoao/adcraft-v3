@@ -16,6 +16,7 @@ import {
   planPipeline,
   type PipelinePlan,
 } from '../frontend/lib/jarvis/planner';
+import { buildCombinationTag } from '../frontend/lib/tagging';
 import {
   resolveAgentDependencies,
   topologicalSort,
@@ -651,7 +652,7 @@ function materializeCombinations(
     for (const body of components.bodies) {
       for (const cta of components.ctas) {
         // Regra 16: tag determinística
-        const tag = `${sku}_v${version}_H${hook.slot_number}_B${body.slot_number}_C${cta.slot_number}`;
+        const tag = buildCombinationTag(sku, version, hook.slot_number, body.slot_number, cta.slot_number);
         if (existingTags.has(tag)) continue;
 
         result.push({

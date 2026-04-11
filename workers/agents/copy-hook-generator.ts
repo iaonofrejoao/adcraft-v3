@@ -6,6 +6,7 @@ import { callAgent } from '../lib/llm/gemini-client';
 import { saveCopyComponents, type CopyComponentInput } from '../lib/knowledge';
 import { type TaskRow } from '../task-runner';
 import { type CopyMode } from '../../frontend/lib/agent-registry';
+import { buildHookTag, buildBodyTag, buildCtaTag } from '../lib/tagging';
 
 /**
  * Agente 3.7 — Copy Hook Generator
@@ -85,7 +86,7 @@ Crie variações esmagadoras e textos instintivos. Retorne o JSON seguindo exata
             components.push({
                 component_type: 'hook',
                 slot_number: slot,
-                tag: `${sku}_v${version}_H${slot}`,
+                tag: buildHookTag(sku, version, slot),
                 content: h.hook_text,
                 rationale: h.rationale,
                 register: h.hook_type,
@@ -100,7 +101,7 @@ Crie variações esmagadoras e textos instintivos. Retorne o JSON seguindo exata
             components.push({
                 component_type: 'body',
                 slot_number: slot,
-                tag: `${sku}_v${version}_B${slot}`,
+                tag: buildBodyTag(sku, version, slot),
                 content: b.body_long,
                 rationale: b.rationale,
                 structure: b.body_short,
@@ -115,7 +116,7 @@ Crie variações esmagadoras e textos instintivos. Retorne o JSON seguindo exata
             components.push({
                 component_type: 'cta',
                 slot_number: slot,
-                tag: `${sku}_v${version}_C${slot}`,
+                tag: buildCtaTag(sku, version, slot),
                 content: c.cta_text,
                 rationale: c.rationale,
             });

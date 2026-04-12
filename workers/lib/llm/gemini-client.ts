@@ -152,7 +152,27 @@ async function executeTool(
   name: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  switch (name) {
+  // Gemini 2.5 às vezes alucina nomes curtos de tools
+  // (padrões do treinamento do Google Search grounding).
+  // Tratamos aliases conhecidos aqui.
+  const KNOWN_ALIASES: Record<string, string> = {
+    'search':        'search_web',
+    'web_search':    'search_web',
+    'google_search': 'search_web',
+    'fetch_page':    'read_page',
+    'read_url':      'read_page',
+  };
+
+  const canonicalName = KNOWN_ALIASES[name] ?? name;
+
+  if (canonicalName !== name) {
+    console.warn(
+      `[gemini-client] tool name alias detected: "${name}" → "${canonicalName}". ` +
+      `Gemini pode estar alucinando o nome. Monitorar frequência.`,
+    );
+  }
+
+  switch (canonicalName) {
     case 'search_web':
       return executeSearchWeb(
         args.query as string,
@@ -164,7 +184,10 @@ async function executeTool(
         (args.extract_mode as 'text' | 'structured' | undefined) ?? 'text',
       );
     default:
-      throw new Error(`Unknown tool: ${name}`);
+      throw new Error(
+        `Unknown tool: ${name}` +
+        (canonicalName !== name ? ` (tried alias "${canonicalName}")` : ''),
+      );
   }
 }
 

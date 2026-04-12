@@ -9,7 +9,14 @@
 // A tabela v1 `assets` tem FK real para `products` → join via PostgREST funciona.
 
 import { NextResponse } from 'next/server';
-import { getSupabase } from '../../../../workers/lib/db';
+import { createClient } from '@supabase/supabase-js';
+
+function getServiceClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Supabase service role key not configured');
+  return createClient(url, key);
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -19,7 +26,7 @@ export async function GET(req: Request) {
   );
 
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
 
     const { data, error } = await supabase
       .from('assets')

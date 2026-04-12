@@ -13,7 +13,31 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { generateSingleEmbedding, embeddingToSql } from '../../../../workers/lib/embeddings/gemini-embeddings';
+
+// ── GET /api/products ─────────────────────────────────────────────────────────
+
+export async function GET() {
+  try {
+    const supabase = getServiceClient();
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, name, sku, platform, target_language, ticket_price, commission_percent, created_at, niches(name)')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Reshape niches relation → niche to match the Product interface on the client
+    const products = (data ?? []).map((p) => {
+      const { niches, ...rest } = p as typeof p & { niches: { name: string } | null };
+      return { ...rest, niche: niches ?? null };
+    });
+
+    return NextResponse.json({ products });
+  } catch (err) {
+    console.error('[products GET] error:', err);
+    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+  }
+}
 
 // ── Supabase service role (bypassa RLS para escrita server-side) ──────────────
 
@@ -26,12 +50,28 @@ function getServiceClient() {
 
 // ── Validação de input ────────────────────────────────────────────────────────
 
+const PLATFORM_DOMAINS: Record<string, 'hotmart' | 'clickbank' | 'monetizze' | 'eduzz'> = {
+  'hotmart.com':    'hotmart',
+  'clickbank.com':  'clickbank',
+  'monetizze.com.br': 'monetizze',
+  'eduzz.com':      'eduzz',
+};
+
+function detectPlatform(url: string): 'hotmart' | 'clickbank' | 'monetizze' | 'eduzz' | null {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return PLATFORM_DOMAINS[host] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const CreateProductSchema = z.object({
   user_id:            z.string().uuid(),
   name:               z.string().min(2).max(255),
-  platform:           z.enum(['hotmart', 'clickbank', 'monetizze', 'eduzz']),
+  platform:           z.enum(['hotmart', 'clickbank', 'monetizze', 'eduzz']).optional(),
   product_url:        z.string().url(),
-  affiliate_link:     z.string().url(),
+  affiliate_link:     z.string().url().optional(),
   commission_percent: z.number().min(0).max(100),
   ticket_price:       z.number().positive(),
   target_country:     z.string().max(10).default('BR'),
@@ -63,6 +103,10 @@ export async function POST(req: Request) {
   const input: CreateProductInput = parsed.data;
   const supabase = getServiceClient();
 
+  // Resolve campos opcionais extraíveis da URL
+  const platform      = input.platform ?? detectPlatform(input.product_url) ?? 'hotmart';
+  const affiliateLink = input.affiliate_link ?? input.product_url;
+
   // 2. INSERT em products
   // O trigger trigger_generate_sku preenche products.sku automaticamente.
   const { data: product, error: insertError } = await supabase
@@ -70,9 +114,9 @@ export async function POST(req: Request) {
     .insert({
       user_id:            input.user_id,
       name:               input.name,
-      platform:           input.platform,
+      platform,
       product_url:        input.product_url,
-      affiliate_link:     input.affiliate_link,
+      affiliate_link:     affiliateLink,
       commission_percent: input.commission_percent,
       ticket_price:       input.ticket_price,
       target_country:     input.target_country,
@@ -106,6 +150,10 @@ async function classifyNicheAsync(
   productUrl: string,
   supabase: ReturnType<typeof getServiceClient>
 ): Promise<void> {
+  // Import dinâmico evita que workers/lib/db.ts inicialize conexão pg no top-level
+  // (o que causaria 500 durante o carregamento do módulo pelo Next.js)
+  const { generateSingleEmbedding, embeddingToSql } = await import('../../../../workers/lib/embeddings/gemini-embeddings');
+
   // 3. Gera embedding do produto (nome + URL como âncora semântica)
   const embeddingText = `${name} ${productUrl}`;
   const embeddingValues = await generateSingleEmbedding(embeddingText, 'products', productId);

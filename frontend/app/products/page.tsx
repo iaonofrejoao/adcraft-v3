@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 
 interface Product {
@@ -183,47 +184,51 @@ export default function ProductsPage() {
 }
 
 function ProductCard({ product: p }: { product: Product }) {
+  const router = useRouter()
   return (
-    <Link href={`/products/${p.sku}`}>
-      <div className="rounded-xl border p-4 cursor-pointer transition-all hover:shadow-sm hover:border-opacity-80"
-        style={{ background: 'var(--surface-card)', borderColor: 'var(--border-default)' }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-default)')}>
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{p.name}</h3>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {p.niche?.name ?? 'Nicho não definido'} · {p.platform} · {p.target_language}
-            </p>
-          </div>
-          <span className="text-xs font-mono px-2 py-0.5 rounded-full shrink-0 ml-2"
-            style={{ background: 'var(--brand-subtle)', color: 'var(--brand-primary)' }}>
-            {p.sku}
-          </span>
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push(`/products/${p.sku}`)}
+      onKeyDown={(e) => e.key === 'Enter' && router.push(`/products/${p.sku}`)}
+      className="rounded-xl border p-4 cursor-pointer transition-all hover:shadow-sm hover:border-opacity-80"
+      style={{ background: 'var(--surface-card)', borderColor: 'var(--border-default)' }}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-default)')}>
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{p.name}</h3>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            {p.niche?.name ?? 'Nicho não definido'} · {p.platform} · {p.target_language}
+          </p>
         </div>
-        <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-          {p.ticket_price && (
-            <span className="font-mono">R$ {parseFloat(p.ticket_price).toLocaleString('pt-BR')}</span>
-          )}
-          {p.commission_percent && (
-            <span>{parseFloat(p.commission_percent).toFixed(0)}% comissão</span>
-          )}
-        </div>
-        <div className="flex gap-2 mt-3">
-          <Link href={`/products/${p.sku}/copies`}
-            className="text-xs px-2 py-1 rounded-lg border hover:opacity-70"
-            style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)' }}
-            onClick={(e) => e.stopPropagation()}>
-            Copies
-          </Link>
-          <Link href={`/?msg=@${p.sku}+/copy`}
-            className="text-xs px-2 py-1 rounded-lg font-medium text-white hover:opacity-80"
-            style={{ background: 'var(--brand-primary)' }}
-            onClick={(e) => e.stopPropagation()}>
-            Gerar copy
-          </Link>
-        </div>
+        <span className="text-xs font-mono px-2 py-0.5 rounded-full shrink-0 ml-2"
+          style={{ background: 'var(--brand-subtle)', color: 'var(--brand-primary)' }}>
+          {p.sku}
+        </span>
       </div>
-    </Link>
+      <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+        {p.ticket_price && (
+          <span className="font-mono">R$ {parseFloat(p.ticket_price).toLocaleString('pt-BR')}</span>
+        )}
+        {p.commission_percent && (
+          <span>{parseFloat(p.commission_percent).toFixed(0)}% comissão</span>
+        )}
+      </div>
+      <div className="flex gap-2 mt-3">
+        <Link href={`/products/${p.sku}/copies`}
+          className="text-xs px-2 py-1 rounded-lg border hover:opacity-70"
+          style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)' }}
+          onClick={(e) => e.stopPropagation()}>
+          Copies
+        </Link>
+        <Link href={`/?msg=@${p.sku}+/copy`}
+          className="text-xs px-2 py-1 rounded-lg font-medium text-white hover:opacity-80"
+          style={{ background: 'var(--brand-primary)' }}
+          onClick={(e) => e.stopPropagation()}>
+          Gerar copy
+        </Link>
+      </div>
+    </div>
   )
 }

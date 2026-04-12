@@ -97,6 +97,10 @@ export const GOAL_TO_DELIVERABLE: Record<GoalName, ArtifactType> = {
   creative_full: 'video_assets',
 };
 
+// Modelo do Jarvis (framework, não agente rastreável — regra 17 nota)
+// Centralizado aqui para facilitar rastreabilidade de modelo.
+export const JARVIS_MODEL = 'gemini-2.5-flash';
+
 // Budgets padrão por goal (PRD seção 10)
 export const GOAL_BUDGET_DEFAULTS: Record<GoalName, number> = {
   avatar_only: 0.30,

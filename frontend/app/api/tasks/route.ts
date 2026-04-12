@@ -12,7 +12,14 @@
 // com duas queries adicionais (pipelines, products).
 
 import { NextResponse } from 'next/server';
-import { getSupabase } from '../../../../workers/lib/db';
+import { createClient } from '@supabase/supabase-js';
+
+function getServiceClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Supabase service role key not configured');
+  return createClient(url, key);
+}
 
 // Colunas da tabela v2 tasks que o Kanban em demandas/page.tsx precisa
 const TASK_COLS = [
@@ -41,7 +48,7 @@ export async function GET(req: Request) {
   const ascending  = dir === 'asc';
 
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceClient();
 
     // 1. Busca tasks
     const { data: tasksRaw, error: tasksErr } = await supabase

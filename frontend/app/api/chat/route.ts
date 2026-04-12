@@ -3,12 +3,14 @@
 //
 // Fluxo:
 //   1. Resolve @mentions (produto por SKU/nome) e /goals via reference-resolver
-//   2. Classifica intent: create_pipeline | approve_plan | check_status | general_question
-//   3. create_pipeline → planPipeline() → persiste pipeline + tasks → stream plan_preview
-//   4. approve_plan    → transiciona pipeline plan_preview → pending → stream pipeline_created
-//   5. check_status    → busca pipeline → stream pipeline_status
-//   6. general_question → chama Gemini Flash via REST → stream message
-//   7. Persiste messages em conversation
+//   2. Classifica intent: list_products | create_pipeline | approve_plan |
+//      check_status | general_question
+//   3. list_products   → listProducts() → stream message com lista
+//   4. create_pipeline → planPipeline() → persiste plan_preview → stream plan_preview + mermaid
+//   5. approve_plan    → transiciona plan_preview → pending OU createNewPipeline()
+//   6. check_status    → getPipelineStatus() → stream pipeline_status
+//   7. general_question → Gemini Flash com contexto enriquecido → stream message
+//   8. Persiste messages em conversation
 //
 // SSE events emitidos:
 //   { type: 'status',                message: string }
@@ -33,6 +35,15 @@ import * as path from 'path';
 import { resolveReferences, extractProduct, extractGoal } from '@/lib/jarvis/reference-resolver';
 import { planPipeline, type PipelinePlan } from '@/lib/jarvis/planner';
 import type { PlannedTask } from '@/lib/jarvis/dag-builder';
+import { JARVIS_MODEL, type GoalName } from '@/lib/agent-registry';
+import {
+  listProducts,
+  getProductKnowledge,
+  getPipelineStatus,
+  createNewPipeline,
+  type Product,
+  type PipelineWithTasks,
+} from '@/lib/jarvis/actions';
 
 // ── Supabase service client ───────────────────────────────────────────────────
 
@@ -62,20 +73,38 @@ const ChatRequestSchema = z.object({
   message:             z.string().min(1).max(4000),
   conversation_id:     z.string().uuid().optional(),
   user_id:             z.string().uuid().optional(),
-  /** pipeline_id de um plano pendente de aprovação (enviado pelo frontend após plan_preview) */
+  /** pipeline_id de um plano_preview aguardando aprovação no DB */
   pending_pipeline_id: z.string().uuid().optional(),
-  /** Força replanejamento mesmo com artifacts frescos */
-  force_refresh:       z.boolean().optional().default(false),
+  /** dados do plano pendente quando não há registro no DB (fluxo novo) */
+  pending_plan: z.object({
+    product_id:      z.string().uuid(),
+    goal:            z.string(),
+    product_version: z.number().int().positive().default(1),
+  }).optional(),
+  force_refresh: z.boolean().optional().default(false),
 });
 
 // ── Intent classifier ─────────────────────────────────────────────────────────
-// Rule-based: evita latência de um LLM call extra para classificação simples.
 
 type Intent =
+  | 'list_products'
   | 'create_pipeline'
   | 'approve_plan'
   | 'check_status'
   | 'general_question';
+
+/**
+ * Detecta goal a partir de palavras-chave no texto (fallback quando não há /ação).
+ */
+function detectGoalFromText(message: string): GoalName | null {
+  const lower = message.toLowerCase();
+  if (/\bavatar\b|p[uú]blico.alvo|persona\b/.test(lower)) return 'avatar_only';
+  if (/\bmercado\b|viabilidade|concorr[eê]ncia/.test(lower)) return 'market_only';
+  if (/\b[aâ]ngulos?\b|\bangles?\b/.test(lower)) return 'angles_only';
+  if (/\bcopy\b|\bhooks?\b|\bbodies\b|\bbody\b|\bctas?\b/.test(lower)) return 'copy_only';
+  if (/\bv[ií]deo\b|criativo|creative/.test(lower)) return 'creative_full';
+  return null;
+}
 
 function classifyIntent(
   message: string,
@@ -83,27 +112,42 @@ function classifyIntent(
   hasGoal: boolean,
   hasPendingPipeline: boolean,
 ): Intent {
-  const lower = message.toLowerCase();
+  const lower = message.toLowerCase().trim();
 
-  // Aprovação explícita do plano
+  // list_products — perguntas sobre catálogo
+  const listPatterns = [
+    'quais produtos', 'meus produtos', 'produtos que eu tenho',
+    'listar produtos', 'o que eu tenho', 'que produtos',
+  ];
+  if (listPatterns.some((w) => lower.includes(w))) return 'list_products';
+  if (/^(listar|lista|ver)\s+(meus\s+)?produtos/.test(lower)) return 'list_products';
+
+  // approve_plan — usuário confirma plano pendente
   if (hasPendingPipeline) {
-    const approveWords = ['sim', 'ok', 'aprovar', 'aprovar plano', 'executar', 'pode executar', 'confirmar', 'yes', 'go'];
+    const approveWords = [
+      'sim', 'ok', 'aprovar', 'executar', 'pode executar', 'confirmar',
+      'yes', 'go', 'pode rodar', 'manda ver', 'roda', 'executa', 'aprova',
+      'pode', 'vamos', 'bora',
+    ];
     if (approveWords.some((w) => lower.includes(w))) return 'approve_plan';
   }
 
-  // Criação de pipeline: tem produto + goal
+  // create_pipeline — produto + goal identificados
   if (hasProduct && hasGoal) return 'create_pipeline';
-  // Só goal → Jarvis pedirá o produto; por ora trata como general
+  // goal sem produto → Jarvis pede o produto
   if (hasGoal && !hasProduct) return 'general_question';
 
-  // Status de pipeline
-  const statusWords = ['status', 'progresso', 'andamento', 'como está', 'como tá', 'quanto falta', 'terminou', 'concluiu'];
-  if (statusWords.some((w) => lower.includes(w))) return 'check_status';
+  // check_status — perguntas sobre progresso
+  const statusWords = [
+    'status', 'progresso', 'andamento', 'como est[aá]', 'como t[aá]',
+    'quanto falta', 'terminou', 'concluiu', 'pipeline', 'rodando', 'executando',
+  ];
+  if (statusWords.some((w) => new RegExp(w).test(lower))) return 'check_status';
 
   return 'general_question';
 }
 
-// ── Persistência do pipeline ──────────────────────────────────────────────────
+// ── Persistência do pipeline como plan_preview ────────────────────────────────
 
 interface PersistedPipeline {
   pipeline_id: string;
@@ -124,61 +168,54 @@ async function getNextProductVersion(
   return data ? (data.product_version as number) + 1 : 1;
 }
 
-async function persistPipeline(
+async function persistPlanPreview(
   plan: PipelinePlan,
   supabase: ReturnType<typeof getServiceClient>,
 ): Promise<PersistedPipeline> {
   const pipelineId     = randomUUID();
   const productVersion = await getNextProductVersion(plan.product_id, supabase);
 
-  // Insere o pipeline com status plan_preview (aguarda aprovação do usuário)
   const { error: pipelineErr } = await supabase.from('pipelines').insert({
-    id:               pipelineId,
-    product_id:       plan.product_id,
-    goal:             plan.goal,
+    id:                pipelineId,
+    product_id:        plan.product_id,
+    goal:              plan.goal,
     deliverable_agent: plan.deliverable,
-    plan:             { tasks: plan.tasks, checkpoints: plan.checkpoints },
-    state:            {},
-    status:           'plan_preview',
-    product_version:  productVersion,
-    budget_usd:       plan.budget_usd,
-    cost_so_far_usd:  '0',
+    plan:              { tasks: plan.tasks, checkpoints: plan.checkpoints },
+    state:             {},
+    status:            'plan_preview',
+    product_version:   productVersion,
+    budget_usd:        plan.budget_usd,
+    cost_so_far_usd:   '0',
   });
 
   if (pipelineErr) throw new Error(`Pipeline insert failed: ${pipelineErr.message}`);
 
-  // Insere tasks: agente_name → uuid map para resolve depends_on
+  // Insere tasks com status waiting/pending (sem executar ainda)
   const agentToTaskId = new Map<string, string>();
   for (const t of plan.tasks) {
     agentToTaskId.set(t.agent, randomUUID());
   }
 
   const taskRows = plan.tasks.map((t: PlannedTask) => {
-    const taskId  = agentToTaskId.get(t.agent)!;
-    // Converte depends_on de agent names → task UUIDs
+    const taskId    = agentToTaskId.get(t.agent)!;
     const depsUuids = t.depends_on
-      .map((depAgent) => agentToTaskId.get(depAgent))
+      .map((dep) => agentToTaskId.get(dep))
       .filter((uid): uid is string => uid !== undefined);
 
-    // reused → skipped, pending sem deps → pending, pending com deps → waiting
     let status: string;
-    if (t.status === 'reused') {
-      status = 'skipped';
-    } else if (depsUuids.length === 0) {
-      status = 'pending';
-    } else {
-      status = 'waiting';
-    }
+    if (t.status === 'reused')       status = 'skipped';
+    else if (depsUuids.length === 0) status = 'pending';
+    else                             status = 'waiting';
 
     return {
-      id:           taskId,
-      pipeline_id:  pipelineId,
-      agent_name:   t.agent,
-      depends_on:   depsUuids,
+      id:            taskId,
+      pipeline_id:   pipelineId,
+      agent_name:    t.agent,
+      depends_on:    depsUuids,
       status,
       input_context: null,
       output:        t.status === 'reused' ? { source_knowledge_id: t.source_knowledge_id } : null,
-      retry_count:  0,
+      retry_count:   0,
     };
   });
 
@@ -190,14 +227,11 @@ async function persistPipeline(
   return { pipeline_id: pipelineId, task_count: taskRows.length };
 }
 
-// ── Gemini Flash para perguntas gerais ────────────────────────────────────────
-// Usa REST API diretamente (sem SDK) para compatibilidade com Edge/Node runtime.
+// ── Gemini Flash para geração de texto ────────────────────────────────────────
+// Usa REST API diretamente. systemInstruction inclui prompt base + contexto real.
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const JARVIS_MODEL = 'gemini-2.5-flash';
 
-// Leitura lazy: evita ENOENT no top-level quando Next.js carrega o módulo.
-// process.cwd() em Next.js dev = frontend/ → sobe um nível para chegar em workers/.
 let _jarvisPrompt: string | null = null;
 function getJarvisPrompt(): string {
   if (_jarvisPrompt) return _jarvisPrompt;
@@ -208,18 +242,18 @@ function getJarvisPrompt(): string {
   return _jarvisPrompt;
 }
 
-async function callJarvisGemini(userMessage: string, context: string): Promise<string> {
+async function callJarvisGemini(
+  userMessage: string,
+  systemInstruction: string,
+): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return 'GEMINI_API_KEY não configurada — não consigo responder esta pergunta.';
 
   const url = `${GEMINI_BASE}/models/${JARVIS_MODEL}:generateContent?key=${apiKey}`;
 
   const body = {
-    system_instruction: { parts: [{ text: getJarvisPrompt() }] },
-    contents: [
-      ...(context ? [{ role: 'user', parts: [{ text: `Contexto: ${context}` }] }] : []),
-      { role: 'user', parts: [{ text: userMessage }] },
-    ],
+    system_instruction: { parts: [{ text: systemInstruction }] },
+    contents: [{ role: 'user', parts: [{ text: userMessage }] }],
     generation_config: { temperature: 0.7, max_output_tokens: 1024 },
   };
 
@@ -241,6 +275,43 @@ async function callJarvisGemini(userMessage: string, context: string): Promise<s
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Sem resposta.';
 }
 
+// ── Contexto enriquecido para Gemini ─────────────────────────────────────────
+
+async function buildSystemInstruction(opts: {
+  product:        { id: string; name: string; sku: string } | null;
+  supabase:       ReturnType<typeof getServiceClient>;
+  intent:         Intent;
+  extraContext?:  string;
+}): Promise<string> {
+  const { product, supabase, intent, extraContext } = opts;
+
+  const products = await listProducts(supabase);
+  const productsList = products.slice(0, 5)
+    .map((p) => `• ${p.sku} — ${p.name}`)
+    .join('\n') || 'nenhum';
+
+  const parts: string[] = [
+    getJarvisPrompt(),
+    '',
+    '=== ESTADO ATUAL ===',
+    `Produtos cadastrados:\n${productsList}`,
+    `Último intent detectado: ${intent}`,
+  ];
+
+  if (product) {
+    const knowledge = await getProductKnowledge(product.id, supabase);
+    const knownTypes = knowledge.map((k) => k.artifact_type).join(', ') || 'nenhum';
+    parts.push(`Produto mencionado: ${product.name} (${product.sku})`);
+    parts.push(`Dados disponíveis para este produto: ${knownTypes}`);
+  }
+
+  if (extraContext) {
+    parts.push('', extraContext);
+  }
+
+  return parts.join('\n');
+}
+
 // ── Persistência de messages ──────────────────────────────────────────────────
 
 async function saveMessage(
@@ -260,7 +331,6 @@ async function saveMessage(
     pipeline_id:     pipelineId ?? null,
   });
 
-  // Atualiza last_message_at na conversa
   await supabase
     .from('conversations')
     .update({ last_message_at: new Date().toISOString() })
@@ -272,12 +342,12 @@ async function saveMessage(
 export async function POST(req: Request) {
   let input: z.infer<typeof ChatRequestSchema>;
   try {
-    const raw = await req.json();
+    const raw    = await req.json();
     const parsed = ChatRequestSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Validation failed', details: parsed.error.flatten() },
-        { status: 422 }
+        { status: 422 },
       );
     }
     input = parsed.data;
@@ -321,7 +391,8 @@ export async function POST(req: Request) {
         // 2. Resolve referências @produto e /goal
         emit({ type: 'status', message: 'Analisando sua mensagem...' });
 
-        const resolved = await resolveReferences(input.message);
+        // Passa o service client para evitar bloqueio RLS com o anon key
+        const resolved = await resolveReferences(input.message, supabase);
 
         emit({
           type:         'references_resolved',
@@ -334,7 +405,10 @@ export async function POST(req: Request) {
           const ambiguous = resolved.mentions.filter((m) => m.ambiguous);
           emit({ type: 'references_ambiguous', mentions: ambiguous });
           const replyContent = `Encontrei mais de um produto com esse nome. Qual você quis dizer?\n${
-            ambiguous.flatMap((m) => m.candidates ?? []).map((c: any) => `• @${c.sku} — ${c.name}`).join('\n')
+            ambiguous
+              .flatMap((m) => m.candidates ?? [])
+              .map((c: any) => `• @${c.sku} — ${c.name}`)
+              .join('\n')
           }`;
           if (conversationId) {
             await saveMessage(supabase, conversationId, 'assistant', replyContent);
@@ -346,125 +420,244 @@ export async function POST(req: Request) {
         }
 
         const product = extractProduct(resolved);
-        const goal    = extractGoal(resolved);
-        const intent  = classifyIntent(
+        // Goal: /ação explícita OU keywords no texto
+        const goal = extractGoal(resolved) ?? detectGoalFromText(input.message);
+
+        const hasPendingPipeline =
+          Boolean(input.pending_pipeline_id) || Boolean(input.pending_plan);
+
+        const intent = classifyIntent(
           input.message,
           product !== null,
           goal !== null,
-          Boolean(input.pending_pipeline_id),
+          hasPendingPipeline,
         );
 
-        // ── Intenção: criar pipeline ──────────────────────────────────────────
-        if (intent === 'create_pipeline' && product && goal) {
-          emit({ type: 'status', message: `Planejando pipeline para ${goal} no produto ${product.sku}...` });
+        // ── list_products ─────────────────────────────────────────────────────
+        if (intent === 'list_products') {
+          emit({ type: 'status', message: 'Buscando seus produtos...' });
 
-          const plan = await planPipeline(goal, product.id, input.force_refresh);
+          const products = await listProducts(supabase);
 
-          const { pipeline_id } = await persistPipeline(plan, supabase);
+          let extraContext: string;
+          if (products.length === 0) {
+            extraContext = 'O usuário não tem nenhum produto cadastrado ainda. Sugira criar um produto via /produtos.';
+          } else {
+            const rows = products.map(
+              (p) => `• ${p.sku} — ${p.name} (criado em ${new Date(p.created_at).toLocaleDateString('pt-BR')})`,
+            );
+            extraContext = `Produtos cadastrados do usuário:\n${rows.join('\n')}`;
+          }
+
+          const systemInstruction = await buildSystemInstruction({
+            product: null,
+            supabase,
+            intent,
+            extraContext,
+          });
+
+          const replyContent = await callJarvisGemini(input.message, systemInstruction);
+
+          if (conversationId) {
+            await saveMessage(supabase, conversationId, 'assistant', replyContent);
+          }
+          emit({ type: 'message', content: replyContent });
+        }
+
+        // ── create_pipeline ───────────────────────────────────────────────────
+        else if (intent === 'create_pipeline' && product && goal) {
+          emit({ type: 'status', message: `Planejando ${goal} para ${product.sku}...` });
+
+          const plan = await planPipeline(goal as GoalName, product.id, input.force_refresh);
+
+          // Persiste como plan_preview — aguarda aprovação do usuário
+          const { pipeline_id } = await persistPlanPreview(plan, supabase);
 
           emit({ type: 'plan_preview', plan, pipeline_id });
 
-          const summary = `Plano montado para **${goal}** — ${plan.tasks.filter((t: PlannedTask) => t.status === 'pending').length} tasks novas, ${plan.tasks.filter((t: PlannedTask) => t.status === 'reused').length} reutilizadas. Custo estimado: $${plan.estimated_cost_usd.toFixed(4)}. Posso executar?`;
+          // Busca knowledge existente para incluir no resumo
+          const knowledge = await getProductKnowledge(product.id, supabase);
+          const knownTypes = knowledge.map((k) => k.artifact_type).join(', ') || 'nenhum';
+
+          const pendingCount = plan.tasks.filter((t: PlannedTask) => t.status === 'pending').length;
+          const reusedCount  = plan.tasks.filter((t: PlannedTask) => t.status === 'reused').length;
+
+          const summary = [
+            `Plano montado para **${goal}** no produto **${product.name}** (${product.sku}):`,
+            '',
+            '```mermaid',
+            plan.mermaid,
+            '```',
+            '',
+            `• Tasks novas: **${pendingCount}** | Reutilizadas do cache: **${reusedCount}**`,
+            `• Custo estimado: **$${plan.estimated_cost_usd.toFixed(4)}** (budget: $${plan.budget_usd})`,
+            `• Dados já disponíveis: ${knownTypes}`,
+            '',
+            'Posso executar? Responda **"sim"** ou **"aprovar"** para iniciar o pipeline.',
+          ].join('\n');
 
           if (conversationId) {
-            await saveMessage(supabase, conversationId, 'assistant', summary, pipeline_id, { plan_preview: true });
+            await saveMessage(supabase, conversationId, 'assistant', summary, pipeline_id, {
+              plan_preview: true,
+            });
           }
           emit({ type: 'message', content: summary });
         }
 
-        // ── Intenção: aprovar plano ───────────────────────────────────────────
-        else if (intent === 'approve_plan' && input.pending_pipeline_id) {
+        // ── approve_plan ──────────────────────────────────────────────────────
+        else if (intent === 'approve_plan' && hasPendingPipeline) {
           emit({ type: 'status', message: 'Aprovando plano e enfileirando tarefas...' });
 
-          const { data: pipeline, error: fetchErr } = await supabase
-            .from('pipelines')
-            .select('id, status')
-            .eq('id', input.pending_pipeline_id)
-            .maybeSingle();
-
-          if (fetchErr || !pipeline) {
-            emit({ type: 'error', error: 'Pipeline não encontrado' });
-          } else if (pipeline.status !== 'plan_preview') {
-            emit({ type: 'error', error: `Pipeline já está em status '${pipeline.status}'` });
-          } else {
-            await supabase
+          if (input.pending_pipeline_id) {
+            // Fluxo plan_preview no DB: transiciona para pending
+            const { data: pipeline, error: fetchErr } = await supabase
               .from('pipelines')
-              .update({ status: 'pending' })
-              .eq('id', input.pending_pipeline_id);
+              .select('id, status')
+              .eq('id', input.pending_pipeline_id)
+              .maybeSingle();
 
-            const { count } = await supabase
-              .from('tasks')
-              .select('id', { count: 'exact', head: true })
-              .eq('pipeline_id', input.pending_pipeline_id)
-              .neq('status', 'skipped');
+            if (fetchErr || !pipeline) {
+              emit({ type: 'error', error: 'Pipeline não encontrado' });
+            } else if (pipeline.status !== 'plan_preview') {
+              emit({ type: 'error', error: `Pipeline já está em status '${pipeline.status}'` });
+            } else {
+              await supabase
+                .from('pipelines')
+                .update({ status: 'pending' })
+                .eq('id', input.pending_pipeline_id);
+
+              const { count } = await supabase
+                .from('tasks')
+                .select('id', { count: 'exact', head: true })
+                .eq('pipeline_id', input.pending_pipeline_id)
+                .neq('status', 'skipped');
+
+              emit({
+                type:        'pipeline_created',
+                pipeline_id: input.pending_pipeline_id,
+                task_count:  count ?? 0,
+              });
+
+              const replyContent = `Pipeline em execução! ${count ?? 0} tasks enfileiradas. Acompanhe o progresso aqui ou em /pipelines/${input.pending_pipeline_id}.`;
+              if (conversationId) {
+                await saveMessage(supabase, conversationId, 'assistant', replyContent, input.pending_pipeline_id);
+              }
+              emit({ type: 'message', content: replyContent });
+            }
+
+          } else if (input.pending_plan) {
+            // Fluxo sem plan_preview no DB: cria pipeline diretamente
+            const { product_id, goal: pendingGoal, product_version } = input.pending_plan;
+            const newPipeline = await createNewPipeline(
+              product_id,
+              pendingGoal as GoalName,
+              product_version,
+              supabase,
+            );
+            const taskCount = newPipeline.tasks.filter((t) => t.status !== 'skipped').length;
 
             emit({
               type:        'pipeline_created',
-              pipeline_id: input.pending_pipeline_id,
-              task_count:  count ?? 0,
+              pipeline_id: newPipeline.id,
+              task_count:  taskCount,
             });
 
-            const replyContent = `Pipeline em execução! Você pode acompanhar o progresso nesta conversa ou em /pipelines/${input.pending_pipeline_id}.`;
+            const replyContent = `Pipeline criado! ${taskCount} tasks enfileiradas. Vou te avisar quando tiver resultado.`;
             if (conversationId) {
-              await saveMessage(supabase, conversationId, 'assistant', replyContent, input.pending_pipeline_id);
+              await saveMessage(supabase, conversationId, 'assistant', replyContent, newPipeline.id);
             }
             emit({ type: 'message', content: replyContent });
           }
         }
 
-        // ── Intenção: verificar status ────────────────────────────────────────
+        // ── check_status ──────────────────────────────────────────────────────
         else if (intent === 'check_status') {
           emit({ type: 'status', message: 'Buscando status do pipeline...' });
 
-          // Busca o pipeline mais recente do produto mencionado (ou o último da conversa)
-          let pipeline: unknown = null;
+          let pipelineId: string | null = null;
 
           if (product) {
-            const { data } = await supabase
+            const { data: latest } = await supabase
               .from('pipelines')
-              .select('id, goal, status, cost_so_far_usd, budget_usd, created_at, updated_at')
+              .select('id')
               .eq('product_id', product.id)
               .order('created_at', { ascending: false })
               .limit(1)
               .maybeSingle();
-            pipeline = data;
+            pipelineId = latest?.id ?? null;
           } else if (input.pending_pipeline_id) {
-            const { data } = await supabase
-              .from('pipelines')
-              .select('id, goal, status, cost_so_far_usd, budget_usd, created_at, updated_at')
-              .eq('id', input.pending_pipeline_id)
-              .maybeSingle();
-            pipeline = data;
+            pipelineId = input.pending_pipeline_id;
           }
 
-          if (!pipeline) {
+          if (!pipelineId) {
             const replyContent = 'Não encontrei nenhum pipeline ativo para este produto. Deseja iniciar um?';
             if (conversationId) {
               await saveMessage(supabase, conversationId, 'assistant', replyContent);
             }
             emit({ type: 'message', content: replyContent });
           } else {
-            emit({ type: 'pipeline_status', pipeline });
-            const p = pipeline as any;
-            const replyContent = `Pipeline **${p.goal}**: status \`${p.status}\` — custo: $${parseFloat(p.cost_so_far_usd ?? '0').toFixed(4)} / $${p.budget_usd}.`;
-            if (conversationId) {
-              await saveMessage(supabase, conversationId, 'assistant', replyContent);
+            const pipelineData = await getPipelineStatus(pipelineId, supabase);
+
+            if (!pipelineData) {
+              emit({ type: 'error', error: 'Pipeline não encontrado' });
+            } else {
+              emit({ type: 'pipeline_status', pipeline: pipelineData });
+
+              const taskLines = pipelineData.tasks
+                .map((t) => `  • ${t.agent_name}: \`${t.status}\``)
+                .join('\n') || '  (sem tasks)';
+
+              const replyContent = [
+                `Pipeline **${pipelineData.goal}**: \`${pipelineData.status}\``,
+                `Custo: $${parseFloat(pipelineData.cost_so_far_usd ?? '0').toFixed(4)} / $${pipelineData.budget_usd}`,
+                '',
+                'Tasks:',
+                taskLines,
+              ].join('\n');
+
+              if (conversationId) {
+                await saveMessage(supabase, conversationId, 'assistant', replyContent, pipelineId);
+              }
+              emit({ type: 'message', content: replyContent });
             }
-            emit({ type: 'message', content: replyContent });
           }
         }
 
-        // ── Intenção: pergunta geral ──────────────────────────────────────────
+        // ── general_question ──────────────────────────────────────────────────
         else {
           emit({ type: 'status', message: 'Pensando...' });
 
-          // Constrói contexto com produto se disponível
-          let context = '';
+          // Contexto adicional: pipeline ativo do produto se houver
+          let extraContext = '';
           if (product) {
-            context = `Produto mencionado: ${product.name} (SKU: ${product.sku})`;
+            const { data: latestPipeline } = await supabase
+              .from('pipelines')
+              .select('id')
+              .eq('product_id', product.id)
+              .in('status', ['pending', 'running'])
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (latestPipeline?.id) {
+              const pd = await getPipelineStatus(latestPipeline.id, supabase);
+              if (pd) {
+                const taskSummary = pd.tasks
+                  .map((t) => `${t.agent_name}:${t.status}`)
+                  .join(', ');
+                extraContext = `Pipeline ativo: ${pd.goal} (${pd.status}) — ${taskSummary}`;
+              }
+            }
           }
 
-          const replyContent = await callJarvisGemini(input.message, context);
+          const systemInstruction = await buildSystemInstruction({
+            product,
+            supabase,
+            intent,
+            extraContext: extraContext || undefined,
+          });
+
+          const replyContent = await callJarvisGemini(input.message, systemInstruction);
 
           if (conversationId) {
             await saveMessage(supabase, conversationId, 'assistant', replyContent);
@@ -485,10 +678,10 @@ export async function POST(req: Request) {
 
   return new Response(stream, {
     headers: {
-      'Content-Type':  'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      'Connection':    'keep-alive',
-      'X-Accel-Buffering': 'no',  // desativa buffering em Nginx/Vercel
+      'Content-Type':      'text/event-stream',
+      'Cache-Control':     'no-cache, no-transform',
+      'Connection':        'keep-alive',
+      'X-Accel-Buffering': 'no',
     },
   });
 }

@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { MessageList } from '@/components/chat/MessageList'
 import { MessageInput } from '@/components/chat/MessageInput'
@@ -156,8 +156,8 @@ function useJarvisChat(conversationId: string | null) {
 
 // ── Página ─────────────────────────────────────────────────────────────────────
 
-export default function ChatPage() {
-  const searchParams  = useSearchParams()
+function ChatPageInner() {
+  const searchParams   = useSearchParams()
   const conversationId = searchParams.get('conv')
 
   const { messages, streaming, sendMessage, approvePlan } = useJarvisChat(conversationId)
@@ -187,5 +187,13 @@ export default function ChatPage() {
       {/* Input */}
       <MessageInput onSend={sendMessage} disabled={streaming} />
     </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="flex flex-col h-full" />}>
+      <ChatPageInner />
+    </Suspense>
   )
 }

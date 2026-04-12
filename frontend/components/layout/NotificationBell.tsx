@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 interface Notification {
   id: string
@@ -19,8 +19,6 @@ export function NotificationBell() {
 
   // Subscrição Realtime em knowledge_notifications
   useEffect(() => {
-    const supabase = createClient()
-
     const channel = supabase
       .channel('notifications')
       .on(

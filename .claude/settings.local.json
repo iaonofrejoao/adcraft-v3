@@ -111,7 +111,8 @@
       "Bash(curl -s -w \"\\\\nHTTP_%{http_code}\" \"http://localhost:3000/api/products?search=%27+OR+1%3D1+--\")",
       "Bash(curl -s http://localhost:3000/api/products)",
       "Bash(curl -s -N --max-time 15 -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"@C8ED @5ED7 @C8ED faz copy\"}')",
-      "Bash(curl -s -N --max-time 15 -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"@C8ED /copy com budget 0\"}')"
+      "Bash(curl -s -N --max-time 15 -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"@C8ED /copy com budget 0\"}')",
+      "Bash(npx drizzle-kit:*)"
     ]
   }
 }

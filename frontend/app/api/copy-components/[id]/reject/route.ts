@@ -16,7 +16,7 @@ function getServiceClient() {
 }
 
 const RejectSchema = z.object({
-  reason: z.string().max(500).optional(),
+  reason: z.string().min(1).max(500),
 });
 
 export async function POST(
@@ -25,13 +25,19 @@ export async function POST(
 ) {
   const { id } = params;
 
-  let body: { reason?: string } = {};
+  let body: { reason: string };
   try {
     const raw = await req.json();
     const parsed = RejectSchema.safeParse(raw);
-    if (parsed.success) body = parsed.data;
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'rejection_reason is required', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    body = parsed.data;
   } catch {
-    // Body é opcional — aceita requisição sem body
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
   const supabase = getServiceClient();
@@ -50,12 +56,17 @@ export async function POST(
     return NextResponse.json({ error: 'Component already rejected' }, { status: 409 });
   }
 
-  // Atualiza o status de aprovação
+  // Atualiza o status de aprovação com rejected_at e rejection_reason
+  const now = new Date().toISOString();
   const { data: updated, error: updateErr } = await supabase
     .from('copy_components')
-    .update({ approval_status: 'rejected' })
+    .update({
+      approval_status:  'rejected',
+      rejected_at:      now,
+      rejection_reason: body.reason,
+    })
     .eq('id', id)
-    .select('id, tag, component_type, slot_number, approval_status')
+    .select('id, tag, component_type, slot_number, approval_status, rejected_at, rejection_reason')
     .single();
 
   if (updateErr) {

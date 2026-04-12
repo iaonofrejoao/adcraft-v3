@@ -129,7 +129,22 @@
       "Bash(curl -s -N -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"Faz pesquisa de avatar pro @6923\",\"force_refresh\":false}')",
       "Bash(curl -s -N -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"Faz pesquisa de avatar novamente pro @6923\"}')",
       "Bash(curl -s -N -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"Refaz a copy do @6923 do zero\"}')",
-      "Bash(PGPASSWORD=2UhYCyYFJxZTn8hF psql \"postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require\" -c \"SELECT id FROM auth.users LIMIT 1;\")"
+      "Bash(PGPASSWORD=2UhYCyYFJxZTn8hF psql \"postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require\" -c \"SELECT id FROM auth.users LIMIT 1;\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/products -H 'Content-Type: application/json' -d '{\"name\":\"QA_EmagreceFast_Capsulas\",\"product_url\":\"https://hotmart.com/produto/qa-emagrecimento-premium\",\"platform\":\"hotmart\",\"ticket_price\":197,\"commission_percent\":60,\"affiliate_link\":\"https://ex.com/qa-aff-1\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/products -H 'Content-Type: application/json' -d '{\"name\":\"QA_EmagreceFast_Capsulas\",\"product_url\":\"https://hotmart.com/produto/qa-emagrecimento-premium\",\"platform\":\"hotmart\",\"ticket_price\":197,\"commission_percent\":60,\"affiliate_link\":\"https://ex.com/qa-aff-1\",\"user_id\":\"00000000-0000-0000-0000-000000000001\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/products -H 'Content-Type: application/json' -d '{\"name\":\"QA_MentalBoost_Nootropico\",\"product_url\":\"https://hotmart.com/produto/qa-memoria-foco\",\"platform\":\"hotmart\",\"ticket_price\":147,\"commission_percent\":55,\"affiliate_link\":\"https://ex.com/qa-aff-2\",\"user_id\":\"00000000-0000-0000-0000-000000000001\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/products -H 'Content-Type: application/json' -d '{\"name\":\"QA_Performance_Masculina\",\"product_url\":\"https://hotmart.com/produto/qa-libido-masculina\",\"platform\":\"hotmart\",\"ticket_price\":297,\"commission_percent\":70,\"affiliate_link\":\"https://ex.com/qa-aff-3\",\"user_id\":\"00000000-0000-0000-0000-000000000001\"}')",
+      "Bash(python3 -c 'import json,sys; d=json.load\\(sys.stdin\\); print\\(type\\(d\\).__name__\\); print\\(list\\(d.keys\\(\\)\\) if isinstance\\(d,dict\\) else f\"array len={len\\(d\\)}\"\\)')",
+      "Bash(curl -s http://localhost:3000/api/products/PBBR)",
+      "Bash(python3 -c 'import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2\\)[:500]\\)')",
+      "Bash(curl -s \"http://localhost:3000/api/assets?limit=50\")",
+      "Bash(curl -s \"http://localhost:3000/api/tasks?limit=100\")",
+      "Bash(node --input-type=module -e ':*)",
+      "Bash(curl -s \"http://localhost:3000/api/tasks?limit=5\")",
+      "Bash(curl -s -m 60 -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"@PBBR /avatar\",\"user_id\":\"00000000-0000-0000-0000-000000000001\"}')",
+      "Bash(psql 'postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require' -f migrations/v2/0010_copy_components_approval_flow.sql)",
+      "Bash(node -e \"const {Pool} = require\\('pg'\\); console.log\\('pg ok'\\)\")",
+      "Bash(grep -E \"^pg$|postgres|@supabase\")"
     ]
   }
 }

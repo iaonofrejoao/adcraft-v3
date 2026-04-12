@@ -28,8 +28,8 @@ import { createOrGetCache } from './prompt-cache';
 
 interface GeminiPart {
   text?: string;
-  functionCall?: { name: string; args: Record<string, unknown> };
-  functionResponse?: { name: string; response: unknown };
+  functionCall?: { id?: string; name: string; args: Record<string, unknown> };
+  functionResponse?: { id?: string; name: string; response: unknown };
 }
 
 interface GeminiContent {
@@ -427,6 +427,7 @@ export async function callAgent(params: CallAgentParams): Promise<CallAgentResul
       reqBody.systemInstruction = { parts: [{ text: systemInstruction }] };
     }
 
+
     const res = await fetch(
       `${GEMINI_API_BASE}/models/${model}:generateContent`,
       {
@@ -473,14 +474,26 @@ export async function callAgent(params: CallAgentParams): Promise<CallAgentResul
       functionCallParts.map(async (part) => {
         const fc = part.functionCall!;
         const toolResult = await executeTool(fc.name, fc.args);
-        return {
-          functionResponse: { name: fc.name, response: toolResult },
-        } as GeminiPart;
+        // Gemini REST API exige que functionResponse.response seja um objeto
+        // (google.protobuf.Struct), nunca um array. Arrays são wrapped em { result: [...] }.
+        const response: unknown = Array.isArray(toolResult)
+          ? { result: toolResult }
+          : toolResult;
+        // Gemini 2.5 retorna `id` em cada functionCall para parallel calls.
+        // O `id` deve ser espelhado na functionResponse correspondente.
+        const frPart: GeminiPart = {
+          functionResponse: { name: fc.name, response },
+        };
+        if (fc.id) frPart.functionResponse!.id = fc.id;
+        return frPart;
       }),
     );
 
-    // Adiciona respostas das tools como mensagem do usuário
-    messages.push({ role: 'user', parts: toolParts });
+    // Gemini 2.5: cada functionResponse deve ser um content separado com role='function'.
+    // Múltiplos parts em um único content causa 400 em chamadas paralelas.
+    for (const toolPart of toolParts) {
+      messages.push({ role: 'function', parts: [toolPart] });
+    }
   }
 
   const durationMs = Date.now() - startedAt;

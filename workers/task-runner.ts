@@ -5,8 +5,7 @@
 
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-import { randomUUID } from 'crypto';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { db } from './lib/db';
 import { tasks, pipelines } from '../frontend/lib/schema/index';
 import { seedNextTasks, isPipelineComplete, hasPipelineFailed } from './lib/seed-next-task';
@@ -68,32 +67,6 @@ export interface TaskRow {
   confirmed_oversized: boolean | null;
 }
 
-// ── Polling ───────────────────────────────────────────────────────────────────
-
-/**
- * Busca a próxima task executável com SELECT ... FOR UPDATE SKIP LOCKED.
- * Critério de "executável":
- *   - status = 'pending'
- *   - TODAS as tasks em depends_on estão com status 'completed'
- */
-async function claimNextTask(): Promise<TaskRow | null> {
-  const rows = await db.execute(sql`
-    SELECT *
-    FROM   tasks t
-    WHERE  t.status = 'pending'
-      AND  NOT EXISTS (
-             SELECT 1 FROM tasks dep
-             WHERE  dep.id::text = ANY(t.depends_on)
-               AND  dep.status  != 'completed'
-           )
-    ORDER BY t.created_at
-    LIMIT  1
-    FOR UPDATE SKIP LOCKED
-  `);
-
-  return (rows as unknown as TaskRow[])[0] ?? null;
-}
-
 // ── Execução de task ──────────────────────────────────────────────────────────
 
 async function executeTask(task: TaskRow): Promise<void> {
@@ -111,7 +84,11 @@ async function executeTask(task: TaskRow): Promise<void> {
 // ── Fluxo de uma iteração ─────────────────────────────────────────────────────
 
 async function runOnce(): Promise<void> {
-  // Wrapping em transação para manter o lock durante a marcação 'running'
+  // Captura o ID da task reclamada dentro da transação para evitar corrida entre workers.
+  // O padrão anterior buscava "a task running mais recente", o que podia retornar a task
+  // de outro worker quando dois processos iniciavam ao mesmo tempo.
+  let claimedTaskId: string | null = null;
+
   await db.transaction(async (tx) => {
     const rows = await tx.execute(sql`
       SELECT *
@@ -130,7 +107,7 @@ async function runOnce(): Promise<void> {
     const task = (rows as unknown as TaskRow[])[0];
     if (!task) return; // Nada a fazer
 
-    console.log(`[task-runner] claiming task ${task.id} (${task.agent_name})`);
+    claimedTaskId = task.id;
 
     // Marca como running
     await tx
@@ -139,14 +116,13 @@ async function runOnce(): Promise<void> {
       .where(eq(tasks.id, task.id));
   });
 
-  // Fora da transação: busca a task que foi recém-marcada como running por este worker
-  const runningTask = await db.execute(sql`
-    SELECT * FROM tasks
-    WHERE  status = 'running'
-      AND  started_at >= NOW() - INTERVAL '10 seconds'
-    ORDER BY started_at DESC
-    LIMIT  1
-  `).then((rows) => (rows as unknown as TaskRow[])[0] ?? null);
+  if (!claimedTaskId) return;
+
+  // Busca a task específica que este worker reclamou (por ID, sem ambiguidade)
+  const runningRows = await db.execute(sql`
+    SELECT * FROM tasks WHERE id = ${claimedTaskId}
+  `);
+  const runningTask = (runningRows as unknown as TaskRow[])[0] ?? null;
 
   if (!runningTask) return;
 
@@ -159,7 +135,6 @@ async function runOnce(): Promise<void> {
       .set({ status: 'completed', completed_at: new Date() })
       .where(eq(tasks.id, runningTask.id));
 
-    console.log(`[task-runner] task ${runningTask.id} completed`);
 
     // Propaga para tasks dependentes
     await seedNextTasks(runningTask.id, runningTask.pipeline_id);
@@ -174,13 +149,13 @@ async function runOnce(): Promise<void> {
           .update(pipelines)
           .set({ status: 'completed', completed_at: new Date() })
           .where(eq(pipelines.id, runningTask.pipeline_id));
-        console.log(`[task-runner] pipeline ${runningTask.pipeline_id} COMPLETED`);
+        console.info(`[task-runner] pipeline ${runningTask.pipeline_id} COMPLETED`);
       } else if (failed) {
         await db
           .update(pipelines)
           .set({ status: 'failed' })
           .where(eq(pipelines.id, runningTask.pipeline_id));
-        console.log(`[task-runner] pipeline ${runningTask.pipeline_id} FAILED`);
+        console.info(`[task-runner] pipeline ${runningTask.pipeline_id} FAILED`);
       }
     }
 
@@ -231,7 +206,7 @@ async function runOnce(): Promise<void> {
 // ── Loop principal ────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  console.log('[task-runner] starting — poll every', POLL_INTERVAL_MS, 'ms');
+  console.info('[task-runner] starting — poll every', POLL_INTERVAL_MS, 'ms');
 
   // eslint-disable-next-line no-constant-condition
   while (true) {

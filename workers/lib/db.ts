@@ -6,7 +6,7 @@ import * as schema from '../../frontend/lib/schema/index';
 import * as path from 'path';
 
 // Carrega dot env local da raiz da aplicação (só tem efeito quando rodando como worker)
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export const queryClient = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(queryClient, { schema });

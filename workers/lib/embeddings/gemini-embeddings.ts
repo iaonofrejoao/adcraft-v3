@@ -218,6 +218,5 @@ export async function batchEmbeddingsWorker(): Promise<number> {
     written++;
   }
 
-  console.log(`[embeddings-worker] generated ${written}/${inputs.length} embeddings (${validPending.length} rows in queue, ${validPending.length - inputs.length} skipped by lazy rules)`);
   return written;
 }

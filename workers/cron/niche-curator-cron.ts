@@ -105,7 +105,7 @@ async function enqueueCuratorTask(niche: EligibleNiche): Promise<string> {
 // ── Entrypoint ────────────────────────────────────────────────────────────────
 
 async function run(): Promise<void> {
-  console.log(`[niche-curator-cron] starting — ${new Date().toISOString()}`);
+  console.info(`[niche-curator-cron] starting — ${new Date().toISOString()}`);
 
   let niches: EligibleNiche[];
   try {
@@ -116,24 +116,20 @@ async function run(): Promise<void> {
   }
 
   if (niches.length === 0) {
-    console.log('[niche-curator-cron] no niches with recent signals — nothing to do');
     process.exit(0);
   }
-
-  console.log(`[niche-curator-cron] ${niches.length} niche(s) eligible for curation`);
 
   let enqueued = 0;
   for (const niche of niches) {
     try {
-      const taskId = await enqueueCuratorTask(niche);
-      console.log(`[niche-curator-cron] queued task ${taskId} for niche "${niche.niche_name}" (${niche.recent_signals} signals)`);
+      await enqueueCuratorTask(niche);
       enqueued++;
     } catch (err) {
       console.error(`[niche-curator-cron] failed to enqueue task for niche ${niche.niche_id}:`, err);
     }
   }
 
-  console.log(`[niche-curator-cron] done — ${enqueued}/${niches.length} tasks enqueued`);
+  console.info(`[niche-curator-cron] done — ${enqueued}/${niches.length} tasks enqueued`);
   process.exit(0);
 }
 

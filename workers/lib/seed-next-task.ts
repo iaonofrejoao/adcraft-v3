@@ -44,12 +44,6 @@ export async function seedNextTasks(
   `);
 
   const ids = (promoted as Array<{ id: string }>).map((r) => r.id);
-  if (ids.length > 0) {
-    console.log(
-      `[seed-next-task] pipeline=${pipelineId}: promoted ${ids.length} task(s) to pending:`,
-      ids,
-    );
-  }
   return ids;
 }
 

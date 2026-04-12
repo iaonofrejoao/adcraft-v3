@@ -218,10 +218,6 @@ async function processCombination(params: {
     const clipBuffers: Buffer[] = [];
 
     for (const scene of storyboard.scenes) {
-        console.log(
-            `[video-maker] VEO 3: cena ${scene.scene_number}/${storyboard.scenes.length} — "${scene.veo3_prompt.slice(0, 60)}..."`,
-        );
-
         const clip = await generateVideoClip(scene.veo3_prompt, {
             durationSeconds: scene.duration_seconds,
             aspectRatio:     storyboard.aspect_ratio as AspectRatioVeo,
@@ -253,9 +249,7 @@ async function processCombination(params: {
 
     const validationResult = await validateVideoQualityFromBuffer(finalMp4Buffer);
 
-    console.log(
-        `[video-maker] upload concluído: ${r2Url} — valid=${validationResult.valid}`,
-    );
+    console.info(`[video-maker] upload concluído: ${r2Url} — valid=${validationResult.valid}`);
 
     if (!validationResult.valid) {
         console.warn(

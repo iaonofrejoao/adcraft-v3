@@ -62,7 +62,23 @@
       "Bash(curl -s \"http://localhost:3000/api/assets?limit=50\" -w \"\\\\n---HTTP: %{http_code}---\")",
       "Bash(curl -s \"http://localhost:3000/api/tasks?limit=100&order=created_at.desc\" -w \"\\\\n---HTTP: %{http_code}---\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/creatives)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/demandas)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/demandas)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm run:*)",
+      "Bash(npx next:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /PID 38752 /F)",
+      "Bash(cmd /c \"taskkill /PID 38752 /F\")",
+      "Bash(cmd /c \"taskkill /PID 38752 /F 2>&1\")",
+      "Bash(powershell -Command \"Stop-Process -Id 38752 -Force; Write-Host 'done'\")",
+      "Bash(curl -s -N -X POST http://localhost:3002/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"quais produtos eu tenho?\"}' --max-time 30)",
+      "Bash(curl -s -N -X POST http://localhost:3002/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"faz uma pesquisa de avatar pro @6923\"}' --max-time 40)",
+      "Bash(curl -s -N -X POST http://localhost:3002/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"faz uma pesquisa de avatar pro @6923\"}' --max-time 50)",
+      "Bash(npx ts-node:*)",
+      "Bash(psql \"postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require\" -c \"UPDATE tasks SET status = 'pending', error = NULL, started_at = NULL, retry_count = 0 WHERE status = 'failed' RETURNING id, agent_name;\")",
+      "Bash(PGPASSWORD=2UhYCyYFJxZTn8hF psql \"postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require\" -c \"UPDATE tasks SET status='pending', error=NULL, started_at=NULL, retry_count=0 WHERE agent_name='avatar_research' RETURNING id, status, retry_count;\")",
+      "Bash(echo \"EXIT:$?\")"
     ]
   }
 }

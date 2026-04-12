@@ -128,7 +128,8 @@
       "Bash(echo \"Server started, PID=$!\")",
       "Bash(curl -s -N -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"Faz pesquisa de avatar pro @6923\",\"force_refresh\":false}')",
       "Bash(curl -s -N -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"Faz pesquisa de avatar novamente pro @6923\"}')",
-      "Bash(curl -s -N -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"Refaz a copy do @6923 do zero\"}')"
+      "Bash(curl -s -N -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"Refaz a copy do @6923 do zero\"}')",
+      "Bash(PGPASSWORD=2UhYCyYFJxZTn8hF psql \"postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require\" -c \"SELECT id FROM auth.users LIMIT 1;\")"
     ]
   }
 }

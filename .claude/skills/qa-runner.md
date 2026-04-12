@@ -161,14 +161,44 @@ E pare.
 
 ### Passo 2 — Seed de dados de teste
 
-Crie 2 produtos com prefixo `QA_` que serão usados nos testes de escrita:
+Crie 3 produtos com prefixo `QA_` que serão usados nos testes de escrita. Use payloads com sinal semântico real — isso garante que o classificador de nicho encontre embedding significativo (não neutro) e que os testes de classificação (Grupo 3, teste 14 e Grupo 4, teste 21) reflitam comportamento real.
 
-```sql
--- Opcional: use a API em vez de SQL direto pra exercitar fluxo real
--- POST /api/products com name "QA_Produto_Teste_1" e URL válida
--- POST /api/products com name "QA_Produto_Teste_2" e URL válida
--- Armazenar os SKUs retornados para uso nos testes
+```jsonc
+// Produto QA #1 — nicho: emagrecimento
+// POST /api/products
+{
+  "name": "QA_EmagreceFast_Capsulas",
+  "product_url": "https://hotmart.com/produto/qa-emagrecimento-premium",
+  "platform": "hotmart",
+  "ticket_price": 197,
+  "commission_percent": 60,
+  "affiliate_link": "https://ex.com/qa-aff-1"
+}
+
+// Produto QA #2 — nicho: memória/foco
+// POST /api/products
+{
+  "name": "QA_MentalBoost_Nootropico",
+  "product_url": "https://hotmart.com/produto/qa-memoria-foco",
+  "platform": "hotmart",
+  "ticket_price": 147,
+  "commission_percent": 55,
+  "affiliate_link": "https://ex.com/qa-aff-2"
+}
+
+// Produto QA #3 — nicho: libido/masculino
+// POST /api/products
+{
+  "name": "QA_Performance_Masculina",
+  "product_url": "https://hotmart.com/produto/qa-libido-masculina",
+  "platform": "hotmart",
+  "ticket_price": 297,
+  "commission_percent": 70,
+  "affiliate_link": "https://ex.com/qa-aff-3"
+}
 ```
+
+Armazenar os 3 SKUs retornados para uso nos testes subsequentes.
 
 ### Passo 3 — Executar grupos de teste na ordem
 
@@ -196,12 +226,12 @@ DELETE FROM approvals WHERE pipeline_id IN (SELECT id FROM pipelines WHERE produ
 DELETE FROM tasks WHERE pipeline_id IN (SELECT id FROM pipelines WHERE product_id IN (SELECT id FROM products WHERE sku LIKE 'QA%'));
 DELETE FROM pipelines WHERE product_id IN (SELECT id FROM products WHERE sku LIKE 'QA%');
 DELETE FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE title LIKE 'QA%' OR title IS NULL);
-DELETE FROM products WHERE sku LIKE 'QA%';
+DELETE FROM products WHERE sku LIKE 'QA%' OR name LIKE 'QA_%';
 ```
 
 Confirme no final:
 ```sql
-SELECT COUNT(*) FROM products WHERE sku LIKE 'QA%';  -- deve ser 0
+SELECT COUNT(*) FROM products WHERE sku LIKE 'QA%' OR name LIKE 'QA_%';  -- deve ser 0
 ```
 
 ### Passo 5 — Gerar QA_REPORT.md

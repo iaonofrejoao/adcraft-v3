@@ -153,7 +153,7 @@ export async function createNewPipeline(
   productVersion: number,
   supabase: SupabaseClient,
 ): Promise<PipelineWithTasks> {
-  const plan = await planPipeline(goal, productId);
+  const plan = await planPipeline(goal, productId, false, supabase);
   const pipelineId = randomUUID();
 
   const { data: pipeline, error: pipelineErr } = await supabase

@@ -468,7 +468,7 @@ export async function POST(req: Request) {
         else if (intent === 'create_pipeline' && product && goal) {
           emit({ type: 'status', message: `Planejando ${goal} para ${product.sku}...` });
 
-          const plan = await planPipeline(goal as GoalName, product.id, input.force_refresh);
+          const plan = await planPipeline(goal as GoalName, product.id, input.force_refresh, supabase);
 
           // Persiste como plan_preview — aguarda aprovação do usuário
           const { pipeline_id } = await persistPlanPreview(plan, supabase);

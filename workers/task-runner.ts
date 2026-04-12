@@ -91,9 +91,11 @@ async function runOnce(): Promise<void> {
 
   await db.transaction(async (tx) => {
     const rows = await tx.execute(sql`
-      SELECT *
+      SELECT t.*
       FROM   tasks t
+      JOIN   pipelines p ON p.id = t.pipeline_id
       WHERE  t.status = 'pending'
+        AND  p.status = 'pending'
         AND  NOT EXISTS (
                SELECT 1 FROM tasks dep
                WHERE  dep.id::text = ANY(t.depends_on)

@@ -120,7 +120,10 @@
       "Bash(where pg_isready)",
       "Bash(grep -E \"^dotenv$\")",
       "Bash(curl -s -X POST http://localhost:3000/api/products -H 'Content-Type: application/json' -d '{:*)",
-      "Bash(curl -s http://localhost:3000/api/debug-embed)"
+      "Bash(curl -s http://localhost:3000/api/debug-embed)",
+      "Bash(tasklist)",
+      "Bash(curl -s http://localhost:3000/api/products -o /dev/null -w \"%{http_code}\")",
+      "Bash(echo \"Worker started in background PID: $!\")"
     ]
   }
 }

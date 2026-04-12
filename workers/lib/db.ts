@@ -8,8 +8,41 @@ import * as path from 'path';
 // Carrega dot env local da raiz da aplicação (só tem efeito quando rodando como worker)
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-export const queryClient = postgres(process.env.DATABASE_URL!);
-export const db = drizzle(queryClient, { schema });
+// ── Drizzle — lazy singleton ──────────────────────────────────────────────────
+// Criação adiada para evitar crash durante import pelo webpack do Next.js,
+// que não tem DATABASE_URL no contexto de compilação (antes de next.config.mjs
+// injetar as vars da raiz no process.env).
+
+let _queryClient: ReturnType<typeof postgres> | null = null;
+let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
+
+function getQueryClient(): ReturnType<typeof postgres> {
+  if (_queryClient) return _queryClient;
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL não está definida no ambiente');
+  _queryClient = postgres(url);
+  return _queryClient;
+}
+
+function getDb(): ReturnType<typeof drizzle<typeof schema>> {
+  if (_db) return _db;
+  _db = drizzle(getQueryClient(), { schema });
+  return _db;
+}
+
+// Proxy mantém compatibilidade com callers existentes (db.select(...), db.insert(...)).
+// O mesmo padrão já usado para `supabase` abaixo.
+export const queryClient = new Proxy({} as ReturnType<typeof postgres>, {
+  get: (_target, prop) => (getQueryClient() as any)[prop],
+});
+
+export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
+  get(_target, prop) {
+    const instance = getDb();
+    const value = (instance as any)[prop];
+    return typeof value === 'function' ? value.bind(instance) : value;
+  },
+});
 
 // ── Supabase — lazy singleton ─────────────────────────────────────────────────
 // Criação adiada para evitar crash durante import pelo webpack do Next.js,

@@ -161,7 +161,7 @@ async function classifyNicheAsync(
   // 4. Chama RPC find_nearest_niche (cosine similarity via pgvector)
   const { data: nicheMatch } = await supabase.rpc('find_nearest_niche', {
     query_embedding: embeddingToSql(embeddingValues),
-    match_threshold: 0.75,
+    match_threshold: 0.65,
     match_count: 1,
   });
 

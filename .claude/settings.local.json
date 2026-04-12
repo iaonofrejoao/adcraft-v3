@@ -118,7 +118,9 @@
       "Bash(psql 'postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require' -f 'c:/Users/joao-/OneDrive/Documentos/Google Antigravity/AdCraft v2/migrations/v2/0007_fix_find_nearest_niche_type.sql')",
       "Bash(where psql:*)",
       "Bash(where pg_isready)",
-      "Bash(grep -E \"^dotenv$\")"
+      "Bash(grep -E \"^dotenv$\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/products -H 'Content-Type: application/json' -d '{:*)",
+      "Bash(curl -s http://localhost:3000/api/debug-embed)"
     ]
   }
 }

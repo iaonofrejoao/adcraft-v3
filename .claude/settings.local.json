@@ -112,7 +112,13 @@
       "Bash(curl -s http://localhost:3000/api/products)",
       "Bash(curl -s -N --max-time 15 -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"@C8ED @5ED7 @C8ED faz copy\"}')",
       "Bash(curl -s -N --max-time 15 -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"@C8ED /copy com budget 0\"}')",
-      "Bash(npx drizzle-kit:*)"
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npx dotenv-cli -e .env.local -- node -e ':*)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(psql 'postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require' -f 'c:/Users/joao-/OneDrive/Documentos/Google Antigravity/AdCraft v2/migrations/v2/0007_fix_find_nearest_niche_type.sql')",
+      "Bash(where psql:*)",
+      "Bash(where pg_isready)",
+      "Bash(grep -E \"^dotenv$\")"
     ]
   }
 }

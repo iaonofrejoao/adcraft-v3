@@ -94,6 +94,26 @@ type Intent =
   | 'general_question';
 
 /**
+ * Detecta se o usuário quer forçar reprocessamento, ignorando cache.
+ * Retorna true para qualquer padrão de "refazer do zero" no texto.
+ */
+function detectForceRefresh(text: string): boolean {
+  const lower = text.toLowerCase();
+  return (
+    /\bforce[_\s]refresh\b/.test(lower) ||
+    /\bfor[cç]ar\b/.test(lower) ||
+    /\brefresh\b/.test(lower) ||
+    /\breprocessar\b/.test(lower) ||
+    /\breexecutar\b/.test(lower) ||
+    /\bde\s*novo\b/.test(lower) ||
+    /\bnovamente\b/.test(lower) ||
+    /\bdo\s+zero\b/.test(lower) ||
+    /\brefaz(er)?\b/.test(lower) ||
+    /\batuali[zs](ar|a)\b/.test(lower)
+  );
+}
+
+/**
  * Detecta goal a partir de palavras-chave no texto (fallback quando não há /ação).
  */
 function detectGoalFromText(message: string): GoalName | null {
@@ -170,6 +190,7 @@ async function getNextProductVersion(
 
 async function persistPlanPreview(
   plan: PipelinePlan,
+  forceRefresh: boolean,
   supabase: ReturnType<typeof getServiceClient>,
 ): Promise<PersistedPipeline> {
   const pipelineId     = randomUUID();
@@ -184,6 +205,7 @@ async function persistPlanPreview(
     state:             {},
     status:            'plan_preview',
     product_version:   productVersion,
+    force_refresh:     forceRefresh,
     budget_usd:        plan.budget_usd,
     cost_so_far_usd:   '0',
   });
@@ -468,10 +490,11 @@ export async function POST(req: Request) {
         else if (intent === 'create_pipeline' && product && goal) {
           emit({ type: 'status', message: `Planejando ${goal} para ${product.sku}...` });
 
-          const plan = await planPipeline(goal as GoalName, product.id, input.force_refresh, supabase);
+          const forceRefresh = input.force_refresh || detectForceRefresh(input.message);
+          const plan = await planPipeline(goal as GoalName, product.id, forceRefresh, supabase);
 
           // Persiste como plan_preview — aguarda aprovação do usuário
-          const { pipeline_id } = await persistPlanPreview(plan, supabase);
+          const { pipeline_id } = await persistPlanPreview(plan, forceRefresh, supabase);
 
           emit({ type: 'plan_preview', plan, pipeline_id });
 

@@ -1,10 +1,12 @@
 'use client'
 import {
-  Clock, RefreshCw, MessageSquare, CheckCircle2, XCircle, Zap,
+  Clock, RefreshCw, MessageSquare, CheckCircle2, XCircle, Zap, X,
   type LucideIcon,
 } from 'lucide-react'
+import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { KanbanColumn } from './KanbanColumn'
 import { KanbanFilters } from './KanbanFilters'
 import type { UseTasksReturn } from '@/hooks/useTasks'
@@ -28,9 +30,20 @@ const COLUMNS: ColumnConfig[] = [
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
-export interface KanbanBoardProps extends UseTasksReturn {}
+export interface KanbanBoardProps extends UseTasksReturn {
+  filterPipelineId?: string
+}
 
-export function KanbanBoard({ isLoading, tasksByStatus }: KanbanBoardProps) {
+export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId }: KanbanBoardProps) {
+  const filteredByStatus = filterPipelineId
+    ? Object.fromEntries(
+        Object.entries(tasksByStatus).map(([status, tasks]) => [
+          status,
+          tasks.filter((t) => t.pipeline_id === filterPipelineId),
+        ])
+      )
+    : tasksByStatus
+
   if (isLoading) {
     return (
       <div className="flex gap-6 p-6 overflow-hidden h-full bg-[#131314]">
@@ -60,6 +73,29 @@ export function KanbanBoard({ isLoading, tasksByStatus }: KanbanBoardProps) {
         <KanbanFilters />
       </div>
 
+      {/* Banner de filtro ativo */}
+      {filterPipelineId && (
+        <div className="px-6 pb-3 shrink-0">
+          <Alert className="bg-[#F28705]/10 border-[#F28705]/30 py-2.5">
+            <AlertDescription className="flex items-center justify-between text-[13px] text-[#F28705]">
+              <span>
+                Mostrando apenas o pipeline{' '}
+                <span className="font-mono font-bold">
+                  {filterPipelineId.slice(0, 8).toUpperCase()}
+                </span>
+              </span>
+              <Link
+                href="/demandas"
+                className="flex items-center gap-1 text-[#9E9489] hover:text-[#E8E3DD] transition-colors text-[12px]"
+              >
+                <X size={12} strokeWidth={1.5} />
+                Limpar filtro
+              </Link>
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+
       {/* Board — scroll horizontal, colunas com scroll independente */}
       <div className="flex-1 min-h-0 overflow-x-auto px-6 pb-20">
         <div className="flex gap-6 h-full min-w-max">
@@ -67,7 +103,7 @@ export function KanbanBoard({ isLoading, tasksByStatus }: KanbanBoardProps) {
             <KanbanColumn
               key={col.id}
               {...col}
-              tasks={tasksByStatus[col.id] ?? []}
+              tasks={filteredByStatus[col.id] ?? []}
             />
           ))}
         </div>

@@ -29,6 +29,15 @@ const nextConfig = {
     // Mantém compatibilidade com Node.js runtime nas API routes
     serverComponentsExternalPackages: [],
   },
+  async redirects() {
+    return [
+      {
+        source: '/pipelines/:id',
+        destination: '/demandas?pipeline=:id',
+        permanent: false,
+      },
+    ]
+  },
   // Silencia warning do mermaid no SSR
   webpack: (config, { isServer }) => {
     if (isServer) {

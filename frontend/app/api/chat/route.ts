@@ -561,7 +561,7 @@ export async function POST(req: Request) {
                 task_count:  count ?? 0,
               });
 
-              const replyContent = `Pipeline em execução! ${count ?? 0} tasks enfileiradas. Acompanhe o progresso aqui ou em /pipelines/${input.pending_pipeline_id}.`;
+              const replyContent = `Pipeline em execução! ${count ?? 0} tasks enfileiradas. Acompanhe o progresso em /demandas?pipeline=${input.pending_pipeline_id}.`;
               if (conversationId) {
                 await saveMessage(supabase, conversationId, 'assistant', replyContent, input.pending_pipeline_id);
               }

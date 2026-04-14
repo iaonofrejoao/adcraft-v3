@@ -67,7 +67,7 @@ export function MentionPicker({
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, items.length - 1)) }
       if (e.key === 'ArrowUp')   { e.preventDefault(); setActiveIdx((i) => Math.max(i - 1, 0)) }
-      if (e.key === 'Enter' && items[activeIdx]) { e.preventDefault(); onSelect(items[activeIdx]) }
+      if ((e.key === 'Enter' || e.key === 'Tab') && items[activeIdx]) { e.preventDefault(); onSelect(items[activeIdx]) }
       if (e.key === 'Escape') onDismiss()
     }
     el.addEventListener('keydown', handler)

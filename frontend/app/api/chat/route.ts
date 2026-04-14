@@ -44,6 +44,7 @@ import {
   type Product,
   type PipelineWithTasks,
 } from '@/lib/jarvis/actions';
+import { loadConversationHistory, type GeminiContent } from '@/lib/jarvis/loadConversationHistory';
 
 // ── Supabase service client ───────────────────────────────────────────────────
 
@@ -273,8 +274,9 @@ function getJarvisPrompt(): string {
 }
 
 async function callJarvisGemini(
-  userMessage: string,
   systemInstruction: string,
+  userMessage: string,
+  history: GeminiContent[] = [],
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return 'GEMINI_API_KEY não configurada — não consigo responder esta pergunta.';
@@ -283,7 +285,10 @@ async function callJarvisGemini(
 
   const body = {
     system_instruction: { parts: [{ text: systemInstruction }] },
-    contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+    contents: [
+      ...history,
+      { role: 'user', parts: [{ text: userMessage }] },
+    ],
     generation_config: { temperature: 0.7, max_output_tokens: 1024 },
   };
 
@@ -501,7 +506,10 @@ export async function POST(req: Request) {
             extraContext,
           });
 
-          const replyContent = await callJarvisGemini(input.message, systemInstruction);
+          const history = conversationId
+            ? await loadConversationHistory(conversationId, supabase)
+            : [];
+          const replyContent = await callJarvisGemini(systemInstruction, input.message, history);
 
           if (conversationId) {
             await saveMessage(supabase, conversationId, 'assistant', replyContent);
@@ -683,7 +691,10 @@ export async function POST(req: Request) {
             extraContext: extraContext || undefined,
           });
 
-          const replyContent = await callJarvisGemini(input.message, systemInstruction);
+          const history = conversationId
+            ? await loadConversationHistory(conversationId, supabase)
+            : [];
+          const replyContent = await callJarvisGemini(systemInstruction, input.message, history);
 
           if (conversationId) {
             await saveMessage(supabase, conversationId, 'assistant', replyContent);

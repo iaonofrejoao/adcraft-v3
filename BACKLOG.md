@@ -232,3 +232,15 @@ Falsos positivos do QA (nenhuma ação necessária):
   (ver `prompts/_archive/v3-future/`)
 - Dashboard de ROI: CAC/LTV por criativo gerado
 - Modo colaborativo (review de copies em equipe)
+
+
+## Backlog adicional
+
+- [ ] Webpack cache warning persistente: ENOENT ao renomear 
+      `.next/cache/webpack/client-development/*.pack.gz_` → `.pack.gz`. 
+      Não é OneDrive (continua após mover pra C:\dev). 
+      Suspeita: Windows Defender ou outro antivírus bloqueando 
+      operações de file rename rápidas. Não impede funcionamento, 
+      só polui logs. Investigar exclusão da pasta .next no Defender.
+
+

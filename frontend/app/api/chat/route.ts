@@ -57,14 +57,15 @@ function getServiceClient() {
 // ── Tipos SSE ─────────────────────────────────────────────────────────────────
 
 type SSEPayload =
-  | { type: 'status';               message: string }
-  | { type: 'references_resolved';  mentions: unknown[]; hasAmbiguity: boolean }
-  | { type: 'references_ambiguous'; mentions: unknown[] }
-  | { type: 'plan_preview';         plan: PipelinePlan; pipeline_id: string }
-  | { type: 'pipeline_created';     pipeline_id: string; task_count: number }
-  | { type: 'pipeline_status';      pipeline: unknown }
-  | { type: 'message';              content: string }
-  | { type: 'error';                error: string }
+  | { type: 'status';                message: string }
+  | { type: 'conversation_created';  conversation_id: string }
+  | { type: 'references_resolved';   mentions: unknown[]; hasAmbiguity: boolean }
+  | { type: 'references_ambiguous';  mentions: unknown[] }
+  | { type: 'plan_preview';          plan: PipelinePlan; pipeline_id: string }
+  | { type: 'pipeline_created';      pipeline_id: string; task_count: number }
+  | { type: 'pipeline_status';       pipeline: unknown }
+  | { type: 'message';               content: string }
+  | { type: 'error';                 error: string }
   | { type: 'done' };
 
 // ── Request schema ────────────────────────────────────────────────────────────
@@ -387,7 +388,8 @@ export async function POST(req: Request) {
   const supabase = getServiceClient();
 
   // Garante que existe uma conversa
-  let conversationId = input.conversation_id;
+  let conversationId    = input.conversation_id;
+  const isNewConversation = !conversationId;
   if (!conversationId) {
     const { data: conv } = await supabase
       .from('conversations')
@@ -412,7 +414,12 @@ export async function POST(req: Request) {
       const emit = (payload: SSEPayload) => controller.enqueue(sseChunk(payload));
 
       try {
-        // 1. Persiste mensagem do usuário
+        // 1. Se a conversa foi criada agora, informa o cliente antes de tudo
+        if (isNewConversation && conversationId) {
+          emit({ type: 'conversation_created', conversation_id: conversationId });
+        }
+
+        // 2. Persiste mensagem do usuário
         if (conversationId) {
           await saveMessage(supabase, conversationId, 'user', input.message);
         }

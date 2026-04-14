@@ -15,7 +15,14 @@ function useJarvisChat(conversationId: string | null) {
   const [messages, setMessages]       = useState<ChatMessage[]>([])
   const [streaming, setStreaming]     = useState(false)
   const [pendingPipeline, setPending] = useState<string | null>(null)
+  // Rastreia o ID ativo da conversa dentro da sessão (pode ser gerado pelo servidor)
+  const [activeConvId, setActiveConvId] = useState<string | null>(conversationId)
   const idCounter = useRef(0)
+
+  // Sincroniza quando o usuário muda de conversa via URL
+  useEffect(() => {
+    setActiveConvId(conversationId)
+  }, [conversationId])
 
   function nextId() { return String(++idCounter.current) }
 
@@ -97,7 +104,7 @@ function useJarvisChat(conversationId: string | null) {
     try {
       const body: Record<string, unknown> = {
         message:         text,
-        conversation_id: conversationId ?? undefined,
+        conversation_id: activeConvId ?? undefined,
         force_refresh:   false,
       }
       if (pendingPipeline) body.pending_pipeline_id = pendingPipeline
@@ -136,6 +143,15 @@ function useJarvisChat(conversationId: string | null) {
           try { event = JSON.parse(raw) } catch { continue }
 
           switch (event.type) {
+            case 'conversation_created': {
+              const newConvId = event.conversation_id as string
+              setActiveConvId(newConvId)
+              const url = new URL(window.location.href)
+              url.searchParams.set('conv', newConvId)
+              window.history.replaceState({}, '', url.toString())
+              break
+            }
+
             case 'status':
               setMessages((prev) => prev.map((m) =>
                 m.id === assistantId ? { ...m, statusMessage: event.message as string } : m
@@ -192,7 +208,7 @@ function useJarvisChat(conversationId: string | null) {
     } finally {
       setStreaming(false)
     }
-  }, [conversationId, pendingPipeline])
+  }, [activeConvId, pendingPipeline])
 
   const approvePlan = useCallback((pipelineId: string) => {
     sendMessage('sim, pode executar')

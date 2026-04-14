@@ -144,7 +144,32 @@
       "Bash(curl -s -m 60 -X POST http://localhost:3000/api/chat -H 'Content-Type: application/json' -d '{\"message\":\"@PBBR /avatar\",\"user_id\":\"00000000-0000-0000-0000-000000000001\"}')",
       "Bash(psql 'postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require' -f migrations/v2/0010_copy_components_approval_flow.sql)",
       "Bash(node -e \"const {Pool} = require\\('pg'\\); console.log\\('pg ok'\\)\")",
-      "Bash(grep -E \"^pg$|postgres|@supabase\")"
+      "Bash(grep -E \"^pg$|postgres|@supabase\")",
+      "Bash(ls -t \"c:/Users/joao-/OneDrive/Documentos/Google Antigravity/AdCraft v2\"/QA_REPORT*.md)",
+      "Bash(pnpm next:*)",
+      "Bash(pnpm build:*)",
+      "Bash(cd \"c:\\\\\\\\Users\\\\\\\\joao-\\\\\\\\OneDrive\\\\\\\\Documentos\\\\\\\\Google Antigravity\\\\\\\\AdCraft v2\\\\\\\\frontend\")",
+      "Bash(npx --yes tsc --noEmit)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(pushd \"/c/Users/joao-/OneDrive/Documentos/Google Antigravity/AdCraft v2/frontend\")",
+      "Bash(node_modules/.bin/next build:*)",
+      "Bash(popd)",
+      "Bash(pnpm dlx:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3003/demandas)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3003/creatives)",
+      "Bash(cat)",
+      "Bash(node /tmp/diag_query.mjs)",
+      "Bash(ls -d \"c:/Users/joao-/OneDrive/Documentos/Google Antigravity/AdCraft v2/workers/node_modules/.pnpm/postgres@\"*/node_modules/postgres/cjs/src/index.js)",
+      "Bash(node --input-type=module)",
+      "Bash(2>&1)",
+      "Bash(node diag_tasks.cjs)",
+      "Bash(node fix_stuck_task.cjs)",
+      "Bash(node diag_task_residue.cjs)",
+      "Bash(node diag_pipeline_timeline.cjs)",
+      "Bash(node diag_llm_calls.cjs)",
+      "Bash(node diag_llm_payload.cjs)",
+      "Bash(node diag_llm_pipeline.cjs)",
+      "Bash(rm diag_llm_pipeline.cjs)"
     ]
   }
 }

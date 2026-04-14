@@ -20,7 +20,12 @@ function getQueryClient(): ReturnType<typeof postgres> {
   if (_queryClient) return _queryClient;
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL não está definida no ambiente');
-  _queryClient = postgres(url);
+  _queryClient = postgres(url, {
+    // Garante que o driver não depende do client_encoding padrão do servidor.
+    // Necessário em ambientes Windows onde o terminal pode reportar encodings
+    // não-UTF8, causando corrupção de caracteres CJK e emoji.
+    connection: { client_encoding: 'UTF8' },
+  });
   return _queryClient;
 }
 

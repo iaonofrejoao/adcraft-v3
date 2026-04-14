@@ -1,30 +1,60 @@
-type Status = 'active' | 'running' | 'draft' | 'paused' | 'failed' | 'completed' | 'pending' | 'waiting' | 'skipped'
+import { cn } from '@/lib/utils'
+import type { TaskStatus } from '@/lib/constants'
 
-const statusConfig: Record<Status, { label: string; bg: string; text: string; dot: string; pulse?: boolean }> = {
-  active:    { label: 'ativo',      bg: 'bg-green-50',  text: 'text-green-800',  dot: 'bg-green-500' },
-  running:   { label: 'executando', bg: 'bg-purple-50', text: 'text-purple-800', dot: 'bg-purple-500', pulse: true },
-  draft:     { label: 'rascunho',   bg: 'bg-gray-50',   text: 'text-gray-600',   dot: 'bg-gray-400' },
-  paused:    { label: 'pausado',    bg: 'bg-amber-50',  text: 'text-amber-800',  dot: 'bg-amber-500' },
-  failed:    { label: 'falha',      bg: 'bg-red-50',    text: 'text-red-800',    dot: 'bg-red-500' },
-  completed: { label: 'concluído',  bg: 'bg-blue-50',   text: 'text-blue-800',   dot: 'bg-blue-500' },
-  pending:   { label: 'pendente',   bg: 'bg-gray-50',   text: 'text-gray-600',   dot: 'bg-gray-400' },
-  waiting:   { label: 'aguardando', bg: 'bg-amber-50',  text: 'text-amber-800',  dot: 'bg-amber-400' },
-  skipped:   { label: 'reutilizado',bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-400' },
+const statusConfig: Record<TaskStatus, {
+  label: string
+  classes: string
+  dot: string
+  animate?: boolean
+}> = {
+  pending: {
+    label: 'Pendente',
+    classes: 'bg-[rgba(161,161,170,0.15)] text-[#A1A1AA]',
+    dot: 'bg-[#A1A1AA]',
+  },
+  running: {
+    label: 'Executando',
+    classes: 'bg-[rgba(59,130,246,0.15)] text-[#60A5FA]',
+    dot: 'bg-[#60A5FA]',
+    animate: true,
+  },
+  done: {
+    label: 'Concluído',
+    classes: 'bg-[rgba(34,197,94,0.15)] text-[#4ADE80]',
+    dot: 'bg-[#4ADE80]',
+  },
+  failed: {
+    label: 'Falha',
+    classes: 'bg-[rgba(239,68,68,0.15)] text-[#F87171]',
+    dot: 'bg-[#F87171]',
+  },
+  paused: {
+    label: 'Pausado',
+    classes: 'bg-[rgba(245,158,11,0.15)] text-[#FCD34D]',
+    dot: 'bg-[#FCD34D]',
+  },
 }
 
 interface StatusBadgeProps {
-  status: Status
+  status: string
   className?: string
 }
 
-export function StatusBadge({ status, className = '' }: StatusBadgeProps) {
-  const config = statusConfig[status] ?? statusConfig.pending
+export function StatusBadge({ status, className }: StatusBadgeProps) {
+  const config = statusConfig[status as TaskStatus] ?? statusConfig.pending
+
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text} ${className}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dot} ${config.pulse ? 'animate-pulse' : ''}`} />
+    <span className={cn(
+      'inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-mono text-[0.6875rem] font-medium tracking-[0.02em]',
+      config.classes,
+      className
+    )}>
+      <span className={cn(
+        'w-1.5 h-1.5 rounded-full',
+        config.dot,
+        config.animate && 'animate-pulse'
+      )} />
       {config.label}
     </span>
   )
 }
-
-export type { Status }

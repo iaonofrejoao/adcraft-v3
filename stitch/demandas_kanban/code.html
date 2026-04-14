@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AdCraft - Demandas Kanban</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"surface-bright": "#313b3c", "on-background": "#dae4e5", background: "#0b1516", error: "#ffb4ab", outline: "#a48c7b", "surface-container-high": "#222c2d", "primary-fixed-dim": "#ffb77b", "outline-variant": "#564335", "on-tertiary-fixed": "#2a1800", "on-tertiary-container": "#513200", "surface-tint": "#ffb77b", "on-surface-variant": "#dcc2af", "on-error-container": "#ffdad6", "on-primary": "#4d2700", "secondary-container": "#45464e", "surface-variant": "#2d3738", "on-tertiary-fixed-variant": "#643f00", "secondary-fixed-dim": "#c6c6cf", secondary: "#c6c6cf", "on-tertiary": "#462b00", primary: "#ffb77b", "inverse-on-surface": "#283233", "on-error": "#690005", "surface-container-lowest": "#061011", "surface-dim": "#0b1516", "on-secondary-fixed-variant": "#45464e", tertiary: "#ffb958", "surface-container-highest": "#2d3738", "on-secondary-fixed": "#1a1b22", "on-secondary-container": "#b4b4bd", "on-primary-container": "#592e00", "tertiary-container": "#df9200", "inverse-primary": "#8f4d00", surface: "#0b1516", "on-primary-fixed-variant": "#6d3a00", "on-primary-fixed": "#2e1500", "on-secondary": "#2f3037", "secondary-fixed": "#e2e1eb", "tertiary-fixed-dim": "#ffb958", "surface-container": "#182122", "on-surface": "#dae4e5", "error-container": "#93000a", "surface-container-low": "#141d1e", "primary-fixed": "#ffdcc2", "primary-container": "#f28705", "tertiary-fixed": "#ffddb5", "inverse-surface": "#dae4e5"}, borderRadius: {DEFAULT: "0.5rem", lg: "1rem", xl: "1.5rem", full: "9999px"}, fontFamily: {headline: ["Inter"], body: ["Inter"], label: ["Inter"], mono: ["JetBrains Mono"], display: "Inter"}}}};</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+            font-size: 18px;
+        }
+        .mono-data { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #131314; }
+        ::-webkit-scrollbar-thumb { background: #353436; border-radius: 10px; }
+        .glass-panel {
+            background: rgba(53, 52, 54, 0.8);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body overflow-hidden">
+<!-- SideNavBar (Shared Component) -->
+<aside class="h-screen w-[240px] fixed left-0 top-0 bg-[#1C1B1C] flex flex-col py-6 z-50">
+<div class="px-6 mb-8">
+<h1 class="text-lg font-bold tracking-tighter text-[#F97316]">Kinetic Console</h1>
+<p class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Marketing Ops</p>
+</div>
+<nav class="flex-1 space-y-1 px-3">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 font-medium hover:bg-[#353436] transition-colors duration-150 rounded" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[14px]">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#F97316] bg-[#201F20] font-semibold rounded" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="text-[14px]">Pipelines</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 font-medium hover:bg-[#353436] transition-colors duration-150 rounded" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="text-[14px]">Campaigns</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 font-medium hover:bg-[#353436] transition-colors duration-150 rounded" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="text-[14px]">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-400 font-medium hover:bg-[#353436] transition-colors duration-150 rounded" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[14px]">Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-3 py-4 border-t border-[#584237]/15">
+<button class="w-full flex items-center justify-center gap-2 bg-[#F97316] text-on-primary py-2 rounded font-bold text-[13px] hover:brightness-110 transition-all mb-4">
+<span class="material-symbols-outlined !text-[16px]">add</span>
+                New Pipeline
+            </button>
+<div class="space-y-1">
+<a class="flex items-center gap-3 px-3 py-1.5 text-gray-400 text-[13px] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined !text-[16px]">help</span>
+                    Help
+                </a>
+<a class="flex items-center gap-3 px-3 py-1.5 text-gray-400 text-[13px] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined !text-[16px]">terminal</span>
+                    Logs
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-[240px] h-screen flex flex-col">
+<!-- TopNavBar (Shared Component) -->
+<header class="h-14 flex justify-between items-center px-6 bg-[#131314]/80 backdrop-blur-xl border-b border-[#584237]/15 z-40">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="text-white font-bold text-[14px]">Marketing Pipelines</span>
+<span class="text-gray-600">/</span>
+<span class="text-white font-medium text-[14px]">Demandas</span>
+</div>
+<nav class="flex items-center gap-4">
+<a class="text-[#F97316] border-b-2 border-[#F97316] pb-1 font-semibold text-[14px]" href="#">Kanban</a>
+<a class="text-gray-400 hover:text-white transition-all text-[14px]" href="#">List</a>
+<a class="text-gray-400 hover:text-white transition-all text-[14px]" href="#">Timeline</a>
+<a class="text-gray-400 hover:text-white transition-all text-[14px]" href="#">Calendar</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2 mr-4">
+<button class="flex items-center gap-2 px-3 py-1 text-[13px] font-medium text-on-surface-variant bg-surface-container-low border border-outline-variant/20 rounded hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined !text-[16px]">filter_list</span>
+                        Filter
+                    </button>
+<button class="flex items-center gap-2 px-3 py-1 text-[13px] font-medium text-on-surface-variant bg-surface-container-low border border-outline-variant/20 rounded hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined !text-[16px]">ios_share</span>
+                        Export
+                    </button>
+</div>
+<div class="flex items-center gap-3">
+<button class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">notifications</span></button>
+<button class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">search</span></button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center border border-outline-variant/30">
+<img alt="User" class="w-7 h-7 rounded-full" data-alt="professional portrait of a creative director in dark studio lighting with subtle rim light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmfG9dob7lGf4foGaeacw4UJsYUfwltfTsgO6myX5Kk6fv_sf5h4YK3UuPzjvJB39uzxHpRERFCjKgEVs2CkYhC68tHysGcRg0D5gKHoKGDrA6IpT5H8op8hikoK0yh2Ekz7sjDGiYL9fX7zw3u9I1mLPF7ukRTB_a9SBzSew1jLUAikDCRCLBaI85QoCdUE5xXtTqC2wIE-YJC-eggVEDn7znyBQRqzwjRJEt1_lLjX73O35kt3qx7q-1kZfg2alFS9NHmBkwH6M"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="flex-1 overflow-x-auto bg-surface overflow-y-hidden p-6">
+<!-- Header Section -->
+<div class="mb-8 flex justify-between items-end">
+<div>
+<h2 class="text-3xl font-bold tracking-tight text-on-background">Demandas</h2>
+<p class="text-gray-500 text-[14px] mt-1">Pipelines em andamento e histórico operacional da rede AdCraft.</p>
+</div>
+<div class="flex items-center gap-4 bg-surface-container-low p-1.5 rounded-lg border border-outline-variant/10">
+<div class="flex items-center gap-2 px-3 py-1.5 text-[12px] font-semibold text-gray-500">
+<span class="material-symbols-outlined !text-[14px]">inventory_2</span>
+                        Produto: Todos
+                    </div>
+<div class="w-px h-4 bg-outline-variant/20"></div>
+<div class="flex items-center gap-2 px-3 py-1.5 text-[12px] font-semibold text-gray-500">
+<span class="material-symbols-outlined !text-[14px]">track_changes</span>
+                        Goal: Todos
+                    </div>
+<div class="w-px h-4 bg-outline-variant/20"></div>
+<div class="flex items-center gap-2 px-3 py-1.5 text-[12px] font-semibold text-gray-500">
+<span class="material-symbols-outlined !text-[14px]">calendar_today</span>
+                        Período: Últimos 30 dias
+                    </div>
+</div>
+</div>
+<!-- Kanban Board -->
+<div class="flex gap-6 h-[calc(100%-80px)] min-w-max pb-4">
+<!-- Col 1: Aguardando -->
+<div class="w-[280px] flex flex-col">
+<div class="flex items-center justify-between mb-4 px-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-gray-500">schedule</span>
+<span class="font-bold text-[14px] uppercase tracking-wide text-gray-500">Aguardando</span>
+<span class="text-gray-600 font-mono text-[12px]">(3)</span>
+</div>
+</div>
+<div class="flex-1 space-y-4 overflow-y-auto pr-2">
+<!-- Card 1 -->
+<div class="bg-[#141416] p-4 rounded-xl border-l-2 border-gray-600 shadow-sm hover:shadow-md transition-shadow relative group cursor-grab active:cursor-grabbing">
+<div class="flex justify-between items-start mb-3">
+<span class="mono-data text-[10px] text-primary font-bold">SKU-MIT-092</span>
+<span class="bg-surface-container-high text-gray-400 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-tighter">full_bundle</span>
+</div>
+<h3 class="text-[14px] font-semibold text-on-surface mb-4">Mitolyn Metabolic Boost</h3>
+<div class="flex items-center justify-between">
+<div class="flex gap-1.5 text-gray-600">
+<span class="material-symbols-outlined !text-[16px]">done</span>
+<span class="material-symbols-outlined !text-[16px]">hourglass_empty</span>
+<span class="material-symbols-outlined !text-[16px]">pending</span>
+</div>
+<div class="text-right">
+<p class="mono-data text-[11px] text-gray-400">T -0d 12h</p>
+<p class="mono-data text-[11px] text-gray-500">$ 0.00</p>
+</div>
+</div>
+<div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-gray-700">drag_indicator</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-[#141416] p-4 rounded-xl border-l-2 border-gray-600 shadow-sm relative group cursor-grab">
+<div class="flex justify-between items-start mb-3">
+<span class="mono-data text-[10px] text-primary font-bold">SKU-ZEN-114</span>
+<span class="bg-surface-container-high text-gray-400 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-tighter">copy_only</span>
+</div>
+<h3 class="text-[14px] font-semibold text-on-surface mb-4">Zenith Sleep Drops</h3>
+<div class="flex items-center justify-between">
+<div class="flex gap-1.5 text-gray-600">
+<span class="material-symbols-outlined !text-[16px]">done</span>
+<span class="material-symbols-outlined !text-[16px]">hourglass_empty</span>
+<span class="material-symbols-outlined !text-[16px]">pending</span>
+</div>
+<div class="text-right">
+<p class="mono-data text-[11px] text-gray-400">T -2d 04h</p>
+<p class="mono-data text-[11px] text-gray-500">$ 0.00</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Col 2: Rodando -->
+<div class="w-[280px] flex flex-col">
+<div class="flex items-center justify-between mb-4 px-2">
+<div class="flex items-center gap-2 text-[#3B82F6]">
+<span class="material-symbols-outlined">sync</span>
+<span class="font-bold text-[14px] uppercase tracking-wide">Rodando</span>
+<span class="text-gray-600 font-mono text-[12px]">(2)</span>
+</div>
+</div>
+<div class="flex-1 space-y-4 overflow-y-auto pr-2">
+<!-- Rodando Card 1 -->
+<div class="bg-[#141416] pt-4 px-4 pb-1 rounded-xl border-l-2 border-[#3B82F6] shadow-md relative group cursor-grab overflow-hidden">
+<div class="flex justify-between items-start mb-3">
+<span class="mono-data text-[10px] text-primary font-bold">SKU-LIV-401</span>
+<span class="bg-blue-900/30 text-blue-400 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-tighter">scale_ads</span>
+</div>
+<h3 class="text-[14px] font-semibold text-on-surface mb-4 flex items-center gap-2">
+                                Liver Guard Ultra
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+</h3>
+<div class="flex items-center justify-between mb-3">
+<div class="flex gap-1.5">
+<span class="material-symbols-outlined !text-[16px] text-green-500" data-weight="fill">check_circle</span>
+<span class="material-symbols-outlined !text-[16px] text-blue-500 animate-spin">refresh</span>
+<span class="material-symbols-outlined !text-[16px] text-gray-600">pending</span>
+</div>
+<div class="text-right">
+<p class="mono-data text-[11px] text-blue-400">ACTIVE</p>
+<p class="mono-data text-[11px] text-white">$ 420.50</p>
+</div>
+</div>
+<div class="h-0.5 bg-gray-800 -mx-4">
+<div class="h-full bg-primary w-2/3"></div>
+</div>
+</div>
+<!-- Rodando Card 2 -->
+<div class="bg-[#141416] pt-4 px-4 pb-1 rounded-xl border-l-2 border-[#3B82F6] shadow-md relative group overflow-hidden">
+<div class="flex justify-between items-start mb-3">
+<span class="mono-data text-[10px] text-primary font-bold">SKU-PRO-220</span>
+<span class="bg-blue-900/30 text-blue-400 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-tighter">creative_vsl</span>
+</div>
+<h3 class="text-[14px] font-semibold text-on-surface mb-4">Prostate Flux Pro</h3>
+<div class="flex items-center justify-between mb-3">
+<div class="flex gap-1.5">
+<span class="material-symbols-outlined !text-[16px] text-green-500" data-weight="fill">check_circle</span>
+<span class="material-symbols-outlined !text-[16px] text-blue-500 animate-spin">refresh</span>
+<span class="material-symbols-outlined !text-[16px] text-gray-600">pending</span>
+</div>
+<div class="text-right">
+<p class="mono-data text-[11px] text-blue-400">ACTIVE</p>
+<p class="mono-data text-[11px] text-white">$ 1,105.00</p>
+</div>
+</div>
+<div class="h-0.5 bg-gray-800 -mx-4">
+<div class="h-full bg-primary w-1/4"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Col 3: Aprovação pendente -->
+<div class="w-[280px] flex flex-col">
+<div class="flex items-center justify-between mb-4 px-2">
+<div class="flex items-center gap-2 text-amber-500">
+<span class="material-symbols-outlined">feedback</span>
+<span class="font-bold text-[14px] uppercase tracking-wide">Aprovação pendente</span>
+<span class="text-gray-600 font-mono text-[12px]">(2)</span>
+</div>
+</div>
+<div class="flex-1 space-y-4 overflow-y-auto pr-2">
+<!-- Pending Card 1 -->
+<div class="bg-[#141416] p-4 rounded-xl border-l-2 border-amber-500 shadow-md relative group">
+<div class="flex justify-between items-start mb-3">
+<span class="mono-data text-[10px] text-primary font-bold">SKU-KETO-88</span>
+<div class="flex items-center gap-2">
+<span class="animate-pulse bg-amber-500/20 text-amber-500 text-[9px] px-1.5 py-0.5 rounded font-bold ring-1 ring-amber-500/50">URGENTE</span>
+<span class="bg-surface-container-high text-gray-400 text-[10px] px-2 py-0.5 rounded font-bold">lander_set</span>
+</div>
+</div>
+<h3 class="text-[14px] font-semibold text-on-surface mb-2">Keto Burn Xtreme</h3>
+<p class="text-[11px] text-gray-500 mb-4 italic">Aguardando revisão de compliance jurídico.</p>
+<div class="flex items-center justify-between">
+<button class="text-[12px] font-bold text-amber-500 hover:text-amber-400 flex items-center gap-1 group">
+                                    Revisar <span class="material-symbols-outlined !text-[14px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<div class="text-right">
+<p class="mono-data text-[11px] text-gray-400">WAIT 18h</p>
+</div>
+</div>
+</div>
+<!-- Pending Card 2 -->
+<div class="bg-[#141416] p-4 rounded-xl border-l-2 border-amber-500 shadow-md relative group">
+<div class="flex justify-between items-start mb-3">
+<span class="mono-data text-[10px] text-primary font-bold">SKU-GLU-001</span>
+<span class="bg-surface-container-high text-gray-400 text-[10px] px-2 py-0.5 rounded font-bold">video_edit</span>
+</div>
+<h3 class="text-[14px] font-semibold text-on-surface mb-2">Glucofit Advance</h3>
+<button class="w-full mt-2 py-1.5 bg-amber-600/10 border border-amber-600/30 text-amber-500 text-[12px] font-bold rounded hover:bg-amber-600/20 transition-colors">
+                                Abrir Editor de IA
+                            </button>
+</div>
+</div>
+</div>
+<!-- Col 4: Concluído -->
+<div class="w-[280px] flex flex-col">
+<div class="flex items-center justify-between mb-4 px-2">
+<div class="flex items-center gap-2 text-green-500">
+<span class="material-symbols-outlined">check_circle</span>
+<span class="font-bold text-[14px] uppercase tracking-wide">Concluído</span>
+<span class="text-gray-600 font-mono text-[12px]">(3)</span>
+</div>
+</div>
+<div class="flex-1 space-y-4 overflow-y-auto pr-2 opacity-80 hover:opacity-100 transition-opacity">
+<!-- Done Card 1 -->
+<div class="bg-[#141416] p-4 rounded-xl border-l-2 border-green-500 shadow-sm">
+<div class="flex justify-between items-start mb-3">
+<span class="mono-data text-[10px] text-primary font-bold">SKU-NEU-332</span>
+<span class="bg-green-900/20 text-green-500 text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-tighter">deploy_success</span>
+</div>
+<h3 class="text-[14px] font-semibold text-on-surface mb-4">Neuriva Focus Complex</h3>
+<div class="flex items-center justify-between">
+<div class="flex gap-1.5 text-green-500">
+<span class="material-symbols-outlined !text-[16px]" data-weight="fill">check_circle</span>
+<span class="material-symbols-outlined !text-[16px]" data-weight="fill">check_circle</span>
+<span class="material-symbols-outlined !text-[16px]" data-weight="fill">check_circle</span>
+</div>
+<div class="text-right">
+<p class="mono-data text-[11px] text-gray-500">Done 2d ago</p>
+<p class="mono-data text-[11px] text-white">$ 2,400.00</p>
+</div>
+</div>
+</div>
+<!-- Done Card 2 -->
+<div class="bg-[#141416] p-4 rounded-xl border-l-2 border-green-500 shadow-sm">
+<div class="flex justify-between items-start mb-3">
+<span class="mono-data text-[10px] text-primary font-bold">SKU-THY-110</span>
+<span class="bg-green-900/20 text-green-500 text-[10px] px-2 py-0.5 rounded font-bold">vsl_final</span>
+</div>
+<h3 class="text-[14px] font-semibold text-on-surface mb-4">Thyroid Rescue</h3>
+<div class="flex items-center justify-between">
+<div class="flex gap-1.5 text-green-500">
+<span class="material-symbols-outlined !text-[16px]" data-weight="fill">check_circle</span>
+<span class="material-symbols-outlined !text-[16px]" data-weight="fill">check_circle</span>
+<span class="material-symbols-outlined !text-[16px]" data-weight="fill">check_circle</span>
+</div>
+<div class="text-right">
+<p class="mono-data text-[11px] text-gray-500">Done 4h ago</p>
+<p class="mono-data text-[11px] text-white">$ 850.00</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Col 5: Falhou -->
+<div class="w-[280px] flex flex-col">
+<div class="flex items-center justify-between mb-4 px-2">
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined">error</span>
+<span class="font-bold text-[14px] uppercase tracking-wide">Falhou</span>
+<span class="text-gray-600 font-mono text-[12px]">(2)</span>
+</div>
+</div>
+<div class="flex-1 space-y-4 overflow-y-auto pr-2">
+<!-- Failed Card 1 -->
+<div class="bg-[#141416] p-4 rounded-xl border-l-2 border-error shadow-sm border-t border-t-error/10 border-r border-r-error/10">
+<div class="flex justify-between items-start mb-3">
+<span class="mono-data text-[10px] text-error font-bold tracking-widest">CRITICAL_ERR</span>
+<span class="bg-error-container text-on-error-container text-[10px] px-2 py-0.5 rounded font-bold">api_timeout</span>
+</div>
+<h3 class="text-[14px] font-semibold text-on-surface mb-2">Joint Genesis Pro</h3>
+<div class="bg-error-container/10 p-2 rounded mb-4 flex items-start gap-2">
+<span class="material-symbols-outlined text-error !text-[16px]">report</span>
+<p class="text-[10px] text-on-error-container leading-tight truncate">Error 504: AWS S3 Bucket access denied during assets export...</p>
+</div>
+<div class="flex items-center justify-between">
+<button class="text-[11px] font-bold text-gray-400 hover:text-white underline underline-offset-2">Retry Pipeline</button>
+<p class="mono-data text-[11px] text-gray-500">$ 32.00 LOST</p>
+</div>
+</div>
+<!-- Failed Card 2 -->
+<div class="bg-[#141416] p-4 rounded-xl border-l-2 border-error shadow-sm border-t border-t-error/10">
+<div class="flex justify-between items-start mb-3">
+<span class="mono-data text-[10px] text-error font-bold tracking-widest">VALID_ERR</span>
+<span class="bg-error-container text-on-error-container text-[10px] px-2 py-0.5 rounded font-bold">copy_reject</span>
+</div>
+<h3 class="text-[14px] font-semibold text-on-surface mb-2">Alpilean Ice Trick</h3>
+<p class="text-[11px] text-gray-500 mb-4 line-clamp-2">Reprovado por baixa pontuação de engajamento na prévia do AI agent.</p>
+<button class="w-full py-1.5 bg-surface-container text-on-surface-variant text-[12px] font-semibold rounded">Ver Logs Detalhados</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- AI Floating Command Bar -->
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[500px] glass-panel rounded-full border border-primary/20 shadow-2xl px-6 py-3 flex items-center gap-4 z-50">
+<span class="material-symbols-outlined text-primary" data-weight="fill">bolt</span>
+<input class="bg-transparent border-none focus:ring-0 text-[14px] text-white flex-1 placeholder:text-gray-500" placeholder="Pergunte ao AI Agent sobre o status das demandas..." type="text"/>
+<div class="flex items-center gap-2">
+<kbd class="px-2 py-1 bg-surface-container rounded text-[10px] text-gray-400 font-mono">⌘</kbd>
+<kbd class="px-2 py-1 bg-surface-container rounded text-[10px] text-gray-400 font-mono">K</kbd>
+</div>
+</div>
+</main>
+</body></html>

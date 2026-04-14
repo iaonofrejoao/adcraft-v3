@@ -1,63 +1,76 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Marca */
-  --brand-primary: #6D5BD0;
-  --brand-secondary: #8B7AE0;
-  --brand-subtle: #EEEDFE;
-
-  /* Superfícies */
-  --surface-page: #F8F7FF;
-  --surface-card: #FFFFFF;
-  --surface-sidebar: #F3F2FA;
-  --surface-input: #FAFAFA;
-
-  /* Texto */
-  --text-primary: #1A1830;
-  --text-secondary: #6B6880;
-  --text-muted: #A09DB8;
-
-  /* Bordas */
-  --border-default: #E8E6F0;
-  --border-focus: #6D5BD0;
-
-  /* Status */
-  --status-running: #7C3AED;
-  --status-success: #16A34A;
-  --status-warning: #D97706;
-  --status-error: #DC2626;
-  --status-idle: #9CA3AF;
-  --status-disabled: #D1D5DB;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --surface-page: #0F0E1A;
-    --surface-card: #1A1830;
-    --surface-sidebar: #15132A;
-    --text-primary: #F0EFF8;
-    --text-secondary: #A09DB8;
-    --border-default: #2D2B45;
+    --surface:                   #131314;
+    --surface-container-low:     #1C1B1C;
+    --surface-container:         #201F20;
+    --surface-container-high:    #2A2829;
+    --surface-container-highest: #353436;
+
+    --primary:                   #F28705;
+    --primary-end:               #FFB690;
+    --primary-container:         rgba(242,135,5,0.15);
+    --on-primary:                #131314;
+
+    --agent-research:            #F29F05;
+    --agent-market:              #A1A1AA;
+    --agent-strategy:            #FFDBCA;
+
+    --on-surface:                #E8E3DD;
+    --on-surface-variant:        #9E9489;
+    --on-surface-muted:          #6B6460;
+    --outline-variant:           #584237;
+
+    --status-pending-bg:         rgba(161,161,170,0.15);
+    --status-pending-text:       #A1A1AA;
+    --status-running-bg:         rgba(59,130,246,0.15);
+    --status-running-text:       #60A5FA;
+    --status-done-bg:            rgba(34,197,94,0.15);
+    --status-done-text:          #4ADE80;
+    --status-failed-bg:          rgba(239,68,68,0.15);
+    --status-failed-text:        #F87171;
+    --status-paused-bg:          rgba(245,158,11,0.15);
+    --status-paused-text:        #FCD34D;
+
+    --background:                #131314;
+    --foreground:                #E8E3DD;
+    --card:                      #201F20;
+    --card-foreground:           #E8E3DD;
+    --popover:                   rgba(53,52,54,0.8);
+    --popover-foreground:        #E8E3DD;
+    --primary-shadcn:            #F28705;
+    --primary-foreground:        #131314;
+    --secondary:                 #1C1B1C;
+    --secondary-foreground:      #E8E3DD;
+    --muted:                     #1C1B1C;
+    --muted-foreground:          #9E9489;
+    --accent:                    rgba(242,135,5,0.15);
+    --accent-foreground:         #F28705;
+    --destructive:               #EF4444;
+    --destructive-foreground:    #E8E3DD;
+    --border:                    rgba(88,66,55,0.15);
+    --input:                     #1C1B1C;
+    --ring:                      #F28705;
+    --radius:                    0.375rem;
   }
 }
 
-body {
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text-primary);
-  background: var(--surface-page);
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .font-mono, [data-mono] {
+    font-family: 'JetBrains Mono', monospace;
+  }
 }
-
-.font-mono {
-  font-family: 'JetBrains Mono', monospace;
-}
-
-/* Scrollbar fina em webkit */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

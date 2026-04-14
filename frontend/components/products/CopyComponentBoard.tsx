@@ -1,36 +1,13 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useState } from 'react'
 import { Toggle } from '@/components/ui/Toggle'
+import {
+  useCopyBoard,
+  type CopyComponent,
+  type CopyCombination,
+} from '@/hooks/useCopyBoard'
 
-// ── Tipos ─────────────────────────────────────────────────────────────────────
-
-export interface CopyComponent {
-  id:                  string
-  component_type:      'hook' | 'body' | 'cta'
-  slot_number:         number
-  tag:                 string
-  content:             string | null
-  rationale:           string | null
-  register?:           string | null
-  structure?:          string | null
-  intensity?:          string | null
-  compliance_status:   'pending' | 'approved' | 'rejected'
-  compliance_violations?: unknown
-  approval_status:     'pending' | 'approved' | 'rejected'
-  approved_at:         string | null
-}
-
-export interface CopyCombination {
-  id:                 string
-  tag:                string
-  hook_id:            string
-  body_id:            string
-  cta_id:             string
-  full_text:          string | null
-  selected_for_video: boolean
-  created_at:         string
-}
+export type { CopyComponent, CopyCombination }
 
 // ── Componente principal ───────────────────────────────────────────────────────
 
@@ -48,84 +25,14 @@ const COLS: { type: ColType; label: string; icon: string }[] = [
 ]
 
 export function CopyComponentBoard({ sku, pipelineId, productId }: CopyComponentBoardProps) {
-  const [components,    setComponents]    = useState<CopyComponent[]>([])
-  const [combinations,  setCombinations]  = useState<CopyCombination[]>([])
-  const [loading,       setLoading]       = useState(true)
-  const [materializing, setMaterializing] = useState(false)
+  const {
+    hooks, bodies, ctas, combinations,
+    isLoading, isMaterializing,
+    approveComponent, rejectComponent, selectComponent,
+    materializeCombinations, canMaterialize,
+  } = useCopyBoard(sku, pipelineId, productId)
 
-  // Carrega componentes + combinações
-  useEffect(() => {
-    Promise.all([
-      fetch(`/api/copy-components?pipeline_id=${pipelineId}&product_id=${productId}`)
-        .then((r) => r.json()),
-      fetch(`/api/copy-combinations?pipeline_id=${pipelineId}&product_id=${productId}`)
-        .then((r) => r.json()).catch(() => ({ combinations: [] })),
-    ]).then(([comps, combos]) => {
-      setComponents(comps.components ?? comps ?? [])
-      setCombinations(combos.combinations ?? combos ?? [])
-    }).finally(() => setLoading(false))
-  }, [pipelineId, productId])
-
-  // Realtime: escuta alterações em copy_components
-  useEffect(() => {
-    const supabase = createClient()
-    const channel  = supabase
-      .channel(`copy_components_${pipelineId}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'copy_components', filter: `pipeline_id=eq.${pipelineId}` },
-        (payload) => {
-          const updated = payload.new as CopyComponent
-          setComponents((prev) => prev.map((c) => c.id === updated.id ? { ...c, ...updated } : c))
-        }
-      )
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [pipelineId])
-
-  async function handleApprove(id: string) {
-    const res = await fetch(`/api/copy-components/${id}/approve`, { method: 'POST' })
-    if (res.ok) {
-      const updated = await res.json()
-      setComponents((prev) => prev.map((c) => c.id === id ? { ...c, ...updated } : c))
-    }
-  }
-
-  async function handleReject(id: string) {
-    const res = await fetch(`/api/copy-components/${id}/reject`, { method: 'POST' })
-    if (res.ok) {
-      const updated = await res.json()
-      setComponents((prev) => prev.map((c) => c.id === id ? { ...c, ...updated } : c))
-    }
-  }
-
-  async function materializeCombinations() {
-    setMaterializing(true)
-    try {
-      const res = await fetch(`/api/products/${sku}/materialize-combinations`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ pipeline_id: pipelineId }),
-      })
-      if (res.ok) {
-        const d = await res.json()
-        setCombinations((prev) => [...prev, ...(d.combinations ?? [])])
-      }
-    } finally {
-      setMaterializing(false)
-    }
-  }
-
-  async function toggleSelectForVideo(comboId: string, selected: boolean) {
-    // Atualiza localmente imediatamente
-    setCombinations((prev) => prev.map((c) => c.id === comboId ? { ...c, selected_for_video: selected } : c))
-    // Persiste
-    const supabase = createClient()
-    await supabase.from('copy_combinations').update({ selected_for_video: selected }).eq('id', comboId)
-  }
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <span className="animate-pulse text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -135,21 +42,17 @@ export function CopyComponentBoard({ sku, pipelineId, productId }: CopyComponent
     )
   }
 
+  const colItems = { hook: hooks, body: bodies, cta: ctas }
+
   const allApproved = (type: ColType) =>
-    components.filter((c) => c.component_type === type).every((c) => c.approval_status === 'approved')
-
-  const hasApproved = (type: ColType) =>
-    components.filter((c) => c.component_type === type).some((c) => c.approval_status === 'approved')
-
-  const canMaterialize = hasApproved('hook') && hasApproved('body') && hasApproved('cta')
-    && components.length > 0
+    colItems[type].every((c) => c.approval_status === 'approved')
 
   return (
     <div className="space-y-6">
       {/* 3 colunas de componentes */}
       <div className="grid grid-cols-3 gap-4">
         {COLS.map(({ type, label, icon }) => {
-          const items = components.filter((c) => c.component_type === type)
+          const items = colItems[type]
           const approvedCount = items.filter((c) => c.approval_status === 'approved').length
           return (
             <div key={type}>
@@ -174,8 +77,8 @@ export function CopyComponentBoard({ sku, pipelineId, productId }: CopyComponent
                     <ComponentCard
                       key={comp.id}
                       component={comp}
-                      onApprove={handleApprove}
-                      onReject={handleReject}
+                      onApprove={approveComponent}
+                      onReject={rejectComponent}
                     />
                   ))
                 )}
@@ -199,10 +102,10 @@ export function CopyComponentBoard({ sku, pipelineId, productId }: CopyComponent
           </div>
           <button
             onClick={materializeCombinations}
-            disabled={materializing}
+            disabled={isMaterializing}
             className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50"
             style={{ background: 'var(--brand-primary)' }}>
-            {materializing ? 'Criando…' : 'Materializar combinações'}
+            {isMaterializing ? 'Criando…' : 'Materializar combinações'}
           </button>
         </div>
       )}
@@ -223,7 +126,7 @@ export function CopyComponentBoard({ sku, pipelineId, productId }: CopyComponent
               <CombinationRow
                 key={combo.id}
                 combination={combo}
-                onToggleVideo={(selected) => toggleSelectForVideo(combo.id, selected)}
+                onToggleVideo={(selected) => selectComponent(combo.id, selected)}
               />
             ))}
           </div>

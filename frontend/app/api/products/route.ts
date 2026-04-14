@@ -172,6 +172,11 @@ async function classifyNicheAsync(
       .from('products')
       .update({ niche_id })
       .eq('id', productId);
+  } else {
+    // Fallback por palavras-chave: nome genérico pode não ter sinal semântico
+    // suficiente para atingir o threshold de embedding (0.65).
+    // Tenta correspondência literal com slug/nome dos nichos ativos.
+    await fallbackNicheByKeyword(productId, name, productUrl, supabase);
   }
 
   // 5. Persiste o embedding do produto para buscas futuras e reclassificações
@@ -181,4 +186,61 @@ async function classifyNicheAsync(
     embedding:    embeddingToSql(embeddingValues),
     model:        'gemini-embedding-001',
   });
+}
+
+// ── Fallback: classificação por palavras-chave ────────────────────────────────
+// Usado quando o embedding score não atinge o threshold mínimo (ex: nomes genéricos
+// como "QA_Stress_3_xxx" que não carregam sinal semântico suficiente).
+// Estratégia: tokeniza nome + domínio da URL e verifica interseção com slug/name
+// de cada nicho ativo. Caso múltiplos nichos batam, prioriza o maior overlap.
+
+async function fallbackNicheByKeyword(
+  productId: string,
+  name: string,
+  productUrl: string,
+  supabase: ReturnType<typeof getServiceClient>
+): Promise<void> {
+  const { data: niches } = await supabase
+    .from('niches')
+    .select('id, slug, name')
+    .eq('status', 'active');
+
+  if (!niches || niches.length === 0) return;
+
+  // Normaliza o texto de busca: nome + domínio da URL, lowercase, sem acentos
+  const normalize = (s: string) =>
+    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  let urlDomain = '';
+  try {
+    urlDomain = new URL(productUrl).hostname;
+  } catch {
+    // URL inválida — ignora domínio
+  }
+
+  const searchText = normalize(`${name} ${urlDomain}`);
+
+  let bestNicheId: string | null = null;
+  let bestScore = 0;
+
+  for (const niche of niches) {
+    // Tokens do nicho: slug separado por hífen + palavras do nome
+    const nicheTokens = normalize(`${niche.slug} ${niche.name}`)
+      .split(/[\s\-_]+/)
+      .filter((t) => t.length >= 3);
+
+    const score = nicheTokens.filter((token) => searchText.includes(token)).length;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestNicheId = niche.id;
+    }
+  }
+
+  if (bestNicheId && bestScore > 0) {
+    await supabase
+      .from('products')
+      .update({ niche_id: bestNicheId })
+      .eq('id', productId);
+  }
 }

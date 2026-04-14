@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kinetic Console - Aprovação de Componentes</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"surface-container-low": "#141d1e", "on-primary-fixed": "#2e1500", "surface-container-highest": "#2d3738", surface: "#0b1516", "inverse-primary": "#8f4d00", "surface-container-high": "#222c2d", "on-tertiary-fixed": "#2a1800", "tertiary-fixed": "#ffddb5", "error-container": "#93000a", "primary-container": "#f28705", "on-secondary": "#2f3037", "on-primary-container": "#592e00", "surface-container": "#182122", "on-error-container": "#ffdad6", outline: "#a48c7b", "secondary-fixed": "#e2e1eb", "inverse-on-surface": "#283233", "on-tertiary": "#462b00", "on-surface": "#dae4e5", "surface-dim": "#0b1516", "surface-bright": "#313b3c", "on-secondary-fixed-variant": "#45464e", "secondary-fixed-dim": "#c6c6cf", "on-tertiary-container": "#513200", "on-primary-fixed-variant": "#6d3a00", "tertiary-container": "#df9200", "secondary-container": "#45464e", background: "#0b1516", "surface-tint": "#ffb77b", "on-primary": "#4d2700", "surface-variant": "#2d3738", "outline-variant": "#564335", "primary-fixed": "#ffdcc2", "on-secondary-container": "#b4b4bd", "primary-fixed-dim": "#ffb77b", tertiary: "#ffb958", secondary: "#c6c6cf", "on-background": "#dae4e5", "on-tertiary-fixed-variant": "#643f00", "on-secondary-fixed": "#1a1b22", "tertiary-fixed-dim": "#ffb958", primary: "#ffb77b", "on-error": "#690005", "surface-container-lowest": "#061011", "inverse-surface": "#dae4e5", "on-surface-variant": "#dcc2af", error: "#ffb4ab"}, borderRadius: {DEFAULT: "0.5rem", lg: "1rem", xl: "1.5rem", full: "9999px"}, fontFamily: {headline: ["Inter"], body: ["Inter"], label: ["Inter"], display: "Inter"}}}};</script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-overlay { background: rgba(53, 52, 54, 0.8); backdrop-filter: blur(12px); }
+        .primary-gradient { background: linear-gradient(135deg, #f97316 0%, #ffb690 100%); }
+        .ghost-border { border: 1px solid rgba(88, 66, 55, 0.15); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-[#131314] flex justify-between items-center px-6 w-full h-14 border-b border-white/5 z-50 sticky top-0">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-orange-500">Kinetic Console</span>
+<div class="hidden md:flex items-center gap-6 font-['Inter'] body-md text-slate-300">
+<a class="text-orange-500 font-semibold border-b-2 border-orange-500 pb-1" href="#">Hooks</a>
+<a class="text-slate-500 hover:text-slate-300 transition-colors" href="#">Bodies</a>
+<a class="text-slate-500 hover:text-slate-300 transition-colors" href="#">CTAs</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined text-slate-500 hover:text-slate-300 transition-all cursor-pointer p-2 rounded-full hover:bg-white/5">notifications</span>
+</div>
+<span class="material-symbols-outlined text-slate-500 hover:text-slate-300 transition-all cursor-pointer p-2 rounded-full hover:bg-white/5">settings</span>
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-white/10 active:scale-95 transition-all duration-100 cursor-pointer" data-alt="Close-up portrait of a professional male designer with a neutral expression in high-key studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdbNnMLZsALyqKSPyKV-Sa3LGUw7xfM9UWgvuW9b-mRqwV_dZ2TVc7RnGMS6hDGgztGsOtahJvay2uhw_ltYkugariP4agFyIkF9OtZwxSsCjkMp_99IDY1qKZE6jf7bCXfICWX0YogYSopJUB4R1rgB2SQlFiyAJk1kbXGi0EzYirkHjlcEpdwi2CN5XWa32Zy3SHKYV68mSF8jOzg-OJr2UDm7oYx8CGUKCejeZbyi0Qjx3KRg8xW76w1q-53kYDT2lUJ85SfZs"/>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="hidden lg:flex flex-col h-screen py-4 bg-[#1C1B1C] shadow-[1px_0_0_0_rgba(255,255,255,0.05)] h-full w-64 fixed left-0 top-0 pt-20 z-40">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 bg-orange-500/20 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-orange-500 text-sm">precision_manufacturing</span>
+</div>
+<div>
+<h3 class="text-lg font-black text-white leading-none">Precision Marketing</h3>
+<span class="font-['JetBrains_Mono'] label-sm tracking-tight text-slate-500 text-[10px]">V2.4.0-stable</span>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="px-3">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 opacity-80 hover:bg-white/5 hover:opacity-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-['JetBrains_Mono'] label-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 opacity-80 hover:bg-white/5 hover:opacity-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">layers</span>
+<span class="font-['JetBrains_Mono'] label-sm">Campaigns</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-orange-500/10 text-orange-500 border-r-2 border-orange-500 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+<span class="font-['JetBrains_Mono'] label-sm">Assets</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 opacity-80 hover:bg-white/5 hover:opacity-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">monitoring</span>
+<span class="font-['JetBrains_Mono'] label-sm">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 opacity-80 hover:bg-white/5 hover:opacity-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+<span class="font-['JetBrains_Mono'] label-sm">Logs</span>
+</a>
+</div>
+</nav>
+<div class="px-6 py-4">
+<button class="w-full primary-gradient text-on-primary-fixed font-bold py-2 rounded-lg text-sm shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:brightness-110 active:scale-[0.98] transition-all">
+                New Asset
+            </button>
+</div>
+<div class="px-3 mt-auto border-t border-white/5 pt-4">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-400 opacity-80 hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-[18px]">help_outline</span>
+<span class="font-['JetBrains_Mono'] label-sm">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-400 opacity-80 hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-[18px]">manage_accounts</span>
+<span class="font-['JetBrains_Mono'] label-sm">Account</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="lg:pl-64 flex-1">
+<div class="p-8 max-w-[1600px] mx-auto">
+<!-- HEADER SECTION -->
+<header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<nav class="flex items-center gap-2 text-xs font-label text-slate-500 mb-3">
+<span>Produtos</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span class="text-orange-500 font-bold">ABCD</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span>Copies</span>
+</nav>
+<h1 class="text-[28px] font-bold tracking-tight text-white mb-2">Aprovação de componentes</h1>
+<p class="text-slate-400 text-sm max-w-xl">
+                        Aprove os componentes que vão para combinação. Você precisa de pelo menos 1 hook, 1 body e 1 CTA aprovados.
+                    </p>
+</div>
+<div class="flex items-center gap-6">
+<div class="bg-surface-container-low p-4 rounded-xl ghost-border">
+<div class="flex items-center gap-4 text-[11px] font-label text-slate-400 mb-2">
+<span>Hooks <span class="text-orange-500">2/3 ✓</span></span>
+<span>Bodies <span class="text-orange-500">1/3 ✓</span></span>
+<span>CTAs <span class="text-error">0/3</span></span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden flex">
+<div class="h-full bg-orange-500" style="width: 33%"></div>
+<div class="h-full bg-orange-300" style="width: 16%"></div>
+<div class="h-full bg-slate-700" style="width: 51%"></div>
+</div>
+</div>
+<div class="relative group">
+<button class="px-6 py-3 bg-slate-700 text-slate-400 font-bold rounded-lg cursor-not-allowed opacity-50 flex items-center gap-2" disabled="">
+                            Gerar combinações
+                            <span class="material-symbols-outlined text-sm">lock</span>
+</button>
+<div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 hidden group-hover:block">
+<div class="bg-surface-container-highest text-[10px] text-white p-2 rounded shadow-xl border border-white/10 text-center">
+                                Aprove ao menos 1 de cada coluna
+                            </div>
+</div>
+</div>
+</div>
+</header>
+<!-- 3-COLUMN GRID -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- COLUMN: HOOKS -->
+<section class="flex flex-col gap-4">
+<div class="flex items-center justify-between px-2">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-orange-500" style="font-variation-settings: 'FILL' 1;">phishing</span>
+</div>
+<h2 class="text-lg font-bold text-white">Hooks <span class="text-slate-500 text-sm font-normal ml-1">(3)</span></h2>
+</div>
+<button class="text-orange-500 text-[11px] font-bold font-label flex items-center gap-1 hover:bg-orange-500/5 px-2 py-1 rounded transition-colors">
+<span class="material-symbols-outlined text-xs">add</span>
+                            + Gerar mais 3
+                        </button>
+</div>
+<div class="space-y-4">
+<!-- Card 1: Approved -->
+<div class="bg-surface-container rounded-xl p-4 ghost-border border-green-500/30 relative">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label text-[10px] text-slate-500">ABCD_v1_H1</span>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 text-[9px] font-bold uppercase rounded">PAS</span>
+<span class="px-2 py-0.5 bg-green-500/10 text-green-500 text-[9px] font-bold uppercase rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">check_circle</span> aprovado anvisa
+                                    </span>
+</div>
+</div>
+<p class="text-sm text-on-surface leading-relaxed mb-4">
+                                Você já sentiu que seu metabolismo parou de funcionar? Descubra o segredo dos 2 minutos.
+                            </p>
+<div class="flex items-center justify-between border-t border-white/5 pt-3">
+<button class="flex items-center gap-1 text-slate-500 text-[10px] hover:text-slate-300">
+<span class="material-symbols-outlined text-xs">expand_more</span>
+                                    Por que esse hook?
+                                </button>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded bg-green-500/20 text-green-500 transition-colors"><span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500 transition-colors"><span class="material-symbols-outlined text-sm">close</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500 transition-colors"><span class="material-symbols-outlined text-sm">refresh</span></button>
+</div>
+</div>
+</div>
+<!-- Card 2: Approved -->
+<div class="bg-surface-container rounded-xl p-4 ghost-border relative">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label text-[10px] text-slate-500">ABCD_v1_H2</span>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-500 text-[9px] font-bold uppercase rounded">soft</span>
+<span class="px-2 py-0.5 bg-green-500/10 text-green-500 text-[9px] font-bold uppercase rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">check_circle</span> aprovado anvisa
+                                    </span>
+</div>
+</div>
+<p class="text-sm text-on-surface leading-relaxed mb-4">
+                                O segredo para uma barriga lisa não está no cardio, mas no que você faz logo ao acordar.
+                            </p>
+<div class="flex items-center justify-between border-t border-white/5 pt-3">
+<button class="flex items-center gap-1 text-slate-500 text-[10px] hover:text-slate-300">
+<span class="material-symbols-outlined text-xs">expand_more</span>
+                                    Por que esse hook?
+                                </button>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded hover:bg-green-500/20 text-green-500 transition-colors"><span class="material-symbols-outlined text-sm">check</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500 transition-colors"><span class="material-symbols-outlined text-sm">close</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500 transition-colors"><span class="material-symbols-outlined text-sm">refresh</span></button>
+</div>
+</div>
+</div>
+<!-- Card 3: Rejected -->
+<div class="bg-surface-container rounded-xl p-4 ghost-border opacity-60 relative">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label text-[10px] text-slate-500">ABCD_v1_H3</span>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-red-500/10 text-red-500 text-[9px] font-bold uppercase rounded">fear</span>
+<span class="px-2 py-0.5 bg-red-500/10 text-red-500 text-[9px] font-bold uppercase rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">cancel</span> rejeitado
+                                    </span>
+</div>
+</div>
+<p class="text-sm text-slate-400 leading-relaxed mb-4 italic">
+                                CUIDADO: Se você ignorar isso, sua gordura abdominal nunca vai sumir.
+                            </p>
+<div class="flex items-center justify-between border-t border-white/5 pt-3">
+<button class="flex items-center gap-1 text-slate-500 text-[10px] hover:text-slate-300">
+<span class="material-symbols-outlined text-xs">expand_more</span>
+                                    Por que esse hook?
+                                </button>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500 transition-colors"><span class="material-symbols-outlined text-sm">check</span></button>
+<button class="p-1.5 rounded bg-red-500/20 text-red-500 transition-colors"><span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">close</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500 transition-colors"><span class="material-symbols-outlined text-sm">refresh</span></button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- COLUMN: BODIES -->
+<section class="flex flex-col gap-4">
+<div class="flex items-center justify-between px-2">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-blue-500">format_align_justify</span>
+</div>
+<h2 class="text-lg font-bold text-white">Bodies</h2>
+</div>
+</div>
+<div class="space-y-4">
+<!-- Card 1: Approved -->
+<div class="bg-surface-container rounded-xl p-4 ghost-border border-green-500/30">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label text-[10px] text-slate-500">ABCD_v1_B1</span>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-500 text-[9px] font-bold uppercase rounded">Education</span>
+<span class="px-2 py-0.5 bg-green-500/10 text-green-500 text-[9px] font-bold uppercase rounded">✓ aprovado anvisa</span>
+</div>
+</div>
+<p class="text-xs text-on-surface leading-relaxed mb-4 line-clamp-4">
+                                Pesquisas recentes da Universidade de Harvard mostram que a obesidade não é causada apenas por má alimentação, mas por um declínio na saúde mitocondrial. Mitolyn utiliza uma fórmula patenteada para reativar as usinas de energia do seu corpo...
+                            </p>
+<div class="flex items-center justify-between border-t border-white/5 pt-3">
+<button class="flex items-center gap-1 text-slate-500 text-[10px]">
+<span class="material-symbols-outlined text-xs">expand_more</span>
+                                    Por que esse body?
+                                </button>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded bg-green-500/20 text-green-500"><span class="material-symbols-outlined text-sm">check</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500"><span class="material-symbols-outlined text-sm">close</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500"><span class="material-symbols-outlined text-sm">refresh</span></button>
+</div>
+</div>
+</div>
+<!-- Card 2: Pending/Warning -->
+<div class="bg-surface-container rounded-xl p-4 ghost-border">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label text-[10px] text-slate-500">ABCD_v1_B2</span>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 text-[9px] font-bold uppercase rounded">PAS</span>
+<span class="px-2 py-0.5 bg-amber-500/10 text-amber-500 text-[9px] font-bold uppercase rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">warning</span> revisar
+                                    </span>
+</div>
+</div>
+<p class="text-xs text-on-surface leading-relaxed mb-4">
+                                Imagine acordar com energia renovada e ver o ponteiro da balança descer naturalmente. Sem dietas malucas ou horas de academia...
+                            </p>
+<div class="flex items-center justify-between border-t border-white/5 pt-3">
+<button class="flex items-center gap-1 text-slate-500 text-[10px]">
+<span class="material-symbols-outlined text-xs">expand_more</span>
+                                    Por que esse body?
+                                </button>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded hover:bg-green-500/5 text-slate-500"><span class="material-symbols-outlined text-sm">check</span></button>
+<button class="p-1.5 rounded hover:bg-red-500/5 text-slate-500"><span class="material-symbols-outlined text-sm">close</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500"><span class="material-symbols-outlined text-sm">refresh</span></button>
+</div>
+</div>
+</div>
+<!-- Card 3: Empty/Pending -->
+<div class="bg-surface-container/50 rounded-xl p-8 border border-dashed border-white/10 flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-slate-600 mb-2">pending</span>
+<p class="text-[10px] font-label text-slate-600 uppercase tracking-widest">Aguardando Geração</p>
+</div>
+</div>
+</section>
+<!-- COLUMN: CTAs -->
+<section class="flex flex-col gap-4">
+<div class="flex items-center justify-between px-2">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-green-500">arrow_circle_right</span>
+</div>
+<h2 class="text-lg font-bold text-white">CTAs</h2>
+</div>
+</div>
+<div class="space-y-4">
+<!-- Card 1: Pending -->
+<div class="bg-surface-container rounded-xl p-4 ghost-border border-white/5">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label text-[10px] text-slate-500">ABCD_v1_C1</span>
+<span class="px-2 py-0.5 bg-slate-500/10 text-slate-500 text-[9px] font-bold uppercase rounded">Oferta 50%</span>
+</div>
+<p class="text-sm text-on-surface leading-relaxed mb-4 font-semibold italic">
+                                "Clique no botão abaixo e garanta seu frasco de Mitolyn com 50% de desconto."
+                            </p>
+<div class="flex items-center justify-between border-t border-white/5 pt-3">
+<button class="flex items-center gap-1 text-slate-500 text-[10px]">
+<span class="material-symbols-outlined text-xs">expand_more</span>
+                                    Rationale
+                                </button>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded hover:bg-green-500/10 text-slate-500"><span class="material-symbols-outlined text-sm">check</span></button>
+<button class="p-1.5 rounded hover:bg-red-500/10 text-slate-500"><span class="material-symbols-outlined text-sm">close</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500"><span class="material-symbols-outlined text-sm">refresh</span></button>
+</div>
+</div>
+</div>
+<!-- Card 2: Pending -->
+<div class="bg-surface-container rounded-xl p-4 ghost-border border-white/5">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label text-[10px] text-slate-500">ABCD_v1_C2</span>
+<span class="px-2 py-0.5 bg-slate-500/10 text-slate-500 text-[9px] font-bold uppercase rounded">Urgência</span>
+</div>
+<p class="text-sm text-on-surface leading-relaxed mb-4 font-semibold italic">
+                                "Últimas unidades com frete grátis para todo o Brasil. Peça o seu agora."
+                            </p>
+<div class="flex items-center justify-between border-t border-white/5 pt-3">
+<button class="flex items-center gap-1 text-slate-500 text-[10px]">
+<span class="material-symbols-outlined text-xs">expand_more</span>
+                                    Rationale
+                                </button>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded hover:bg-green-500/10 text-slate-500"><span class="material-symbols-outlined text-sm">check</span></button>
+<button class="p-1.5 rounded hover:bg-red-500/10 text-slate-500"><span class="material-symbols-outlined text-sm">close</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500"><span class="material-symbols-outlined text-sm">refresh</span></button>
+</div>
+</div>
+</div>
+<!-- Card 3: Pending -->
+<div class="bg-surface-container rounded-xl p-4 ghost-border border-white/5">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label text-[10px] text-slate-500">ABCD_v1_C3</span>
+<span class="px-2 py-0.5 bg-slate-500/10 text-slate-500 text-[9px] font-bold uppercase rounded">Garantia</span>
+</div>
+<p class="text-sm text-on-surface leading-relaxed mb-4 font-semibold italic">
+                                "Teste o Mitolyn por 90 dias sem riscos. Resultados visíveis ou seu dinheiro de volta."
+                            </p>
+<div class="flex items-center justify-between border-t border-white/5 pt-3">
+<button class="flex items-center gap-1 text-slate-500 text-[10px]">
+<span class="material-symbols-outlined text-xs">expand_more</span>
+                                    Rationale
+                                </button>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded hover:bg-green-500/10 text-slate-500"><span class="material-symbols-outlined text-sm">check</span></button>
+<button class="p-1.5 rounded hover:bg-red-500/10 text-slate-500"><span class="material-symbols-outlined text-sm">close</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-slate-500"><span class="material-symbols-outlined text-sm">refresh</span></button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- AI Command Bar -->
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-50">
+<div class="glass-overlay rounded-full ghost-border p-1 flex items-center shadow-2xl">
+<div class="pl-4 pr-2">
+<span class="material-symbols-outlined text-orange-500 text-[20px]">auto_awesome</span>
+</div>
+<input class="bg-transparent border-none focus:ring-0 text-sm text-on-surface w-full placeholder:text-slate-500 font-medium py-3" placeholder="Peça ao assistente para melhorar um hook ou criar variações..." type="text"/>
+<button class="primary-gradient w-10 h-10 rounded-full flex items-center justify-center mr-1 shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-on-primary-fixed text-[20px]" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"primary-container": "#f28705", "on-secondary": "#2f3037", "surface-container-high": "#222c2d", "on-tertiary-fixed": "#2a1800", "tertiary-fixed": "#ffddb5", "error-container": "#93000a", "inverse-primary": "#8f4d00", "surface-container-low": "#141d1e", "on-primary-fixed": "#2e1500", "surface-container-highest": "#2d3738", surface: "#0b1516", "surface-dim": "#0b1516", "surface-bright": "#313b3c", "on-secondary-fixed-variant": "#45464e", "secondary-fixed-dim": "#c6c6cf", "on-tertiary-container": "#513200", "on-primary-fixed-variant": "#6d3a00", outline: "#a48c7b", "secondary-fixed": "#e2e1eb", "inverse-on-surface": "#283233", "on-tertiary": "#462b00", "on-surface": "#dae4e5", "on-primary-container": "#592e00", "surface-container": "#182122", "on-error-container": "#ffdad6", "outline-variant": "#564335", "primary-fixed": "#ffdcc2", "on-secondary-container": "#b4b4bd", "surface-variant": "#2d3738", "on-primary": "#4d2700", "tertiary-container": "#df9200", "secondary-container": "#45464e", background: "#0b1516", "surface-tint": "#ffb77b", "surface-container-lowest": "#061011", "inverse-surface": "#dae4e5", "on-surface-variant": "#dcc2af", error: "#ffb4ab", "on-secondary-fixed": "#1a1b22", "tertiary-fixed-dim": "#ffb958", primary: "#ffb77b", "on-error": "#690005", tertiary: "#ffb958", secondary: "#c6c6cf", "on-background": "#dae4e5", "on-tertiary-fixed-variant": "#643f00", "primary-fixed-dim": "#ffb77b"}, borderRadius: {DEFAULT: "0.5rem", lg: "1rem", xl: "1.5rem", full: "9999px"}, fontFamily: {headline: ["Inter"], body: ["Inter"], label: ["Inter"], mono: ["JetBrains Mono"], display: "Inter"}}}};</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131314;
+            color: #e5e2e3;
+            font-family: 'Inter', sans-serif;
+        }
+        .kinetic-glass {
+            background: rgba(53, 52, 54, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        .cta-sheen {
+            background: linear-gradient(135deg, #F97316 0%, #FFB690 100%);
+        }
+        .video-overlay {
+            background: linear-gradient(to top, rgba(19, 19, 20, 0.9) 0%, rgba(19, 19, 20, 0.4) 50%, rgba(19, 19, 20, 0.1) 100%);
+        }
+    </style>
+</head>
+<body class="flex min-h-screen overflow-x-hidden">
+<!-- SideNavBar Anchor -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#1C1B1C] flex flex-col py-6 z-50">
+<div class="px-6 mb-10 flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#F97316] flex items-center justify-center text-white font-bold">A</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-[#F97316]">AdCraft</h1>
+<p class="text-[10px] font-mono text-[#C6C6CF] opacity-50 uppercase tracking-widest">AI Marketing Engine</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-[#C6C6CF] opacity-70 hover:opacity-100 hover:bg-[#201F20] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">chat</span>
+<span class="font-['Inter'] body-md">Chat</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#C6C6CF] opacity-70 hover:opacity-100 hover:bg-[#201F20] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-['Inter'] body-md">Produtos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#F97316] font-semibold bg-[#201F20] rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">movie_filter</span>
+<span class="font-['Inter'] body-md">Criativos</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#C6C6CF] opacity-70 hover:opacity-100 hover:bg-[#201F20] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-['Inter'] body-md">Demandas</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1 border-t border-[#584237]/15 pt-6">
+<a class="flex items-center gap-3 px-4 py-3 text-[#C6C6CF] opacity-70 hover:opacity-100 hover:bg-[#201F20] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Inter'] body-md">Configurações</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#C6C6CF] opacity-70 hover:opacity-100 hover:bg-[#201F20] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-['Inter'] body-md">Sair</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 ml-64 bg-[#131314] min-h-screen">
+<!-- TopNavBar Anchor -->
+<header class="w-full sticky top-0 z-40 bg-[#131314]/80 backdrop-blur-xl flex justify-between items-center px-8 h-16 border-b border-[#584237]/15">
+<div class="flex items-center gap-8">
+<nav class="flex gap-6">
+<a class="text-[#C6C6CF] hover:text-[#F97316] font-['Inter'] title-sm font-semibold transition-opacity" href="#">Visão Geral</a>
+<a class="text-[#F97316] border-b-2 border-[#F97316] pb-1 font-['Inter'] title-sm font-semibold" href="#">Relatórios</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-secondary text-sm">search</span>
+<input class="bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-1.5 text-sm w-64 focus:ring-1 focus:ring-primary" placeholder="Global search..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="text-[#C6C6CF] hover:opacity-80"><span class="material-symbols-outlined">notifications</span></button>
+<button class="text-[#C6C6CF] hover:opacity-80"><span class="material-symbols-outlined">help_outline</span></button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-[#584237]/30">
+<img class="w-full h-full object-cover" data-alt="Portrait of a professional marketing manager with a clean workspace background, professional studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvirfgEtzXY3b5NeLSp6ANOT5Z2Mq92rZwXCSjEEVxur2LGzYM-EcRuIVex81flEdQen60fCiGZ3KAXXDWqVPgTyua9gRwmKB_qQqn4Q4C66UmimvjLt7cEoyVsCX0VFwCqvpY3fyBgOZrmO3snKZZ07TxiB-mJDz9uEoJbsRxxbXGeb-0OA72Lrd9EneugfnC__HwoLGiqo8vuUp-iEf2Bmqx7knCQHIJB5BsMjHpnod1Ca___Ho9i1PmMNQIjzzoGAHGGTz0LR4"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Header -->
+<section class="px-8 pt-8 pb-4">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="text-3xl font-bold tracking-tight text-on-surface">Criativos</h2>
+<p class="text-secondary opacity-70 mt-1">47 vídeos gerados em 12 produtos</p>
+</div>
+<button class="cta-sheen px-5 py-2.5 rounded-lg flex items-center gap-2 text-on-primary-container font-bold text-sm shadow-lg shadow-primary/10">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'wght' 700;">add</span>
+                    Gerar Novo Vídeo
+                </button>
+</div>
+<!-- Filter Bar -->
+<div class="flex flex-wrap gap-3 p-1.5 bg-surface-container-low rounded-xl mb-8">
+<div class="flex-1 min-w-[240px] relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary/50 text-xl">search</span>
+<input class="w-full bg-surface-container border-none rounded-lg pl-11 py-2.5 text-sm placeholder:text-secondary/30 focus:ring-1 focus:ring-primary" placeholder="Buscar criativos..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<select class="bg-surface-container border-none rounded-lg px-4 py-2.5 text-sm text-secondary/80 focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+<option>Produto: Todos</option>
+<option>Mitolyn</option>
+<option>Vitality</option>
+</select>
+<select class="bg-surface-container border-none rounded-lg px-4 py-2.5 text-sm text-secondary/80 focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+<option>Nicho: Todos</option>
+<option>Health</option>
+<option>Finance</option>
+</select>
+<select class="bg-surface-container border-none rounded-lg px-4 py-2.5 text-sm text-secondary/80 focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+<option>Aspect Ratio</option>
+<option>9:16</option>
+<option>1:1</option>
+</select>
+<select class="bg-surface-container border-none rounded-lg px-4 py-2.5 text-sm text-secondary/80 focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+<option>Ordenar: Recentes</option>
+<option>Populares</option>
+</select>
+</div>
+</div>
+<!-- Video Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pb-20">
+<!-- Card 1: Mitolyn -->
+<div class="group">
+<div class="relative aspect-[9/16] bg-black rounded-xl overflow-hidden mb-3 border border-[#584237]/10">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Close-up of vibrant supplement bottle on a dark reflective surface with glowing amber lighting and particle effects" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5nVgR5YtQy-RLEimscIz7S_OoeHyNz3p_CTbXlo5QMXkVZDD0jP6HQ-8UQIE72QZScrt7AvgaFRApeQR8mgKDgSdNGF0ZHv3eC0GMvc_PEAz8wbuDW0n74cT6_amOjjXdaZGxrmEFxn0ZtQk0uXb66DWq5IhJxbTav90r6OQT6T57g_9Ip81T5I1i3JcGPiEQE0ZQ6fqQ6KzzEy2uHqYtZKnlQxxK8fVBKeYQV5zFOkh54eau6wX-K-pqd__QfPjw9tpjvr0Ro_4"/>
+<div class="absolute inset-0 video-overlay"></div>
+<div class="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] font-mono text-primary border border-primary/20">MITO_v1_H1_B2</div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/40 backdrop-blur-md rounded text-[10px] font-mono text-secondary">9:16</div>
+<!-- Hover Overlay -->
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<button class="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center text-on-primary shadow-xl">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<button class="absolute bottom-4 right-4 p-2 bg-white/10 backdrop-blur-md rounded-lg text-white hover:bg-white/20 transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+<button class="absolute top-4 right-10 p-2 text-white/70 hover:text-white">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-on-surface mb-1">Mitolyn Supreme</h4>
+<div class="flex gap-2 text-[11px] text-secondary/60 mb-1">
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> Hook: fear</span>
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> PAS</span>
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> soft</span>
+</div>
+<div class="flex justify-between items-center text-[10px] font-mono text-secondary/40">
+<span>8s • 2.4MB</span>
+<span>há 3 dias</span>
+</div>
+</div>
+</div>
+<!-- Card 2: Vitality -->
+<div class="group">
+<div class="relative aspect-[9/16] bg-black rounded-xl overflow-hidden mb-3 border border-[#584237]/10">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Dynamic shot of a person running at night with futuristic glowing athletic gear and urban neon reflections" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAodEYUU7n3QrHVk9rKmNfnJji8yuzzDzX01vFVCQQA2QYln-xbdLylH5AsgZ1oKYO53HR_1LeMCYkEVcx9cqzF5TtG4484kjaLsUVsgFyNs6GPVYmtVz7oMChuuavdOTP-_7i_XJk-H4Bpwm992XPwx_iOaeMk4fCaFEBwZPJZ94zuaOOfmlH2Ez3ILUQ_tKD9LQg4yk5B_g3z_S91i0ilubcgId1gCtqXxR6ScDkArwJLOfXLKwn4HHAJ24Vj2pW4u2iv1A7forc"/>
+<div class="absolute inset-0 video-overlay"></div>
+<div class="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] font-mono text-primary border border-primary/20">VITA_v2_H1_V3</div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/40 backdrop-blur-md rounded text-[10px] font-mono text-secondary">9:16</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<button class="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<button class="absolute bottom-4 right-4 p-2 bg-white/10 backdrop-blur-md rounded-lg text-white">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-on-surface mb-1">Vitality Boost</h4>
+<div class="flex gap-2 text-[11px] text-secondary/60 mb-1">
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> Hook: gain</span>
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> AIDA</span>
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> hard</span>
+</div>
+<div class="flex justify-between items-center text-[10px] font-mono text-secondary/40">
+<span>15s • 4.1MB</span>
+<span>há 1 dia</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Profit Pulse -->
+<div class="group">
+<div class="relative aspect-[9/16] bg-black rounded-xl overflow-hidden mb-3 border border-[#584237]/10">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Abstract cinematic visualization of stock market data with rising golden graphs and high-tech dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdjtfILhHyICp8EWWRwahr534hbPQHg8SRd56d9jq0sJVdo089zVINRDgi7nLBMyrellsYbZobIMuDWpwre0cFdFHKlyybO7mpR2A-qRBCQXziIqnnCRjhdQ5G0flOiN4xHwmcFzqlzt-1h3iGMXY_bG22YMq-kmAm5qMk9oKMlNbOf6zfZI6YvHAEbNSye3S2igV_R1NgUr54uK36Sh-g5ZG6V6dY_D55eAXtC5Igki-9mfIsAUivf_OlCr1frwgIimAbx3fes44"/>
+<div class="absolute inset-0 video-overlay"></div>
+<div class="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] font-mono text-primary border border-primary/20">PULS_v4_C1_V1</div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/40 backdrop-blur-md rounded text-[10px] font-mono text-secondary">9:16</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<button class="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<button class="absolute bottom-4 right-4 p-2 bg-white/10 backdrop-blur-md rounded-lg text-white">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-on-surface mb-1">Profit Pulse AI</h4>
+<div class="flex gap-2 text-[11px] text-secondary/60 mb-1">
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> Hook: logic</span>
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> BAB</span>
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> direct</span>
+</div>
+<div class="flex justify-between items-center text-[10px] font-mono text-secondary/40">
+<span>12s • 3.7MB</span>
+<span>há 5 horas</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Glow Skin -->
+<div class="group">
+<div class="relative aspect-[9/16] bg-black rounded-xl overflow-hidden mb-3 border border-[#584237]/10">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Macro photography of golden liquid essence droplets with soft lighting and elegant minimalist aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAneTlJL0pXDQs_VFW4B98wWpZtL-rc7TUzmO5-ILedWPm29Uq8WOK07H3W0vjMLMuYS-NnzGAcKbQEHFhPcA7VOfmK9tYqBYeMNiamoxJ0pjnAkwnSzkssXNAcPn9_pgUGl5Cb8xbf5U-T-yOOv-70dHrQC5mFY8XxLEgpZj4unW-3ZTRecnSfel_2V03cGzb0KWq7wP8XJeymgzyTZtPZJy5r5trDjYBZCUl1jHDZ9H6wfNxRkA9xhkYLjYREE3ca4pgrbO_86zY"/>
+<div class="absolute inset-0 video-overlay"></div>
+<div class="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] font-mono text-primary border border-primary/20">GLOW_v1_B1_V1</div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/40 backdrop-blur-md rounded text-[10px] font-mono text-secondary">9:16</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<button class="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<button class="absolute bottom-4 right-4 p-2 bg-white/10 backdrop-blur-md rounded-lg text-white">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-on-surface mb-1">Glow Skin Serum</h4>
+<div class="flex gap-2 text-[11px] text-secondary/60 mb-1">
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> Hook: desire</span>
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> HSL</span>
+<span class="flex items-center gap-1"><span class="w-1 h-1 bg-primary rounded-full"></span> soft</span>
+</div>
+<div class="flex justify-between items-center text-[10px] font-mono text-secondary/40">
+<span>10s • 2.1MB</span>
+<span>há 2 dias</span>
+</div>
+</div>
+</div>
+<!-- Repeat with variations for 8 cards -->
+<div class="group">
+<div class="relative aspect-[9/16] bg-black rounded-xl overflow-hidden mb-3 border border-[#584237]/10">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Cinematic shot of a modern smartphone showing an analytics dashboard with vibrant orange data peaks" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyNDxbPWiOxDEABtrbcpgxC0FuuCTLykvSnusfLiNkcemBCXuGBm-3EjSqRXsKT4kXLmNRKF1ehBbi13JOv8hGyMOZ6hauEwiDbC8In-xfcAdVmXckQhyvElnwTqZ6SrOJLK9iE2crY-v7d0zmp6tMnrYWtIWHcT4rkVUkvAfldQazJtK4iaIpOdDUYJ9_T5_rd3uhRbtEIAmy1hnmO-a54QuaoP-DuxE6Y9CQOLEXnl6SE4R7SFfjS_mOXi76BoSa5oLPAevvXH8"/>
+<div class="absolute inset-0 video-overlay"></div>
+<div class="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] font-mono text-primary border border-primary/20">PULS_v5_A2_C1</div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/40 backdrop-blur-md rounded text-[10px] font-mono text-secondary">1:1</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<button class="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-4xl">play_arrow</span></button>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-on-surface mb-1">Profit Pulse Desktop</h4>
+<div class="flex gap-2 text-[11px] text-secondary/60 mb-1">
+<span class="flex items-center gap-1">Hook: authority</span>
+<span class="flex items-center gap-1">Problem</span>
+</div>
+<div class="flex justify-between items-center text-[10px] font-mono text-secondary/40">
+<span>20s • 5.5MB</span>
+<span>há 4 dias</span>
+</div>
+</div>
+</div>
+<div class="group">
+<div class="relative aspect-[9/16] bg-black rounded-xl overflow-hidden mb-3 border border-[#584237]/10">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="High-end skincare routine with steam and dramatic backlighting, premium luxury spa atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBl9baAzO6xoPWie7r6YUpED38ZQs4kX3gp4gw8luGSMWSxm6wROG4YMd5Nop11cfq7PrPop9tJF3PqgvVFzMH6lRp6NVuNOCLFOQU7t2CR5dpX-jitVV7njYA6Ifj3eZy6yP47ugnxmcZLqaeWNLL3RQfp6Oe7Bq5SExdPaoYTFl4sLKkOwyQSSz2YgW-JvPpO2OUI1K9w4-qPyWmw471cKTdhecLlD-vm-246Se912mmalNhuf8_U-Aety_7pFufQEiylOPX1Ia4"/>
+<div class="absolute inset-0 video-overlay"></div>
+<div class="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] font-mono text-primary border border-primary/20">GLOW_v3_H2_V1</div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/40 backdrop-blur-md rounded text-[10px] font-mono text-secondary">9:16</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<button class="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-4xl">play_arrow</span></button>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-on-surface mb-1">Glow Skin Routine</h4>
+<div class="flex gap-2 text-[11px] text-secondary/60 mb-1">
+<span class="flex items-center gap-1">Hook: curiosity</span>
+<span class="flex items-center gap-1">Solution</span>
+</div>
+<div class="flex justify-between items-center text-[10px] font-mono text-secondary/40">
+<span>15s • 3.2MB</span>
+<span>há 6 dias</span>
+</div>
+</div>
+</div>
+<div class="group">
+<div class="relative aspect-[9/16] bg-black rounded-xl overflow-hidden mb-3 border border-[#584237]/10">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Technological circuit board with flowing orange energy lights, digital precision and speed visual" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgxvinc6_Dz48cERADmPXf2pSw1vRNQOkOWKJ7CoworYCYHhPr9wn8IZ3nwuUtHtgWemgsIb7IxN7iSmyMkAcetMb1KdUlesb9jNOWRKLND9FdpSI18MA9bPz9L-z5slUI_drl_bpbgecmvFj1ev142w4zk5VpseGQG92cwEL7pPZoUkIjfVVeruwFk5d4_jGO35qNQuSLV5KKTLWYAAuPucu9nwGmDD7zjr9o6kz8DMOeO_Sey98aktX_8fpfS42gbBxeGBI_tcw"/>
+<div class="absolute inset-0 video-overlay"></div>
+<div class="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] font-mono text-primary border border-primary/20">MITO_v3_H1_B1</div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/40 backdrop-blur-md rounded text-[10px] font-mono text-secondary">16:9</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<button class="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-4xl">play_arrow</span></button>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-on-surface mb-1">Mitolyn Bio-Tech</h4>
+<div class="flex gap-2 text-[11px] text-secondary/60 mb-1">
+<span class="flex items-center gap-1">Hook: logic</span>
+<span class="flex items-center gap-1">Proof</span>
+</div>
+<div class="flex justify-between items-center text-[10px] font-mono text-secondary/40">
+<span>30s • 12MB</span>
+<span>há 1 semana</span>
+</div>
+</div>
+</div>
+<div class="group">
+<div class="relative aspect-[9/16] bg-black rounded-xl overflow-hidden mb-3 border border-[#584237]/10">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" data-alt="Healthy meal prep on a dark wood table with cinematic overhead lighting, fresh and energetic mood" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsRxV5JqkGlmIz6pukfVXdQoWtpk-MkvP9bUT7_NOA2JJErmCLASKn5DgaiGUVN9c6u_VCRXEPk2mTu0d4rGVRn9k8WGum93pIrzS8Ecopl2FHd_oT4f48Dj6ctD51WGQgAIpH5zSAlEV9N2_0yi2TJnX83rVOAgQoGKlNplBCHbp1puhWT5_uc5tHrkanYY618RppUbsz8djbQcl8MqLumdLvEIinQO-3kpU8yDT_f1_PPU1L1hDtD0gIP7hXpyVAf4I3icFo-Zk"/>
+<div class="absolute inset-0 video-overlay"></div>
+<div class="absolute top-3 left-3 px-2 py-1 bg-black/60 backdrop-blur-md rounded text-[10px] font-mono text-primary border border-primary/20">VITA_v5_C2_V4</div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/40 backdrop-blur-md rounded text-[10px] font-mono text-secondary">9:16</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<button class="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center text-on-primary"><span class="material-symbols-outlined text-4xl">play_arrow</span></button>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-semibold text-on-surface mb-1">Vitality Kitchen</h4>
+<div class="flex gap-2 text-[11px] text-secondary/60 mb-1">
+<span class="flex items-center gap-1">Hook: routine</span>
+<span class="flex items-center gap-1">Feature</span>
+</div>
+<div class="flex justify-between items-center text-[10px] font-mono text-secondary/40">
+<span>12s • 2.8MB</span>
+<span>há 3 horas</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Floating AI Command Bar -->
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-xl px-4 z-50">
+<div class="bg-surface-container-highest/80 backdrop-blur-xl border border-primary/20 rounded-full p-2 shadow-2xl flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary shrink-0">
+<span class="material-symbols-outlined">auto_awesome</span>
+</div>
+<input class="bg-transparent border-none focus:ring-0 flex-1 text-sm text-on-surface placeholder:text-secondary/50" placeholder="Pergunte à IA ou peça para criar um novo roteiro..." type="text"/>
+<div class="flex items-center gap-1 pr-2">
+<kbd class="px-2 py-1 rounded bg-surface-container text-[10px] font-mono text-secondary border border-[#584237]/30">⌘</kbd>
+<kbd class="px-2 py-1 rounded bg-surface-container text-[10px] font-mono text-secondary border border-[#584237]/30">K</kbd>
+</div>
+</div>
+</div>
+</main>
+</body></html>

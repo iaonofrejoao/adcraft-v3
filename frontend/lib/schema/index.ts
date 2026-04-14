@@ -94,6 +94,8 @@ export const copyComponents = pgTable("copy_components", {
   compliance_violations: jsonb("compliance_violations"),
   approval_status: text("approval_status").default('pending'),
   approved_at: timestamp("approved_at"),
+  rejected_at: timestamp("rejected_at"),
+  rejection_reason: text("rejection_reason"),
   created_at: timestamp("created_at").defaultNow(),
 });
 

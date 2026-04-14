@@ -1,0 +1,5 @@
+export { ProductDetailHeader }  from './ProductDetailHeader'
+export { KnowledgeSection }     from './KnowledgeSection'
+export { StatsAndActivity }     from './StatsAndActivity'
+export { ProductDetailLoading } from './ProductDetailLoading'
+export type { Product, Pipeline } from './types'

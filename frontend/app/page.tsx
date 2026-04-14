@@ -163,14 +163,12 @@ function ChatPageInner() {
   const { messages, streaming, sendMessage, approvePlan } = useJarvisChat(conversationId)
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-surface">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2.5 border-b shrink-0"
-        style={{ borderColor: 'var(--border-default)', background: 'var(--surface-page)' }}>
+      <header className="flex items-center justify-between px-4 py-2.5 shrink-0 bg-surface-low">
         <div className="flex items-center gap-2">
-          <h1 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Jarvis</h1>
-          <span className="text-xs px-1.5 py-0.5 rounded-full"
-            style={{ background: 'var(--brand-subtle)', color: 'var(--brand-primary)' }}>
+          <h1 className="text-sm font-semibold text-on-surface">Jarvis</h1>
+          <span className="text-xs px-1.5 py-0.5 rounded-full bg-brand-muted text-brand">
             gemini-2.5-flash
           </span>
         </div>

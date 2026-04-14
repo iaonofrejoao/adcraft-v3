@@ -1,42 +1,12 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-
-interface Notification {
-  id: string
-  type: string
-  message: string
-  pipeline_id?: string
-  created_at: string
-  read: boolean
-}
+import { useState } from 'react'
+import { useNotifications } from '@/hooks/useNotifications'
 
 export function NotificationBell() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const { notifications, unreadCount, markAllAsRead } = useNotifications()
   const [open, setOpen] = useState(false)
 
-  const unread = notifications.filter((n) => !n.read).length
-
-  // Subscrição Realtime em knowledge_notifications
-  useEffect(() => {
-    const channel = supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'knowledge_notifications' },
-        (payload) => {
-          const row = payload.new as Notification
-          setNotifications((prev) => [{ ...row, read: false }, ...prev].slice(0, 50))
-        }
-      )
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [])
-
-  function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  }
+  const unread = unreadCount
 
   return (
     <div className="relative">
@@ -64,7 +34,7 @@ export function NotificationBell() {
               Notificações
             </span>
             {unread > 0 && (
-              <button onClick={markAllRead} className="text-xs hover:underline"
+              <button onClick={markAllAsRead} className="text-xs hover:underline"
                 style={{ color: 'var(--brand-primary)' }}>
                 Marcar todas como lidas
               </button>

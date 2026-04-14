@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { GOALS } from '@/lib/constants'
+import { JARVIS_GOALS } from '@/lib/jarvis/goals'
 
 export interface MentionItem {
   type:      '@' | '/'
@@ -10,10 +10,10 @@ export interface MentionItem {
   sublabel?: string
 }
 
-const GOAL_ITEMS: MentionItem[] = GOALS.map((g) => ({
+const GOAL_ITEMS: MentionItem[] = JARVIS_GOALS.map((g) => ({
   type:     '/' as const,
-  value:    g.id,
-  label:    `/${g.id}`,
+  value:    g.command.slice(1),   // remove leading '/'
+  label:    g.command,
   sublabel: g.label,
 }))
 

@@ -49,6 +49,8 @@ const ACTION_TO_GOAL: Record<string, GoalName> = {
   criativos: 'creative_full',
   creative:  'creative_full',
   full:      'creative_full',
+  video:     'creative_full',
+  vídeo:     'creative_full',
 };
 
 // ── Parser de tokens ──────────────────────────────────────────────────────────

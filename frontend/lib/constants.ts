@@ -37,14 +37,6 @@ export const AGENT_ICONS: Record<string, string> = {
   'niche-curator':     'BookOpen',
 }
 
-// ── Goals / ações do MentionPicker ────────────────────────────────────────────
-export const GOALS = [
-  { id: 'pesquisa-mercado', label: 'Pesquisa de mercado', icon: 'BarChart2' },
-  { id: 'copy',             label: 'Gerar copy',          icon: 'FileText'  },
-  { id: 'video',            label: 'Criar vídeo',         icon: 'Film'      },
-  { id: 'reformular',       label: 'Reformular',          icon: 'RefreshCw' },
-] as const
-
 // ── Status de tasks/pipelines ─────────────────────────────────────────────────
 export const TASK_STATUS = {
   pending:  'pending',

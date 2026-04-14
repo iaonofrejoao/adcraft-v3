@@ -38,7 +38,7 @@ export async function GET(
 
   const { data: messages } = await supabase
     .from('messages')
-    .select('id, role, content, references, pipeline_id, created_at')
+    .select('id, role, content, references, pipeline_id, created_at, pipelines(plan, status, goal, deliverable_agent, budget_usd, product_id)')
     .eq('conversation_id', id)
     .order('created_at', { ascending: true });
 

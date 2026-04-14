@@ -52,6 +52,8 @@ export interface PipelinePlan {
   estimated_cost_usd: number;
   budget_usd: number;
   checkpoints: PlanCheckpoint[];
+  product_sku?: string;
+  product_name?: string;
 }
 
 // Checkpoints definidos por goal (PRD tabela 4.2)

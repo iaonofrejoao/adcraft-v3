@@ -25,11 +25,59 @@ function useJarvisChat(conversationId: string | null) {
     fetch(`/api/conversations/${conversationId}`)
       .then((r) => r.json())
       .then((d) => {
-        const msgs: ChatMessage[] = (d.messages ?? []).map((m: { id: string; role: string; content: string }) => ({
-          id:      m.id,
-          role:    m.role as 'user' | 'assistant',
-          content: m.content,
-        }))
+        const msgs: ChatMessage[] = (d.messages ?? []).map((m: {
+          id: string
+          role: string
+          content: string
+          pipeline_id?: string
+          pipelines?: {
+            plan?: {
+              tasks?: unknown[]
+              checkpoints?: unknown[]
+              mermaid?: string
+              estimated_cost_usd?: number
+              product_sku?: string
+              product_name?: string
+            }
+            status?: string
+            goal?: string
+            deliverable_agent?: string
+            budget_usd?: number
+            product_id?: string
+          } | null
+        }) => {
+          const base: ChatMessage = {
+            id:      m.id,
+            role:    m.role as 'user' | 'assistant',
+            content: m.content,
+          }
+
+          if (m.pipeline_id && m.pipelines) {
+            const p = m.pipelines
+            const plan: PipelinePlan = {
+              goal:               p.goal as PipelinePlan['goal'],
+              product_id:         p.product_id ?? '',
+              deliverable:        p.deliverable_agent as PipelinePlan['deliverable'],
+              tasks:              (p.plan?.tasks ?? []) as PipelinePlan['tasks'],
+              mermaid:            p.plan?.mermaid ?? '',
+              estimated_cost_usd: p.plan?.estimated_cost_usd ?? 0,
+              budget_usd:         p.budget_usd ?? 0,
+              checkpoints:        (p.plan?.checkpoints ?? []) as PipelinePlan['checkpoints'],
+              product_sku:        p.plan?.product_sku,
+              product_name:       p.plan?.product_name,
+            }
+            return {
+              ...base,
+              planPreview: {
+                plan,
+                pipeline_id:     m.pipeline_id,
+                pipeline_status: p.status,
+              },
+            }
+          }
+
+          return base
+        })
         setMessages(msgs)
       })
       .catch(() => {})

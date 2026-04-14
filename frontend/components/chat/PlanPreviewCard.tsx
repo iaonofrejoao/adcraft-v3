@@ -31,13 +31,35 @@ const TASK_STATUS_LABELS: Record<string, string> = {
   reused:  'Reutilizada ✓',
 }
 
-interface PlanPreviewCardProps {
-  plan:       PipelinePlan
-  pipelineId: string
-  onApprove:  (pipelineId: string) => void
+const PIPELINE_STATUS_CONFIG: Record<string, { label: string; textClass: string; bgClass: string }> = {
+  pending:   { label: 'Aguardando execução', textClass: 'text-[var(--status-pending-text)]', bgClass: 'bg-[var(--status-pending-bg)]' },
+  running:   { label: 'Em execução',         textClass: 'text-[var(--status-running-text)]', bgClass: 'bg-[var(--status-running-bg)]' },
+  completed: { label: 'Concluído',           textClass: 'text-[var(--status-done-text)]',    bgClass: 'bg-[var(--status-done-bg)]' },
+  failed:    { label: 'Falhou',              textClass: 'text-[var(--status-failed-text)]',  bgClass: 'bg-[var(--status-failed-bg)]' },
+  cancelled: { label: 'Cancelado',           textClass: 'text-[var(--status-pending-text)]', bgClass: 'bg-[var(--status-pending-bg)]' },
 }
 
-export function PlanPreviewCard({ plan, pipelineId, onApprove }: PlanPreviewCardProps) {
+function PipelineStatusBadge({ status }: { status: string }) {
+  const cfg = PIPELINE_STATUS_CONFIG[status] ?? PIPELINE_STATUS_CONFIG.pending
+  return (
+    <span className={cn(
+      'flex-1 text-center text-sm font-medium py-2 px-4 rounded-lg',
+      cfg.bgClass,
+      cfg.textClass,
+    )}>
+      {cfg.label}
+    </span>
+  )
+}
+
+interface PlanPreviewCardProps {
+  plan:            PipelinePlan
+  pipelineId:      string
+  pipelineStatus?: string
+  onApprove:       (pipelineId: string) => void
+}
+
+export function PlanPreviewCard({ plan, pipelineId, pipelineStatus, onApprove }: PlanPreviewCardProps) {
   const diagramRef               = useRef<HTMLDivElement>(null)
   const [svgContent, setSvgContent] = useState<string>('')
   const [approved,   setApproved]   = useState(false)
@@ -69,6 +91,16 @@ export function PlanPreviewCard({ plan, pipelineId, onApprove }: PlanPreviewCard
       {/* Header */}
       <div className="px-4 py-3 flex items-center justify-between">
         <div>
+          {(plan.product_sku || plan.product_name) && (
+            <div className="mb-1 flex items-center gap-2">
+              {plan.product_sku && (
+                <span className="font-mono text-sm text-brand">{plan.product_sku}</span>
+              )}
+              {plan.product_name && (
+                <span className="text-sm text-on-surface">{plan.product_name}</span>
+              )}
+            </div>
+          )}
           <span className="text-sm font-semibold text-on-surface">
             Plano: {plan.goal}
           </span>
@@ -122,38 +154,52 @@ export function PlanPreviewCard({ plan, pipelineId, onApprove }: PlanPreviewCard
 
       {/* Checkpoints */}
       {plan.checkpoints.length > 0 && (
-        <div className="px-4 pb-3">
-          <p className="text-[0.6875rem] text-on-surface-variant uppercase tracking-[0.05em] mb-1">
-            Checkpoints de aprovação:
-          </p>
-          {plan.checkpoints.map((cp, i) => (
-            <p key={i} className="text-sm text-on-surface flex items-center gap-2">
-              • Após <strong>{cp.after_agent}</strong>: {cp.description}
-            </p>
-          ))}
+        <div className="px-4 pb-3 space-y-2">
+          <h4 className="text-[0.6875rem] font-semibold uppercase tracking-[0.05em] text-on-surface-variant">
+            Checkpoints de aprovação
+          </h4>
+          <ul className="space-y-1">
+            {plan.checkpoints.map((cp, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm">
+                <span className="text-brand mt-0.5 shrink-0">✓</span>
+                <span>
+                  <span className="text-on-surface-variant">Após </span>
+                  <span className="font-mono text-on-surface">{cp.after_agent}</span>
+                  <span className="text-on-surface-variant">: </span>
+                  <span className="text-on-surface">{cp.description}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
       {/* Ações */}
       <div className="px-4 pb-4 flex gap-2">
-        <Button
-          onClick={handleApprove}
-          disabled={approved}
-          className="flex-1 bg-gradient-to-br from-[#F28705] to-[#FFB690] text-[#131314]
-            font-medium hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
-            transition-shadow duration-150 disabled:opacity-50"
-        >
-          {approved ? 'Aprovado ✓' : 'Aprovar e executar'}
-        </Button>
-        <Button
-          variant="outline"
-          disabled={approved}
-          className="border-outline-variant/20 bg-transparent text-on-surface
-            hover:bg-surface-high transition-colors duration-150 disabled:opacity-50"
-          onClick={() => {/* Cancelar — usuário digita resposta alternativa */}}
-        >
-          Cancelar
-        </Button>
+        {(!pipelineStatus || pipelineStatus === 'plan_preview') ? (
+          <>
+            <Button
+              onClick={handleApprove}
+              disabled={approved}
+              className="flex-1 bg-gradient-to-br from-[#F28705] to-[#FFB690] text-[#131314]
+                font-medium hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
+                transition-shadow duration-150 disabled:opacity-50"
+            >
+              {approved ? 'Aprovado ✓' : 'Aprovar e executar'}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={approved}
+              className="border-outline-variant/20 bg-transparent text-on-surface
+                hover:bg-surface-high transition-colors duration-150 disabled:opacity-50"
+              onClick={() => {/* Cancelar — usuário digita resposta alternativa */}}
+            >
+              Cancelar
+            </Button>
+          </>
+        ) : (
+          <PipelineStatusBadge status={pipelineStatus} />
+        )}
       </div>
     </div>
   )

@@ -201,7 +201,14 @@ async function persistPlanPreview(
     product_id:        plan.product_id,
     goal:              plan.goal,
     deliverable_agent: plan.deliverable,
-    plan:              { tasks: plan.tasks, checkpoints: plan.checkpoints },
+    plan:              {
+      tasks:              plan.tasks,
+      checkpoints:        plan.checkpoints,
+      mermaid:            plan.mermaid,
+      estimated_cost_usd: plan.estimated_cost_usd,
+      product_sku:        plan.product_sku,
+      product_name:       plan.product_name,
+    },
     state:             {},
     status:            'plan_preview',
     product_version:   productVersion,
@@ -492,39 +499,19 @@ export async function POST(req: Request) {
 
           const forceRefresh = input.force_refresh || detectForceRefresh(input.message);
           const plan = await planPipeline(goal as GoalName, product.id, forceRefresh, supabase);
+          plan.product_sku  = product.sku;
+          plan.product_name = product.name;
 
           // Persiste como plan_preview — aguarda aprovação do usuário
           const { pipeline_id } = await persistPlanPreview(plan, forceRefresh, supabase);
 
           emit({ type: 'plan_preview', plan, pipeline_id });
 
-          // Busca knowledge existente para incluir no resumo
-          const knowledge = await getProductKnowledge(product.id, supabase);
-          const knownTypes = knowledge.map((k) => k.artifact_type).join(', ') || 'nenhum';
-
-          const pendingCount = plan.tasks.filter((t: PlannedTask) => t.status === 'pending').length;
-          const reusedCount  = plan.tasks.filter((t: PlannedTask) => t.status === 'reused').length;
-
-          const summary = [
-            `Plano montado para **${goal}** no produto **${product.name}** (${product.sku}):`,
-            '',
-            '```mermaid',
-            plan.mermaid,
-            '```',
-            '',
-            `• Tasks novas: **${pendingCount}** | Reutilizadas do cache: **${reusedCount}**`,
-            `• Custo estimado: **$${plan.estimated_cost_usd.toFixed(4)}** (budget: $${plan.budget_usd})`,
-            `• Dados já disponíveis: ${knownTypes}`,
-            '',
-            'Posso executar? Responda **"sim"** ou **"aprovar"** para iniciar o pipeline.',
-          ].join('\n');
-
           if (conversationId) {
-            await saveMessage(supabase, conversationId, 'assistant', summary, pipeline_id, {
+            await saveMessage(supabase, conversationId, 'assistant', '[plan_preview]', pipeline_id, {
               plan_preview: true,
             });
           }
-          emit({ type: 'message', content: summary });
         }
 
         // ── approve_plan ──────────────────────────────────────────────────────

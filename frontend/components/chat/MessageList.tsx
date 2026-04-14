@@ -82,6 +82,7 @@ function MessageBubble({
         <PlanPreviewCard
           plan={msg.planPreview.plan}
           pipelineId={msg.planPreview.pipeline_id}
+          pipelineStatus={msg.planPreview.pipeline_status}
           onApprove={onApprovePlan}
         />
       )}

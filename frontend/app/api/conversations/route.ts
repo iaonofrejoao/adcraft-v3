@@ -26,7 +26,7 @@ export async function GET(req: Request) {
 
   let query = supabase
     .from('conversations')
-    .select('id, title, created_at, last_message_at, user_id')
+    .select('id, title, created_at, last_message_at, user_id', { count: 'exact' })
     .order('last_message_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);

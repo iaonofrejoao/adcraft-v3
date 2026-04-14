@@ -1,7 +1,9 @@
 'use client'
 import Link from 'next/link'
+import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useConversations } from '@/hooks/useConversations'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 const NAV = [
   { href: '/',          label: 'Chat',      icon: '💬' },
@@ -21,10 +23,35 @@ function timeAgo(iso: string): string {
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { conversations, createConversation } = useConversations()
+  const {
+    conversations,
+    hasMore,
+    isLoadingMore,
+    loadMore,
+    createConversation,
+  } = useConversations()
+
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMore, isLoadingMore, loadMore])
 
   return (
-    <aside className="flex flex-col w-56 shrink-0 bg-[#1C1B1C] overflow-y-auto">
+    <aside className="flex h-screen flex-col w-56 shrink-0 bg-[#1C1B1C]">
 
       {/* Logo */}
       <div className="px-4 py-4">
@@ -71,34 +98,55 @@ export function Sidebar() {
         </button>
       </div>
 
-      <div className="flex-1 px-2 pb-4 pt-1 space-y-0.5 overflow-y-auto">
-        {conversations.length === 0 ? (
-          <p className="px-3 py-2 text-[0.6875rem] text-[#6B6460]">
-            Nenhuma conversa ainda
-          </p>
-        ) : (
-          conversations.map((conv) => {
-            const active = pathname === '/' && typeof window !== 'undefined' &&
-              new URLSearchParams(window.location.search).get('conv') === conv.id
-            return (
-              <Link
-                key={conv.id}
-                href={`/?conv=${conv.id}`}
-                className={`block px-3 py-2 rounded transition-colors duration-150 ${
-                  active
-                    ? 'bg-[#2A2829] text-[#E8E3DD]'
-                    : 'text-[#9E9489] hover:bg-[#2A2829]'
-                }`}
-              >
-                <span className="block truncate text-sm text-[#E8E3DD]">{conv.title}</span>
-                <span className="text-[0.6875rem] font-mono text-[#6B6460]">
-                  {timeAgo(conv.updated_at)}
-                </span>
-              </Link>
-            )
-          })
-        )}
-      </div>
+      <ScrollArea className="flex-1 h-0">
+        <div className="px-2 pb-4 pt-1 space-y-0.5">
+          {conversations.length === 0 ? (
+            <p className="px-3 py-2 text-[0.6875rem] text-[#6B6460]">
+              Nenhuma conversa ainda
+            </p>
+          ) : (
+            <>
+              {conversations.map((conv) => {
+                const active = pathname === '/' && typeof window !== 'undefined' &&
+                  new URLSearchParams(window.location.search).get('conv') === conv.id
+                return (
+                  <Link
+                    key={conv.id}
+                    href={`/?conv=${conv.id}`}
+                    className={`block px-3 py-2 rounded transition-colors duration-150 ${
+                      active
+                        ? 'bg-[#2A2829] text-[#E8E3DD]'
+                        : 'text-[#9E9489] hover:bg-[#2A2829]'
+                    }`}
+                  >
+                    <span className="block truncate text-sm text-[#E8E3DD]">{conv.title}</span>
+                    <span className="text-[0.6875rem] font-mono text-[#6B6460]">
+                      {timeAgo(conv.updated_at)}
+                    </span>
+                  </Link>
+                )
+              })}
+
+              {/* Sentinel: IntersectionObserver aciona loadMore quando visível */}
+              <div ref={sentinelRef} className="h-1" />
+
+              {isLoadingMore && (
+                <div className="px-3 py-2 space-y-1.5">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-8 rounded bg-[#2A2829] animate-pulse" />
+                  ))}
+                </div>
+              )}
+
+              {!hasMore && (
+                <p className="px-3 py-2 text-center text-[0.625rem] text-[#6B6460]">
+                  Você viu todas as conversas
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      </ScrollArea>
     </aside>
   )
 }

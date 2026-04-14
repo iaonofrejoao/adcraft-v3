@@ -16,8 +16,15 @@ import { createClient } from '@supabase/supabase-js';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL_LOCAL ?? 'http://localhost:3000';
 
-const SUPABASE_URL   = 'https://yocbgubxvxpqctbpgpfz.supabase.co';
-const SUPABASE_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvY2JndWJ4dnhwcWN0YnBncGZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTM5OTkyNiwiZXhwIjoyMDkwOTc1OTI2fQ.9HXOkisoLrYVmdN73mxTS-eO7iXHevePyU6en3lAvPw';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY
+  ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  throw new Error(
+    'SUPABASE_URL e SUPABASE_SERVICE_KEY devem estar no .env'
+  );
+}
 
 // UUID fixo para o usuário de teste
 const TEST_USER_ID = '00000000-0000-0000-0000-000000000001';

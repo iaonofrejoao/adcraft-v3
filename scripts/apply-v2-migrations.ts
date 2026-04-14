@@ -8,8 +8,11 @@
 import postgres from 'postgres';
 import fs from 'fs';
 
-const DB_URL =
-  'postgresql://postgres:2UhYCyYFJxZTn8hF@db.yocbgubxvxpqctbpgpfz.supabase.co:5432/postgres';
+const DB_URL = process.env.DATABASE_URL;
+
+if (!DB_URL) {
+  throw new Error('DATABASE_URL deve estar no .env');
+}
 
 async function runFile(sql: postgres.Sql, file: string, splitOnBreakpoint = false) {
   console.log(`\nApplying ${file} …`);

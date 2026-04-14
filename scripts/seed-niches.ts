@@ -84,9 +84,11 @@ const NICHES = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const DB_URL =
-  process.env.DATABASE_URL ??
-  'postgresql://postgres.yocbgubxvxpqctbpgpfz:2UhYCyYFJxZTn8hF@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require';
+const DB_URL = process.env.DATABASE_URL;
+
+if (!DB_URL) {
+  throw new Error('DATABASE_URL deve estar no .env');
+}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 

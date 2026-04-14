@@ -48,6 +48,11 @@ dist/
 # .env.example é PERMITIDO (não listado aqui)
 
 # ============================================================
+# Claude Code — configuração local (pode conter credenciais)
+# ============================================================
+.claude/settings.local.json
+
+# ============================================================
 # Credenciais e service accounts
 # ============================================================
 # Qualquer JSON cujo nome contenha: credentials, service-account,

@@ -16,6 +16,10 @@ if (!DB_URL) {
 
 async function runFile(sql: postgres.Sql, file: string, splitOnBreakpoint = false) {
   console.log(`\nApplying ${file} …`);
+
+  // Limpa qualquer transação abortada da execução anterior
+  try { await sql.unsafe('ROLLBACK'); } catch { /* noop — sem transação aberta */ }
+
   const content = fs.readFileSync(file, 'utf8');
   const statements = splitOnBreakpoint
     ? content.split('--> statement-breakpoint').map((s) => s.trim()).filter(Boolean)
@@ -28,6 +32,8 @@ async function runFile(sql: postgres.Sql, file: string, splitOnBreakpoint = fals
       ok++;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
+      // Rollback para limpar estado após qualquer erro
+      try { await sql.unsafe('ROLLBACK'); } catch { /* noop */ }
       if (msg.includes('already exists') || msg.includes('duplicate')) {
         skip++;
       } else {
@@ -57,6 +63,39 @@ async function main() {
 
   // 5. Niche intelligence RPCs
   await runFile(sql, 'migrations/v2/0003_niche_intelligence_rpcs.sql');
+
+  // 6. llm_calls payload column
+  await runFile(sql, 'migrations/v2/0004_llm_calls_payload.sql');
+
+  // 7. tasks confirmed + oversized columns
+  await runFile(sql, 'migrations/v2/0005_tasks_confirmed_oversized.sql');
+
+  // 8. Complete RLS policies
+  await runFile(sql, 'migrations/v2/0006_complete_rls.sql');
+
+  // 9. Fix find_nearest_niche type
+  await runFile(sql, 'migrations/v2/0007_fix_find_nearest_niche_type.sql');
+
+  // 10. uuid default gen_random
+  await runFile(sql, 'migrations/v2/0008_uuid_default_gen_random.sql');
+
+  // 11. Schema integrity fixes
+  await runFile(sql, 'migrations/v2/0009_schema_integrity_fixes.sql');
+
+  // 12. Copy components approval flow
+  await runFile(sql, 'migrations/v2/0010_copy_components_approval_flow.sql');
+
+  // 13. FK: messages.pipeline_id → pipelines.id
+  await runFile(sql, 'migrations/v2/0011_add_messages_pipeline_fk.sql');
+
+  // Força reload do schema cache do PostgREST
+  console.log('\nReloading PostgREST schema cache…');
+  try {
+    await sql.unsafe("NOTIFY pgrst, 'reload schema'");
+    console.log('  schema cache reload notified.');
+  } catch (err) {
+    console.warn('  NOTIFY failed (not fatal):', err instanceof Error ? err.message : err);
+  }
 
   await sql.end();
   console.log('\nAll migrations applied.');

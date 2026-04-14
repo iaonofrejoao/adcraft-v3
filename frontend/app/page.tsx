@@ -16,10 +16,13 @@ function useJarvisChat(conversationId: string | null) {
   const [streaming, setStreaming]     = useState(false)
   const [pendingPipeline, setPending] = useState<string | null>(null)
   // Rastreia o ID ativo da conversa dentro da sessão (pode ser gerado pelo servidor)
-  const [activeConvId, setActiveConvId] = useState<string | null>(conversationId)
-  const idCounter = useRef(0)
+  const [activeConvId, setActiveConvId]       = useState<string | null>(conversationId)
+  // Quando true, o próximo disparo do useEffect de histórico é ignorado.
+  // Evita sobrescrever mensagens em memória quando conversation_created chega via SSE.
+  const skipHistoryLoad                        = useRef(false)
+  const idCounter                              = useRef(0)
 
-  // Sincroniza quando o usuário muda de conversa via URL
+  // Sincroniza quando o usuário muda de conversa via URL (click na sidebar, cold load)
   useEffect(() => {
     setActiveConvId(conversationId)
   }, [conversationId])
@@ -28,8 +31,12 @@ function useJarvisChat(conversationId: string | null) {
 
   // Carrega histórico da conversa ao montar / mudar conversa
   useEffect(() => {
-    if (!conversationId) return
-    fetch(`/api/conversations/${conversationId}`)
+    if (!activeConvId) return
+    if (skipHistoryLoad.current) {
+      skipHistoryLoad.current = false
+      return
+    }
+    fetch(`/api/conversations/${activeConvId}`)
       .then((r) => r.json())
       .then((d) => {
         const msgs: ChatMessage[] = (d.messages ?? []).map((m: {
@@ -88,7 +95,7 @@ function useJarvisChat(conversationId: string | null) {
         setMessages(msgs)
       })
       .catch(() => {})
-  }, [conversationId])
+  }, [activeConvId])
 
   const sendMessage = useCallback(async (text: string) => {
     // Adiciona mensagem do usuário imediatamente
@@ -145,6 +152,7 @@ function useJarvisChat(conversationId: string | null) {
           switch (event.type) {
             case 'conversation_created': {
               const newConvId = event.conversation_id as string
+              skipHistoryLoad.current = true   // não sobrescrever mensagens em memória
               setActiveConvId(newConvId)
               const url = new URL(window.location.href)
               url.searchParams.set('conv', newConvId)

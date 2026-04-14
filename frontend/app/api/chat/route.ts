@@ -352,13 +352,22 @@ async function saveMessage(
   pipelineId?: string,
   refs?: unknown,
 ): Promise<void> {
-  await supabase.from('messages').insert({
+  console.log('[saveMessage] inserting:', {
+    conversationId, role, contentPreview: content.slice(0, 50),
+  });
+
+  const { data, error } = await supabase.from('messages').insert({
     id:              randomUUID(),
     conversation_id: conversationId,
     role,
     content,
     references:      refs ?? null,
     pipeline_id:     pipelineId ?? null,
+  }).select();
+
+  console.log('[saveMessage] result:', {
+    error: error?.message,
+    inserted: data?.length,
   });
 
   await supabase

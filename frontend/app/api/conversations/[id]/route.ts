@@ -36,11 +36,16 @@ export async function GET(
     return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
   }
 
-  const { data: messages } = await supabase
+  const { data: messages, error: messagesError } = await supabase
     .from('messages')
     .select('id, role, content, references, pipeline_id, created_at, pipelines(plan, status, goal, deliverable_agent, budget_usd, product_id)')
     .eq('conversation_id', id)
     .order('created_at', { ascending: true });
+
+  if (messagesError) {
+    console.error('[GET conv] messages query error:', messagesError.message);
+    return NextResponse.json({ error: messagesError.message }, { status: 500 });
+  }
 
   return NextResponse.json({ ...conversation, messages: messages ?? [] });
 }

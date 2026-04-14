@@ -52,6 +52,15 @@
       não injetam o service client em contextos server-side. 
       Risco: função "funciona" mas retorna vazio 
       silenciosamente.
+      
+- [ ] Worker: gravar version/commit hash no start pra facilitar 
+      correlação entre retries e versões de código. No log:
+      "[task-runner] starting — version 377cc52"
+
+- [ ] Worker com hot reload (tsx --watch ou equivalente). 
+      Ontem a gente gastou tempo descobrindo que o worker 
+      estava rodando código antigo porque não tinha reload.
+      Evitaria hipótese B viva hoje também.
 
 ---
 

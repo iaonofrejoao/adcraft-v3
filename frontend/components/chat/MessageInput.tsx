@@ -6,12 +6,35 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { MentionPicker, type MentionItem } from './MentionPicker'
 
-interface MessageInputProps {
-  onSend:    (message: string) => void
-  disabled?: boolean
+// ─── Token parsing ─────────────────────────────────────────────────────────────
+type TextPart =
+  | { type: 'text';    value: string }
+  | { type: 'mention'; value: string }   // @SKU
+  | { type: 'command'; value: string }   // /ação
+
+const TOKEN_REGEX = /(@\S+|\/\S+)/g
+
+function parseTokens(text: string): TextPart[] {
+  const parts: TextPart[] = []
+  let last = 0
+  for (const match of text.matchAll(TOKEN_REGEX)) {
+    if (match.index! > last) {
+      parts.push({ type: 'text', value: text.slice(last, match.index) })
+    }
+    const value = match[0]
+    parts.push({
+      type: value.startsWith('@') ? 'mention' : 'command',
+      value,
+    })
+    last = match.index! + value.length
+  }
+  if (last < text.length) {
+    parts.push({ type: 'text', value: text.slice(last) })
+  }
+  return parts
 }
 
-// Detecta trigger @ ou / e a query que vem depois — lógica original preservada
+// ─── Trigger detection ─────────────────────────────────────────────────────────
 function detectTrigger(
   text: string,
   cursor: number,
@@ -25,12 +48,19 @@ function detectTrigger(
   return { trigger: null, query: '', triggerStart: -1 }
 }
 
+// ─── Component ─────────────────────────────────────────────────────────────────
+interface MessageInputProps {
+  onSend:    (message: string) => void
+  disabled?: boolean
+}
+
 export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
   const [text,           setText]           = useState('')
   const [mentionTrigger, setMentionTrigger] = useState<'@' | '/' | null>(null)
   const [mentionQuery,   setMentionQuery]   = useState('')
   const [triggerStart,   setTriggerStart]   = useState(-1)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const overlayRef  = useRef<HTMLDivElement>(null)
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val    = e.target.value
@@ -62,7 +92,8 @@ export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
   const dismiss = useCallback(() => setMentionTrigger(null), [])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !mentionTrigger) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      if (mentionTrigger) return   // picker open — deixa o MentionPicker tratar
       e.preventDefault()
       submit()
     }
@@ -102,15 +133,44 @@ export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
           disabled={disabled}
           placeholder="Pergunte ao Jarvis ou use @ para produtos e / para ações..."
           rows={2}
+          onScroll={(e) => {
+            if (overlayRef.current) {
+              overlayRef.current.scrollTop = e.currentTarget.scrollTop
+            }
+          }}
           className={cn(
             'resize-none min-h-[52px] max-h-40 w-full',
             'bg-surface-low border-outline-variant/20 rounded-xl',
-            'text-sm text-on-surface placeholder:text-on-surface-muted',
+            // text-transparent hides the real characters; caret-on-surface keeps the cursor visible
+            'text-sm text-transparent caret-on-surface placeholder:text-on-surface-muted',
             'px-5 py-4 pb-14',                             // pb-14 → room for action row
             'focus-visible:border-brand focus-visible:ring-brand/20',
             'transition-all duration-150',
           )}
         />
+
+        {/* Highlight overlay — same metrics as Textarea, pointer-events-none so input is unaffected.
+            inset-px offsets the 1px border so text content aligns pixel-perfectly. */}
+        <div
+          ref={overlayRef}
+          aria-hidden
+          className={cn(
+            'absolute inset-px',              // accounts for 1px textarea border
+            'px-5 py-4 pb-14',               // mirrors textarea padding exactly
+            'text-sm leading-5 font-sans',   // mirrors textarea font metrics
+            'whitespace-pre-wrap break-words overflow-hidden',
+            'pointer-events-none select-none',
+            'rounded-xl text-on-surface',
+          )}
+        >
+          {parseTokens(text).map((part, i) =>
+            part.type === 'text'
+              ? <span key={i}>{part.value}</span>
+              : <span key={i} className="text-brand">{part.value}</span>
+          )}
+          {/* Zero-width space prevents height collapse when text ends with \n */}
+          &#8203;
+        </div>
 
         {/* Action row: attach + send — absolutely inside the textarea */}
         <div className="absolute bottom-3 right-3 flex items-center gap-2">

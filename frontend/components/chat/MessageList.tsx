@@ -68,7 +68,7 @@ function MessageBubble({
   // Assistant message
   return (
     <JarvisMessageWrapper>
-      {msg.content && (
+      {msg.content && !msg.planPreview && (
         <div className="text-sm text-on-surface leading-relaxed">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}

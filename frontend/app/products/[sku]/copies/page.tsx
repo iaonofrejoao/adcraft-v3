@@ -88,8 +88,8 @@ export default function CopiesPage() {
           </div>
           <Link
             href={`/?msg=@${sku}+/copy`}
-            className="text-sm px-4 py-2 rounded font-medium text-[#131314]
-              bg-gradient-to-br from-[#F28705] to-[#FFB690]
+            className="text-sm px-4 py-2 rounded font-medium text-primary-foreground
+              bg-gradient-to-br from-brand to-brand-end
               hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
               transition-shadow duration-150"
           >
@@ -196,8 +196,8 @@ function CopiesHeader({
 
           <Link
             href={`/?msg=@${sku}+/copy`}
-            className="text-sm px-3 py-1.5 rounded font-medium text-[#131314]
-              bg-gradient-to-br from-[#F28705] to-[#FFB690]
+            className="text-sm px-3 py-1.5 rounded font-medium text-primary-foreground
+              bg-gradient-to-br from-brand to-brand-end
               hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
               transition-shadow duration-150"
           >

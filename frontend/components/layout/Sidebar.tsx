@@ -51,15 +51,15 @@ export function Sidebar() {
   }, [hasMore, isLoadingMore, loadMore])
 
   return (
-    <aside className="flex h-screen flex-col w-56 shrink-0 bg-[#1C1B1C]">
+    <aside className="flex h-screen flex-col w-56 shrink-0 bg-surface-low">
 
       {/* Logo */}
       <div className="px-4 py-4">
-        <span className="text-lg font-semibold text-[#F28705]">
-          AdCraft <span className="text-xs font-normal text-[#6B6460]">v2</span>
+        <span className="text-lg font-semibold text-brand">
+          AdCraft <span className="text-xs font-normal text-on-surface-muted">v2</span>
         </span>
       </div>
-      <div className="h-px bg-[#584237]/15" />
+      <div className="h-px bg-outline-variant/15" />
 
       {/* Nav principal */}
       <nav className="px-2 pt-3 pb-1 space-y-0.5">
@@ -71,8 +71,8 @@ export function Sidebar() {
               href={href}
               className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors duration-150 ${
                 active
-                  ? 'bg-[#F28705]/10 text-[#F28705] border-l-2 border-[#F28705]'
-                  : 'text-[#9E9489] hover:bg-[#2A2829]'
+                  ? 'bg-brand/10 text-brand border-l-2 border-brand'
+                  : 'text-on-surface-variant hover:bg-surface-high'
               }`}
             >
               <span className="text-base">{icon}</span>
@@ -82,16 +82,16 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="h-px bg-[#584237]/15 my-2" />
+      <div className="h-px bg-outline-variant/15 my-2" />
 
       {/* Histórico de conversas */}
       <div className="px-4 pb-1.5 flex items-center justify-between">
-        <span className="text-[0.6875rem] font-medium uppercase tracking-[0.05em] text-[#6B6460]">
+        <span className="text-[0.6875rem] font-medium uppercase tracking-[0.05em] text-on-surface-muted">
           Conversas
         </span>
         <button
           onClick={createConversation}
-          className="w-5 h-5 flex items-center justify-center rounded text-xs font-bold bg-[#F28705]/15 text-[#F28705] hover:bg-[#F28705]/25 transition-colors duration-150"
+          className="w-5 h-5 flex items-center justify-center rounded text-xs font-bold bg-brand/15 text-brand hover:bg-brand/25 transition-colors duration-150"
           title="Nova conversa"
         >
           +
@@ -101,7 +101,7 @@ export function Sidebar() {
       <ScrollArea className="flex-1 h-0">
         <div className="px-2 pb-4 pt-1 space-y-0.5">
           {conversations.length === 0 ? (
-            <p className="px-3 py-2 text-[0.6875rem] text-[#6B6460]">
+            <p className="px-3 py-2 text-[0.6875rem] text-on-surface-muted">
               Nenhuma conversa ainda
             </p>
           ) : (
@@ -115,12 +115,12 @@ export function Sidebar() {
                     href={`/?conv=${conv.id}`}
                     className={`block px-3 py-2 rounded transition-colors duration-150 ${
                       active
-                        ? 'bg-[#2A2829] text-[#E8E3DD]'
-                        : 'text-[#9E9489] hover:bg-[#2A2829]'
+                        ? 'bg-surface-high text-on-surface'
+                        : 'text-on-surface-variant hover:bg-surface-high'
                     }`}
                   >
-                    <span className="block truncate text-sm text-[#E8E3DD]">{conv.title}</span>
-                    <span className="text-[0.6875rem] font-mono text-[#6B6460]">
+                    <span className="block truncate text-sm text-on-surface">{conv.title}</span>
+                    <span className="text-[0.6875rem] font-mono text-on-surface-muted">
                       {timeAgo(conv.updated_at)}
                     </span>
                   </Link>
@@ -133,13 +133,13 @@ export function Sidebar() {
               {isLoadingMore && (
                 <div className="px-3 py-2 space-y-1.5">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-8 rounded bg-[#2A2829] animate-pulse" />
+                    <div key={i} className="h-8 rounded bg-surface-high animate-pulse" />
                   ))}
                 </div>
               )}
 
               {!hasMore && (
-                <p className="px-3 py-2 text-center text-[0.625rem] text-[#6B6460]">
+                <p className="px-3 py-2 text-center text-[0.625rem] text-on-surface-muted">
                   Você viu todas as conversas
                 </p>
               )}

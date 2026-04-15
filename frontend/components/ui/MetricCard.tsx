@@ -16,17 +16,17 @@ export function MetricCard({
   format = 'number',
 }: MetricCardProps) {
   return (
-    <div className="bg-[#201F20] border border-[#584237]/15 rounded-md p-4">
-      <p className="text-[0.6875rem] font-medium uppercase tracking-[0.02em] text-[#6B6460] mb-2">
+    <div className="bg-surface-container border border-outline-variant/15 rounded-md p-4">
+      <p className="text-[0.6875rem] font-medium uppercase tracking-[0.02em] text-on-surface-muted mb-2">
         {label}
       </p>
-      <p className="text-[2.75rem] font-semibold leading-none tracking-[-0.02em] font-mono text-[#E8E3DD]">
+      <p className="text-[2.75rem] font-semibold leading-none tracking-[-0.02em] font-mono text-on-surface">
         {formatValue(value, format)}
       </p>
       {delta && (
         <p className={cn(
           'text-[0.6875rem] font-mono mt-1',
-          deltaPositive ? 'text-[#4ADE80]' : 'text-[#F87171]'
+          deltaPositive ? 'text-status-done-text' : 'text-status-failed-text'
         )}>
           {delta}
         </p>

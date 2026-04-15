@@ -9,29 +9,29 @@ const statusConfig: Record<TaskStatus, {
 }> = {
   pending: {
     label: 'Pendente',
-    classes: 'bg-[rgba(161,161,170,0.15)] text-[#A1A1AA]',
-    dot: 'bg-[#A1A1AA]',
+    classes: 'bg-status-pending text-status-pending-text',
+    dot: 'bg-status-pending-text',
   },
   running: {
     label: 'Executando',
-    classes: 'bg-[rgba(59,130,246,0.15)] text-[#60A5FA]',
-    dot: 'bg-[#60A5FA]',
+    classes: 'bg-status-running text-status-running-text',
+    dot: 'bg-status-running-text',
     animate: true,
   },
   done: {
     label: 'Concluído',
-    classes: 'bg-[rgba(34,197,94,0.15)] text-[#4ADE80]',
-    dot: 'bg-[#4ADE80]',
+    classes: 'bg-status-done text-status-done-text',
+    dot: 'bg-status-done-text',
   },
   failed: {
     label: 'Falha',
-    classes: 'bg-[rgba(239,68,68,0.15)] text-[#F87171]',
-    dot: 'bg-[#F87171]',
+    classes: 'bg-status-failed text-status-failed-text',
+    dot: 'bg-status-failed-text',
   },
   paused: {
     label: 'Pausado',
-    classes: 'bg-[rgba(245,158,11,0.15)] text-[#FCD34D]',
-    dot: 'bg-[#FCD34D]',
+    classes: 'bg-status-paused text-status-paused-text',
+    dot: 'bg-status-paused-text',
   },
 }
 

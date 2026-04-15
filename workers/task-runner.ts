@@ -5,6 +5,7 @@
 
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { execSync } from 'node:child_process';
 import { eq, sql } from 'drizzle-orm';
 import { db } from './lib/db';
 import { tasks, pipelines } from '../frontend/lib/schema/index';
@@ -23,6 +24,17 @@ import { runVideoMaker }         from './agents/video-maker';
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // ── Configuração ──────────────────────────────────────────────────────────────
+
+function getGitCommit(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', {
+      cwd: __dirname,
+      encoding: 'utf-8',
+    }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
 const POLL_INTERVAL_MS = 5_000;    // 5 segundos
 const MAX_RETRIES      = 3;
@@ -208,7 +220,8 @@ async function runOnce(): Promise<void> {
 // ── Loop principal ────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  console.info('[task-runner] starting — poll every', POLL_INTERVAL_MS, 'ms');
+  const commit = getGitCommit();
+  console.info(`[task-runner] starting — version ${commit} — poll every ${POLL_INTERVAL_MS} ms`);
 
   // eslint-disable-next-line no-constant-condition
   while (true) {

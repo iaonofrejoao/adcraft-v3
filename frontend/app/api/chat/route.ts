@@ -357,11 +357,7 @@ async function saveMessage(
   pipelineId?: string,
   refs?: unknown,
 ): Promise<void> {
-  console.log('[saveMessage] inserting:', {
-    conversationId, role, contentPreview: content.slice(0, 50),
-  });
-
-  const { data, error } = await supabase.from('messages').insert({
+  const { error } = await supabase.from('messages').insert({
     id:              randomUUID(),
     conversation_id: conversationId,
     role,
@@ -370,10 +366,7 @@ async function saveMessage(
     pipeline_id:     pipelineId ?? null,
   }).select();
 
-  console.log('[saveMessage] result:', {
-    error: error?.message,
-    inserted: data?.length,
-  });
+  if (error) console.error('[saveMessage] insert error:', error.message);
 
   await supabase
     .from('conversations')

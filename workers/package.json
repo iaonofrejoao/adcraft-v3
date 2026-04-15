@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/workers/task-runner.js",
-    "dev": "tsx task-runner.ts",
+    "dev": "tsx --watch task-runner.ts",
     "test": "vitest run"
   },
   "dependencies": {

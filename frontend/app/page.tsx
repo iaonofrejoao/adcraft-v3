@@ -21,6 +21,9 @@ function useJarvisChat(conversationId: string | null) {
   // Evita sobrescrever mensagens em memória quando conversation_created chega via SSE.
   const skipHistoryLoad                        = useRef(false)
   const idCounter                              = useRef(0)
+  // Controle de reconexão SSE
+  const isStreamingRef                         = useRef(false)
+  const retryCountRef                          = useRef(0)
 
   // Sincroniza quando o usuário muda de conversa via URL (click na sidebar, cold load)
   useEffect(() => {
@@ -93,6 +96,14 @@ function useJarvisChat(conversationId: string | null) {
           return base
         })
         setMessages(msgs)
+
+        // Restaura pendingPipeline se houver plano aguardando aprovação
+        const pendingMsg = msgs.find(
+          (m) => m.planPreview?.pipeline_status === 'plan_preview',
+        )
+        if (pendingMsg?.planPreview) {
+          setPending(pendingMsg.planPreview.pipeline_id)
+        }
       })
       .catch(() => {})
   }, [activeConvId])
@@ -102,125 +113,158 @@ function useJarvisChat(conversationId: string | null) {
     const userMsg: ChatMessage = { id: nextId(), role: 'user', content: text }
     setMessages((prev) => [...prev, userMsg])
     setStreaming(true)
+    isStreamingRef.current = true
+    retryCountRef.current  = 0
 
     // Cria placeholder da resposta do assistente
     const assistantId = nextId()
     const assistantMsg: ChatMessage = { id: assistantId, role: 'assistant', content: '' }
     setMessages((prev) => [...prev, assistantMsg])
 
-    try {
-      const body: Record<string, unknown> = {
-        message:         text,
-        conversation_id: activeConvId ?? undefined,
-        force_refresh:   false,
-      }
-      if (pendingPipeline) body.pending_pipeline_id = pendingPipeline
+    async function startStream(convId: string | null): Promise<void> {
+      try {
+        const body: Record<string, unknown> = {
+          message:         text,
+          conversation_id: convId ?? undefined,
+          force_refresh:   false,
+        }
+        if (pendingPipeline) body.pending_pipeline_id = pendingPipeline
 
-      const resp = await fetch('/api/chat', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
-      })
+        const resp = await fetch('/api/chat', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(body),
+        })
 
-      if (!resp.ok || !resp.body) {
-        setMessages((prev) => prev.map((m) =>
-          m.id === assistantId ? { ...m, content: 'Erro ao conectar ao Jarvis.' } : m
-        ))
-        return
-      }
+        if (!resp.ok || !resp.body) {
+          throw new Error(`HTTP ${resp.status}`)
+        }
 
-      const reader  = resp.body.getReader()
-      const decoder = new TextDecoder()
-      let   buffer  = ''
+        const reader  = resp.body.getReader()
+        const decoder = new TextDecoder()
+        let   buffer  = ''
+        // Guarda convId resolvido pelo servidor (conversation_created event)
+        let   resolvedConvId = convId
 
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
 
-        const lines = buffer.split('\n\n')
-        buffer = lines.pop() ?? ''
+          const lines = buffer.split('\n\n')
+          buffer = lines.pop() ?? ''
 
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          const raw = line.slice(6).trim()
-          if (!raw) continue
-          let event: Record<string, unknown>
-          try { event = JSON.parse(raw) } catch { continue }
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            const raw = line.slice(6).trim()
+            if (!raw) continue
+            let event: Record<string, unknown>
+            try { event = JSON.parse(raw) } catch { continue }
 
-          switch (event.type) {
-            case 'conversation_created': {
-              const newConvId = event.conversation_id as string
-              skipHistoryLoad.current = true   // não sobrescrever mensagens em memória
-              setActiveConvId(newConvId)
-              const url = new URL(window.location.href)
-              url.searchParams.set('conv', newConvId)
-              window.history.replaceState({}, '', url.toString())
-              break
+            switch (event.type) {
+              case 'conversation_created': {
+                const newConvId = event.conversation_id as string
+                resolvedConvId = newConvId
+                skipHistoryLoad.current = true   // não sobrescrever mensagens em memória
+                setActiveConvId(newConvId)
+                const url = new URL(window.location.href)
+                url.searchParams.set('conv', newConvId)
+                window.history.replaceState({}, '', url.toString())
+                break
+              }
+
+              case 'status':
+                setMessages((prev) => prev.map((m) =>
+                  m.id === assistantId ? { ...m, statusMessage: event.message as string } : m
+                ))
+                break
+
+              case 'message':
+                setMessages((prev) => prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, content: m.content + (event.content as string), statusMessage: undefined }
+                    : m
+                ))
+                break
+
+              case 'plan_preview':
+                setPending(event.pipeline_id as string)
+                setMessages((prev) => prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, planPreview: { plan: event.plan as PipelinePlan, pipeline_id: event.pipeline_id as string } }
+                    : m
+                ))
+                break
+
+              case 'pipeline_created':
+                setPending(null)
+                break
+
+              case 'pipeline_status':
+                setMessages((prev) => prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, pipelineStatus: event.pipeline as Record<string, unknown> }
+                    : m
+                ))
+                break
+
+              case 'error':
+                setMessages((prev) => prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, content: `Erro: ${event.error}`, statusMessage: undefined }
+                    : m
+                ))
+                break
+
+              case 'done':
+                isStreamingRef.current = false
+                setStreaming(false)
+                break
             }
-
-            case 'status':
-              setMessages((prev) => prev.map((m) =>
-                m.id === assistantId ? { ...m, statusMessage: event.message as string } : m
-              ))
-              break
-
-            case 'message':
-              setMessages((prev) => prev.map((m) =>
-                m.id === assistantId
-                  ? { ...m, content: m.content + (event.content as string), statusMessage: undefined }
-                  : m
-              ))
-              break
-
-            case 'plan_preview':
-              setPending(event.pipeline_id as string)
-              setMessages((prev) => prev.map((m) =>
-                m.id === assistantId
-                  ? { ...m, planPreview: { plan: event.plan as PipelinePlan, pipeline_id: event.pipeline_id as string } }
-                  : m
-              ))
-              break
-
-            case 'pipeline_created':
-              setPending(null)
-              break
-
-            case 'pipeline_status':
-              setMessages((prev) => prev.map((m) =>
-                m.id === assistantId
-                  ? { ...m, pipelineStatus: event.pipeline as Record<string, unknown> }
-                  : m
-              ))
-              break
-
-            case 'error':
-              setMessages((prev) => prev.map((m) =>
-                m.id === assistantId
-                  ? { ...m, content: `Erro: ${event.error}`, statusMessage: undefined }
-                  : m
-              ))
-              break
-
-            case 'done':
-              setStreaming(false)
-              break
           }
         }
+        // Usa o convId resolvido para manter coerência (não afeta lógica actual, mas
+        // evita que um retry use o ID antigo antes de conversation_created chegar)
+        void resolvedConvId
+      } catch (err) {
+        if (isStreamingRef.current && retryCountRef.current < 3) {
+          retryCountRef.current += 1
+          console.warn(`[SSE] connection error, retrying (${retryCountRef.current}/3) in 3s…`, err)
+          setMessages((prev) => prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, statusMessage: `Reconectando… (tentativa ${retryCountRef.current}/3)` }
+              : m
+          ))
+          await new Promise((resolve) => setTimeout(resolve, 3000))
+          // Passa o convId corrente (pode ter sido actualizado por conversation_created)
+          if (isStreamingRef.current) {
+            await startStream(activeConvId)
+          }
+        } else {
+          console.error('[SSE] gave up after retries or stream already cancelled', err)
+          isStreamingRef.current = false
+          setMessages((prev) => prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: 'Conexão perdida. Recarregue a página ou tente novamente.', statusMessage: undefined }
+              : m
+          ))
+          setStreaming(false)
+        }
       }
-    } catch (err) {
-      setMessages((prev) => prev.map((m) =>
-        m.id === assistantId ? { ...m, content: 'Falha na conexão com o Jarvis.' } : m
-      ))
+    }
+
+    try {
+      await startStream(activeConvId)
     } finally {
+      isStreamingRef.current = false
       setStreaming(false)
     }
   }, [activeConvId, pendingPipeline])
 
   const approvePlan = useCallback((pipelineId: string) => {
-    sendMessage('sim, pode executar')
     setPending(pipelineId)
+    sendMessage('sim, pode executar')
   }, [sendMessage])
 
   return { messages, streaming, sendMessage, approvePlan }

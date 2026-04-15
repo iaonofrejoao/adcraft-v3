@@ -35,14 +35,20 @@ export interface KanbanBoardProps extends UseTasksReturn {
 }
 
 export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId }: KanbanBoardProps) {
+  // Merge 'skipped' into 'done' — skipped = resultado reutilizado, semântica de concluído
+  const mergedByStatus: typeof tasksByStatus = {
+    ...tasksByStatus,
+    done: [...(tasksByStatus['done'] ?? []), ...(tasksByStatus['skipped'] ?? [])],
+  }
+
   const filteredByStatus = filterPipelineId
     ? Object.fromEntries(
-        Object.entries(tasksByStatus).map(([status, tasks]) => [
+        Object.entries(mergedByStatus).map(([status, tasks]) => [
           status,
           tasks.filter((t) => t.pipeline_id === filterPipelineId),
         ])
       )
-    : tasksByStatus
+    : mergedByStatus
 
   if (isLoading) {
     return (

@@ -19,6 +19,15 @@ import {
 } from './dag-builder';
 import { renderMermaid } from './mermaid-renderer';
 import { createClient } from '../supabase';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
+// Falls back to service-role client — never the anon key — to avoid silent RLS failures.
+function getServiceClient(): ReturnType<typeof createClient> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Supabase service role key not configured');
+  return createSupabaseClient(url, key) as unknown as ReturnType<typeof createClient>;
+}
 
 // ── Estimativa de custo ─────────────────────────────────────────────────────
 
@@ -96,7 +105,7 @@ async function isFresh(
   freshnessDays: number,
   supabaseClient?: ReturnType<typeof createClient>
 ): Promise<FreshResult> {
-  const client = supabaseClient ?? createClient();
+  const client = supabaseClient ?? getServiceClient();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - freshnessDays);
 

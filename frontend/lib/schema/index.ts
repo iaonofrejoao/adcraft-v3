@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, integer, boolean, numeric, timestamp, customType } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, varchar, jsonb, integer, boolean, numeric, timestamp, customType } from "drizzle-orm/pg-core";
 
 const vector = customType<{ data: number[]; driverData: string }>({
   dataType() {
@@ -39,6 +39,7 @@ export const niches = pgTable("niches", {
 export const products = pgTable("products", {
   id: uuid("id").primaryKey(),
   name: text("name").notNull(),
+  platform: varchar("platform", { length: 100 }),
   niche_id: uuid("niche_id").references(() => niches.id),
   target_language: text("target_language").default('pt-BR'),
   ticket_price: numeric("ticket_price", { precision: 10, scale: 2 }),

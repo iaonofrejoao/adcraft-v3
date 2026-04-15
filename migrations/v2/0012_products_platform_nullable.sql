@@ -1,0 +1,22 @@
+-- Migration: 0012_products_platform_nullable.sql
+-- Remove NOT NULL de products.platform.
+--
+-- CONTEXTO:
+--   O campo platform era NOT NULL sem default no banco.
+--   O código em api/products/route.ts tinha fallback ?? 'hotmart',
+--   fazendo produtos com URL não reconhecida (ex: example.com) ficarem
+--   marcados como platform='hotmart' silenciosamente.
+--   Após esta migration, platform=NULL significa "não detectado/informado"
+--   e o usuário pode corrigir manualmente.
+--
+-- PRODUTOS EXISTENTES:
+--   O UPDATE abaixo está comentado intencionalmente.
+--   Não tocamos em dados existentes sem análise manual.
+--   Se quiser corrigir produtos com hotmart gravado erroneamente:
+--
+-- UPDATE products
+-- SET platform = NULL
+-- WHERE platform = 'hotmart'
+--   AND product_url NOT LIKE '%hotmart%';
+
+ALTER TABLE products ALTER COLUMN platform DROP NOT NULL;

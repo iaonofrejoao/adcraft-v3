@@ -88,6 +88,9 @@ async function main() {
   // 13. FK: messages.pipeline_id → pipelines.id
   await runFile(sql, 'migrations/v2/0011_add_messages_pipeline_fk.sql');
 
+  // 14. products.platform nullable (remove NOT NULL)
+  await runFile(sql, 'migrations/v2/0012_products_platform_nullable.sql');
+
   // Força reload do schema cache do PostgREST
   console.log('\nReloading PostgREST schema cache…');
   try {

@@ -179,14 +179,14 @@ export const AGENT_REGISTRY = {
 **Modelo:** gemini-2.5-flash
 **Prompt:** `prompts/jarvis.md`
 
-**Intents:**
-- `create_pipeline` — pedido de novo trabalho
+**Intents** (classificados em `route.ts`):
+- `list_products` — perguntas sobre catálogo de produtos
+- `create_pipeline` — produto + goal identificados → monta plano
+- `approve_plan` — usuário confirma plano pendente (defensive lookup via messages)
 - `check_status` — consulta de pipeline em andamento
-- `query_data` — pergunta sobre artifacts/learnings existentes
-- `approve_plan` — aprovação do DAG sugerido
-- `approve_components` — aprovação de componentes de copy (dispara via UI também)
-- `select_combinations` — escolha de combinações pra virar vídeo
-- `general_question` — dúvidas operacionais
+- `general_question` — dúvidas operacionais + goal sem produto
+
+Aprovação de componentes e seleção de combinações ocorrem via UI (tela `/products/[sku]/copies`), não via intent do chat.
 
 **Tools:**
 - `resolve_product(query)` — busca produto por SKU/nome/menção
@@ -242,7 +242,7 @@ export const AGENT_REGISTRY = {
 ## 6. Database Schema
 
 ### Tabelas mantidas do v1 (não alterar — migrations 001-013 já aplicadas)
-`enums`, `users`, `user_credentials`, `niches`, `pattern_intelligence`, `products`, `templates`, `projects`, `executions`, `assets`, `campaigns`, `knowledge_notifications`. Algumas serão estendidas com colunas novas (ver abaixo).
+`enums`, `users`, `user_credentials`, `niches`, `pattern_intelligence`, `products`, `templates`, `projects`, `executions`, `assets`, `campaigns`, `knowledge_notifications`. Algumas foram estendidas com colunas novas (ver abaixo).
 
 ### Novas tabelas v2 (em `/migrations/v2/` via Drizzle)
 
@@ -342,6 +342,21 @@ alter table products add column slug text;
 alter table niches add column embedding_anchor text; -- texto representativo do nicho pra embedding
 ```
 
+### Alterações aplicadas via migrations v2
+
+```sql
+-- migration 0010: copy_components tem approval_status canônico
+alter table copy_components add column approval_status text default 'pending';
+alter table copy_components add column approved_at timestamptz;
+
+-- migration 0011: messages.pipeline_id com FK para pipelines
+alter table messages add column pipeline_id uuid references pipelines(id);
+
+-- migration 0012: products.platform agora é nullable
+alter table products alter column platform drop not null;
+-- default anterior era 'hotmart'; agora NULL para plataformas não reconhecidas
+```
+
 ---
 
 ## 7. Memory & Knowledge System
@@ -391,7 +406,8 @@ Quando produto novo é cadastrado, sub-rotina `classifyNiche(productPage)` (não
 ## 8. Reference Resolution (Menções @ e /)
 
 **`@`** abre dropdown de **entidades** (produtos por SKU/nome).
-**`/`** abre dropdown de **ações rápidas** (`/pesquisa-mercado`, `/copy`, `/video`, `/reformular`).
+**`/`** abre dropdown de **ações rápidas** (`/avatar`, `/mercado`, `/angulos`, `/copy`, `/video`).
+Fonte canônica: `frontend/lib/jarvis/goals.ts`.
 
 Backend tem pre-processor que parseia menções antes de mandar pro Jarvis e resolve em contexto rico:
 ```
@@ -448,19 +464,24 @@ Documentação completa em `skills/gemini-cost-optimization.md`. Resumo das 9 pr
 ```
 POST   /api/chat                          → SSE endpoint do Jarvis
 GET    /api/products                      → lista
-POST   /api/products                      → cadastra (gera SKU + classifica nicho)
-GET    /api/products/[sku]
-GET    /api/products/[sku]/copies         → componentes pra aprovar
+POST   /api/products                      → cadastra (gera SKU + classifica nicho) — retorna 201
+GET    /api/products/[sku]                → detalhe do produto
+GET    /api/products/[sku]/copies         → componentes pra aprovar (por pipeline)
+POST   /api/products/[sku]/materialize-combinations
 POST   /api/copy-components/[id]/approve
 POST   /api/copy-components/[id]/reject
-POST   /api/products/[sku]/materialize-combinations
-GET    /api/pipelines/[id]
-GET    /api/pipelines/[id]/status
-POST   /api/pipelines/[id]/select-combinations
-GET    /api/conversations
-POST   /api/conversations
-GET    /api/conversations/[id]/messages
-GET    /api/niches/[id]/learnings
+GET    /api/copy-components              → lista componentes (novo — filtra por pipeline_id)
+GET    /api/copy-combinations            → lista combinações (novo — filtra por pipeline_id)
+GET    /api/pipelines                    → lista pipelines
+GET    /api/pipelines/[id]               → pipeline + tasks + approvals pendentes
+PATCH  /api/pipelines/[id]               → transiciona status (ex: plan_preview → pending)
+GET    /api/conversations                → lista conversas (paginado)
+POST   /api/conversations                → cria conversa
+GET    /api/conversations/[id]           → conversa + messages (com JOIN pipelines)
+PATCH  /api/conversations/[id]           → atualiza título
+DELETE /api/conversations/[id]           → remove conversa e messages
+GET    /api/tasks                        → lista tasks (filtra por pipeline_id)
+GET    /api/assets                       → lista assets de vídeo
 ```
 
 ---

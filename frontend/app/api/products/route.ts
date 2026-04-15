@@ -104,7 +104,7 @@ export async function POST(req: Request) {
   const supabase = getServiceClient();
 
   // Resolve campos opcionais extraíveis da URL
-  const platform      = input.platform ?? detectPlatform(input.product_url) ?? 'hotmart';
+  const platform      = input.platform ?? detectPlatform(input.product_url) ?? null;
   const affiliateLink = input.affiliate_link ?? input.product_url;
 
   // 2. INSERT em products

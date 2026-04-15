@@ -110,8 +110,7 @@ function detectForceRefresh(text: string): boolean {
     /\bde\s*novo\b/.test(lower) ||
     /\bnovamente\b/.test(lower) ||
     /\bdo\s+zero\b/.test(lower) ||
-    /\brefaz(er)?\b/.test(lower) ||
-    /\batuali[zs](ar|a)\b/.test(lower)
+    /\brefaz(er)?\b/.test(lower)
   );
 }
 
@@ -466,8 +465,31 @@ export async function POST(req: Request) {
         // Goal: /ação explícita OU keywords no texto
         const goal = extractGoal(resolved) ?? detectGoalFromText(input.message);
 
+        // Defensive lookup: se pending_pipeline_id não veio (ex: reload de página),
+        // busca pipeline em plan_preview via última mensagem desta conversa.
+        let effectivePendingPipelineId = input.pending_pipeline_id ?? null;
+        if (!effectivePendingPipelineId && conversationId) {
+          const { data: recentMsgs } = await supabase
+            .from('messages')
+            .select('pipeline_id, pipelines(id, status)')
+            .eq('conversation_id', conversationId)
+            .not('pipeline_id', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(5);
+          if (recentMsgs) {
+            for (const msg of recentMsgs) {
+              const pArr = msg.pipelines as Array<{ id: string; status: string }> | null;
+              const p = pArr?.[0] ?? null;
+              if (p?.status === 'plan_preview') {
+                effectivePendingPipelineId = p.id;
+                break;
+              }
+            }
+          }
+        }
+
         const hasPendingPipeline =
-          Boolean(input.pending_pipeline_id) || Boolean(input.pending_plan);
+          Boolean(effectivePendingPipelineId) || Boolean(input.pending_plan);
 
         const intent = classifyIntent(
           input.message,
@@ -535,12 +557,12 @@ export async function POST(req: Request) {
         else if (intent === 'approve_plan' && hasPendingPipeline) {
           emit({ type: 'status', message: 'Aprovando plano e enfileirando tarefas...' });
 
-          if (input.pending_pipeline_id) {
+          if (effectivePendingPipelineId) {
             // Fluxo plan_preview no DB: transiciona para pending
             const { data: pipeline, error: fetchErr } = await supabase
               .from('pipelines')
               .select('id, status')
-              .eq('id', input.pending_pipeline_id)
+              .eq('id', effectivePendingPipelineId)
               .maybeSingle();
 
             if (fetchErr || !pipeline) {
@@ -551,23 +573,23 @@ export async function POST(req: Request) {
               await supabase
                 .from('pipelines')
                 .update({ status: 'pending' })
-                .eq('id', input.pending_pipeline_id);
+                .eq('id', effectivePendingPipelineId);
 
               const { count } = await supabase
                 .from('tasks')
                 .select('id', { count: 'exact', head: true })
-                .eq('pipeline_id', input.pending_pipeline_id)
+                .eq('pipeline_id', effectivePendingPipelineId)
                 .neq('status', 'skipped');
 
               emit({
                 type:        'pipeline_created',
-                pipeline_id: input.pending_pipeline_id,
+                pipeline_id: effectivePendingPipelineId,
                 task_count:  count ?? 0,
               });
 
-              const replyContent = `Pipeline em execução! ${count ?? 0} tasks enfileiradas. Acompanhe o progresso em /demandas?pipeline=${input.pending_pipeline_id}.`;
+              const replyContent = `Pipeline em execução! ${count ?? 0} tasks enfileiradas. Acompanhe o progresso em /demandas?pipeline=${effectivePendingPipelineId}.`;
               if (conversationId) {
-                await saveMessage(supabase, conversationId, 'assistant', replyContent, input.pending_pipeline_id);
+                await saveMessage(supabase, conversationId, 'assistant', replyContent, effectivePendingPipelineId);
               }
               emit({ type: 'message', content: replyContent });
             }
@@ -612,8 +634,8 @@ export async function POST(req: Request) {
               .limit(1)
               .maybeSingle();
             pipelineId = latest?.id ?? null;
-          } else if (input.pending_pipeline_id) {
-            pipelineId = input.pending_pipeline_id;
+          } else if (effectivePendingPipelineId) {
+            pipelineId = effectivePendingPipelineId;
           }
 
           if (!pipelineId) {

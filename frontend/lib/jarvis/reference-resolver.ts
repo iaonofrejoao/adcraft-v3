@@ -7,6 +7,15 @@
 // /ação   → mapeia para GoalName do GOAL_TO_DELIVERABLE
 
 import { createClient } from '../supabase';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
+// Falls back to service-role client — never the anon key — to avoid silent RLS failures.
+function getServiceClient(): ReturnType<typeof createClient> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Supabase service role key not configured');
+  return createSupabaseClient(url, key) as unknown as ReturnType<typeof createClient>;
+}
 import type { GoalName } from '../agent-registry';
 
 // ── Tipos públicos ────────────────────────────────────────────────────────────
@@ -143,7 +152,7 @@ export async function resolveReferences(
   message: string,
   supabaseClient?: ReturnType<typeof createClient>
 ): Promise<ResolveResult> {
-  const client = supabaseClient ?? createClient();
+  const client = supabaseClient ?? getServiceClient();
   const tokens = parseTokens(message);
 
   if (tokens.length === 0) {

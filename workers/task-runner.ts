@@ -93,9 +93,45 @@ async function executeTask(task: TaskRow): Promise<void> {
   return output as any; // runner é responsável por persistir via writeArtifact
 }
 
+// ── Reaper: tasks presas em running > 10 minutos ──────────────────────────────
+
+async function reapStuckTasks(): Promise<void> {
+  const reaped = await db.execute(sql`
+    UPDATE tasks
+    SET
+      status       = 'failed',
+      error        = 'Task timed out — running for more than 10 minutes without completion',
+      completed_at = NOW()
+    WHERE status     = 'running'
+      AND started_at < NOW() - INTERVAL '10 minutes'
+    RETURNING id, pipeline_id, agent_name
+  `);
+
+  const rows = reaped as unknown as { id: string; pipeline_id: string | null; agent_name: string }[];
+
+  if (!rows || rows.length === 0) return;
+
+  console.warn(
+    `[reaper] reaped ${rows.length} stuck task(s):`,
+    rows.map((t) => `${t.agent_name}/${t.id.slice(0, 8)}`).join(', '),
+  );
+
+  // Marca pipelines afetados como failed também (só se ainda pending/running)
+  const pipelineIds = [...new Set(rows.map((t) => t.pipeline_id).filter(Boolean))] as string[];
+  for (const pid of pipelineIds) {
+    await db.execute(sql`
+      UPDATE pipelines
+      SET status = 'failed'
+      WHERE id     = ${pid}::uuid
+        AND status IN ('pending', 'running')
+    `);
+  }
+}
+
 // ── Fluxo de uma iteração ─────────────────────────────────────────────────────
 
 async function runOnce(): Promise<void> {
+  await reapStuckTasks();
   // Captura o ID da task reclamada dentro da transação para evitar corrida entre workers.
   // O padrão anterior buscava "a task running mais recente", o que podia retornar a task
   // de outro worker quando dois processos iniciavam ao mesmo tempo.

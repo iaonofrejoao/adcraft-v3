@@ -50,6 +50,11 @@ const STEP_ICONS: Record<string, StepConfig[]> = {
     { icon: CheckCircle2, className: 'text-[#4ADE80]' },
     { icon: CheckCircle2, className: 'text-[#4ADE80]' },
   ],
+  skipped: [
+    { icon: CheckCircle2, className: 'text-[#4ADE80]' },
+    { icon: CheckCircle2, className: 'text-[#4ADE80]' },
+    { icon: CheckCircle2, className: 'text-[#4ADE80]' },
+  ],
   failed: [
     { icon: CheckCircle2,  className: 'text-[#4ADE80]' },
     { icon: XCircle,       className: 'text-[#F87171]' },
@@ -62,6 +67,7 @@ const BORDER_BY_STATUS: Record<string, string> = {
   running: 'border-l-[#60A5FA]',
   paused:  'border-l-[#FCD34D]',
   done:    'border-l-[#4ADE80]',
+  skipped: 'border-l-[#4ADE80]',
   failed:  'border-l-[#F87171]',
 }
 
@@ -90,10 +96,11 @@ export function TaskCard({ task }: TaskCardProps) {
   const sku      = task.pipeline?.product?.sku  ?? task.pipeline_id.slice(0, 8).toUpperCase()
   const badge    = (task.mode ?? task.agent_name).replace(/_/g, '_')
 
-  const isRunning = task.status === 'running'
-  const isFailed  = task.status === 'failed'
-  const isPaused  = task.status === 'paused'
-  const isDone    = task.status === 'done'
+  const isRunning  = task.status === 'running'
+  const isFailed   = task.status === 'failed'
+  const isPaused   = task.status === 'paused'
+  const isDone     = task.status === 'done' || task.status === 'skipped'
+  const isSkipped  = task.status === 'skipped'
 
   const steps = STEP_ICONS[task.status] ?? STEP_ICONS.pending
 
@@ -111,6 +118,14 @@ export function TaskCard({ task }: TaskCardProps) {
           {sku}
         </span>
         <div className="flex items-center gap-1.5">
+          {isSkipped && (
+            <span
+              title="Resultado reutilizado de pesquisa anterior"
+              className="bg-[rgba(74,222,128,0.12)] text-[#4ADE80] text-[9px] px-1.5 py-0.5 rounded font-bold ring-1 ring-[#4ADE80]/30 uppercase tracking-wide"
+            >
+              ↻ reutilizado
+            </span>
+          )}
           {isPaused && (
             <span className="animate-pulse bg-[rgba(245,158,11,0.2)] text-[#FCD34D] text-[9px] px-1.5 py-0.5 rounded font-bold ring-1 ring-[#FCD34D]/40 uppercase tracking-wide">
               Urgente

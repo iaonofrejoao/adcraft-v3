@@ -1,5 +1,9 @@
 /**
  * Canonical tagging implementation for AdCraft v2.
+ * This file is a duplicate of frontend/lib/tagging.ts.
+ * The frontend cannot cross-import from workers/ (Next.js bundler moduleResolution),
+ * so both packages keep identical copies. If you change one, change the other.
+ *
  * Format:
  *   Hook:        SKU_v{N}_H{n}
  *   Body:        SKU_v{N}_B{n}
@@ -153,6 +157,6 @@ export function parseTag(tag: string): TagParts | null {
     };
   }
 
-  // SKU_vN (no component suffix — base tag, treated as combination without slots)
+  // SKU_vN (no component suffix — base tag)
   return { sku, version, type: 'combination' };
 }

@@ -11,8 +11,12 @@ interface ProductDetailHeaderProps {
 }
 
 const TABS = [
-  { label: 'Visão geral', href: (sku: string) => `/products/${sku}` },
-  { label: 'Copies',      href: (sku: string) => `/products/${sku}/copies` },
+  { label: 'Mercado',   href: (sku: string) => `/products/${sku}/mercado`   },
+  { label: 'Personas',  href: (sku: string) => `/products/${sku}/personas`  },
+  { label: 'Copy',      href: (sku: string) => `/products/${sku}/copies`    },
+  { label: 'Criativos', href: (sku: string) => `/products/${sku}/criativos` },
+  { label: 'Campanhas', href: (sku: string) => `/products/${sku}/campanhas` },
+  { label: 'Histórico', href: (sku: string) => `/products/${sku}/historico` },
 ] as const
 
 function formatRelativeDate(iso: string): string {
@@ -95,17 +99,17 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
               text-on-surface text-sm font-medium
               hover:bg-surface-high transition-colors duration-150"
           >
-            Pedir nova copy
+            Ver copies
           </Link>
           <Link
-            href={`/?msg=@${sku}+/copy`}
+            href={`/?msg=@${sku}`}
             className="px-4 py-2 rounded-lg text-sm font-bold text-[#131314]
               bg-gradient-to-br from-[#F28705] to-[#FFB690]
               shadow-[0_12px_40px_-10px_rgba(249,115,22,0.3)]
               hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_12px_40px_-10px_rgba(249,115,22,0.3)]
               hover:scale-[1.02] active:scale-[0.98] transition-all duration-150"
           >
-            Gerar copy
+            Abrir Jarvis
           </Link>
         </div>
       </div>

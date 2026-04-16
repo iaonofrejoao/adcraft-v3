@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { KeyboardShortcutsProvider } from '@/components/layout/KeyboardShortcutsProvider'
 import './globals.css'
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <Toaster />
+          <KeyboardShortcutsProvider />
         </TooltipProvider>
       </body>
     </html>

@@ -175,6 +175,48 @@ export const promptCaches = pgTable("prompt_caches", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+// ── Fase E — Sistema de Memória Cumulativa ────────────────────────────────────
+
+export const executionLearnings = pgTable("execution_learnings", {
+  id:                  uuid("id").primaryKey(),
+  pipeline_id:         uuid("pipeline_id").references(() => pipelines.id),
+  product_id:          uuid("product_id").references(() => products.id),
+  niche_id:            uuid("niche_id").references(() => niches.id),
+  category:            text("category").notNull(),
+  observation:         text("observation").notNull(),
+  evidence:            jsonb("evidence"),
+  confidence:          numeric("confidence", { precision: 3, scale: 2 }).default('0.50'),
+  validated_by_user:   boolean("validated_by_user"),
+  invalidation_reason: text("invalidation_reason"),
+  status:              text("status").default('active'),
+  created_at:          timestamp("created_at").defaultNow(),
+});
+
+export const learningPatterns = pgTable("learning_patterns", {
+  id:                      uuid("id").primaryKey(),
+  pattern_text:            text("pattern_text").notNull(),
+  category:                text("category"),
+  niche_id:                uuid("niche_id").references(() => niches.id),
+  supporting_learning_ids: uuid("supporting_learning_ids").array(),
+  supporting_count:        integer("supporting_count").default(0),
+  confidence:              numeric("confidence", { precision: 3, scale: 2 }).default('0.50'),
+  status:                  text("status").default('active'),
+  created_at:              timestamp("created_at").defaultNow(),
+  updated_at:              timestamp("updated_at").defaultNow(),
+});
+
+export const insights = pgTable("insights", {
+  id:                uuid("id").primaryKey(),
+  title:             text("title").notNull(),
+  body:              text("body").notNull(),
+  importance:        integer("importance").default(3),
+  source:            text("source").default('aggregator'),
+  pattern_ids:       uuid("pattern_ids").array(),
+  validated_by_user: boolean("validated_by_user").default(false),
+  created_at:        timestamp("created_at").defaultNow(),
+  updated_at:        timestamp("updated_at").defaultNow(),
+});
+
 export const llmCalls = pgTable("llm_calls", {
   id: uuid("id").primaryKey(),
   agent_name: text("agent_name"),

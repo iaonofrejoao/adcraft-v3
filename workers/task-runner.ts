@@ -20,6 +20,7 @@ import { runCopyHookGenerator }  from './agents/copy-hook-generator';
 import { runAnvisaCompliance }   from './agents/anvisa-compliance';
 import { runNicheCurator }       from './agents/niche-curator';
 import { runVideoMaker }         from './agents/video-maker';
+import { extractLearningsAsync } from './agents/learning-extractor';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -200,6 +201,11 @@ async function runOnce(): Promise<void> {
           .set({ status: 'completed', completed_at: new Date() })
           .where(eq(pipelines.id, runningTask.pipeline_id));
         console.info(`[task-runner] pipeline ${runningTask.pipeline_id} COMPLETED`);
+
+        // Fase E: extração de learnings assíncrona (não bloqueia o task-runner)
+        extractLearningsAsync(runningTask.pipeline_id).catch((err) =>
+          console.error('[learning-extractor] uncaught:', err),
+        );
       } else if (failed) {
         await db
           .update(pipelines)

@@ -26,6 +26,12 @@ import {
   WEB_SEARCH_TOOL, executeSearchWeb,
 } from '../tools/web-search';
 
+import {
+  QUERY_LEARNINGS_TOOL,        executeQueryLearnings,
+  FIND_SIMILAR_CAMPAIGNS_TOOL, executeFindSimilarCampaigns,
+  GET_INSIGHTS_TOOL,           executeGetInsights,
+} from './tools/memory';
+
 // ── Adaptador: WEB_SEARCH_TOOL usa formato genérico, não Anthropic.Tool ──────
 
 const WEB_SEARCH_ANTHROPIC_TOOL: Anthropic.Tool = {
@@ -77,6 +83,22 @@ export const JARVIS_TOOL_DEFINITIONS: Anthropic.Tool[] = [
   },
   // Web
   WEB_SEARCH_ANTHROPIC_TOOL,
+  // Memória cumulativa — Fase E
+  {
+    name:         QUERY_LEARNINGS_TOOL.name,
+    description:  QUERY_LEARNINGS_TOOL.description,
+    input_schema: QUERY_LEARNINGS_TOOL.input_schema,
+  },
+  {
+    name:         FIND_SIMILAR_CAMPAIGNS_TOOL.name,
+    description:  FIND_SIMILAR_CAMPAIGNS_TOOL.description,
+    input_schema: FIND_SIMILAR_CAMPAIGNS_TOOL.input_schema,
+  },
+  {
+    name:         GET_INSIGHTS_TOOL.name,
+    description:  GET_INSIGHTS_TOOL.description,
+    input_schema: GET_INSIGHTS_TOOL.input_schema,
+  },
 ];
 
 // ── Executor central ─────────────────────────────────────────────────────────
@@ -105,6 +127,10 @@ export function buildToolExecutor(
           input.query as string,
           (input.num_results as number | undefined) ?? 5,
         );
+      // Memória cumulativa — Fase E
+      case 'query_learnings':         return executeQueryLearnings(input, ctx);
+      case 'find_similar_campaigns':  return executeFindSimilarCampaigns(input, ctx);
+      case 'get_insights':            return executeGetInsights(input, ctx);
       default:
         throw new Error(`Tool desconhecida: ${name}`);
     }

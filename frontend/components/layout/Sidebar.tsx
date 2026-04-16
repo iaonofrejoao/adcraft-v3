@@ -10,6 +10,7 @@ const NAV = [
   { href: '/products',  label: 'Produtos',  icon: '📦' },
   { href: '/creatives', label: 'Criativos', icon: '🎬' },
   { href: '/demandas',  label: 'Demandas',  icon: '📋' },
+  { href: '/insights',  label: 'Memória',   icon: '🧠' },
 ]
 
 function timeAgo(iso: string): string {

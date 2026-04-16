@@ -15,6 +15,7 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
   { display: 'g p',  description: 'Ir para Produtos'              },
   { display: 'g d',  description: 'Ir para Demandas'              },
   { display: 'g c',  description: 'Ir para Criativos'             },
+  { display: 'g i',  description: 'Ir para Memória / Insights'    },
   { display: 'Esc',  description: 'Fechar modal / cancelar'       },
 ]
 
@@ -63,6 +64,7 @@ export function useKeyboardShortcuts(onOpenHelp: () => void) {
           case 'p': router.push('/products');  break
           case 'd': router.push('/demandas');  break
           case 'c': router.push('/creatives'); break
+          case 'i': router.push('/insights');  break
         }
         return
       }

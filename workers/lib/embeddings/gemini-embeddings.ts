@@ -6,13 +6,14 @@
 //   - niche_learnings: só processa se confidence >= 0.5
 //   - product_knowledge: sempre processa
 //   - niches: sempre processa (usa embedding_anchor)
+//   - execution_learnings: só processa se confidence >= 0.5 (Fase E)
 //
 // Modelo: gemini-embedding-001, dim 768 (PRD seção 2 / schema padrão).
 // Fase 2.7.3
 
 import { callEmbedding } from '../llm/gemini-client';
 import { db } from '../db';
-import { embeddings, nicheLearnings, productKnowledge } from '../../../frontend/lib/schema/index';
+import { embeddings, nicheLearnings, productKnowledge, executionLearnings } from '../../../frontend/lib/schema/index';
 import { eq, isNull, sql } from 'drizzle-orm';
 
 const OUTPUT_DIM = 768;
@@ -130,6 +131,34 @@ async function resolveTexts(
       const confidence = parseFloat(record.confidence ?? '0');
       if (confidence < MIN_CONFIDENCE_FOR_EMBEDDING) continue; // lazy generation rule
       result.push({ embedding_id: row.embedding_id, source_table: row.source_table, source_id: row.source_id, text: record.content ?? '' });
+    }
+  }
+
+  // ── execution_learnings ── (Fase E — lazy: só se confidence >= 0.5)
+  const elRows = byTable.get('execution_learnings') ?? [];
+  if (elRows.length > 0) {
+    const ids = elRows.map((r) => r.source_id);
+    const records = await db
+      .select({
+        id:          executionLearnings.id,
+        observation: executionLearnings.observation,
+        confidence:  executionLearnings.confidence,
+      })
+      .from(executionLearnings)
+      .where(sql`${executionLearnings.id} = ANY(${ids})`);
+
+    const byId = new Map(records.map((r) => [r.id, r]));
+    for (const row of elRows) {
+      const record = byId.get(row.source_id);
+      if (!record?.observation) continue;
+      const confidence = parseFloat(record.confidence ?? '0');
+      if (confidence < MIN_CONFIDENCE_FOR_EMBEDDING) continue; // lazy generation rule
+      result.push({
+        embedding_id: row.embedding_id,
+        source_table: row.source_table,
+        source_id:    row.source_id,
+        text:         record.observation,
+      });
     }
   }
 

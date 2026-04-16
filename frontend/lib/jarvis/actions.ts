@@ -1,11 +1,11 @@
 // Ações reais do Jarvis: queries SQL via Supabase service client.
 // Cada função recebe o client como parâmetro (injeção de dependência)
 // para evitar acoplamento com workers/lib/db.ts no contexto Next.js.
-// Chamado por frontend/app/api/chat/route.ts.
+// Chamado por frontend/app/api/chat/route.ts e pelos tools do Claude agent.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
-import { planPipeline } from './planner';
+import { planPipeline, type PipelinePlan } from './planner';
 import type { GoalName } from '../agent-registry';
 import type { PlannedTask } from './dag-builder';
 
@@ -143,7 +143,98 @@ export async function getPipelineStatus(
   };
 }
 
-// ── 5. createNewPipeline ──────────────────────────────────────────────────────
+// ── 5. getNextProductVersion ──────────────────────────────────────────────────
+
+export async function getNextProductVersion(
+  product_id: string,
+  supabase: SupabaseClient,
+): Promise<number> {
+  const { data } = await supabase
+    .from('pipelines')
+    .select('product_version')
+    .eq('product_id', product_id)
+    .order('product_version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data ? (data.product_version as number) + 1 : 1;
+}
+
+// ── 6. persistPlanPreview ─────────────────────────────────────────────────────
+// Persiste um PipelinePlan no DB com status 'plan_preview' — aguarda aprovação.
+
+export interface PersistedPipeline {
+  pipeline_id: string;
+  task_count:  number;
+}
+
+export async function persistPlanPreview(
+  plan: PipelinePlan,
+  forceRefresh: boolean,
+  supabase: SupabaseClient,
+): Promise<PersistedPipeline> {
+  const pipelineId     = randomUUID();
+  const productVersion = await getNextProductVersion(plan.product_id, supabase);
+
+  const { error: pipelineErr } = await supabase.from('pipelines').insert({
+    id:                pipelineId,
+    product_id:        plan.product_id,
+    goal:              plan.goal,
+    deliverable_agent: plan.deliverable,
+    plan:              {
+      tasks:              plan.tasks,
+      checkpoints:        plan.checkpoints,
+      mermaid:            plan.mermaid,
+      estimated_cost_usd: plan.estimated_cost_usd,
+      product_sku:        plan.product_sku,
+      product_name:       plan.product_name,
+    },
+    state:             {},
+    status:            'plan_preview',
+    product_version:   productVersion,
+    force_refresh:     forceRefresh,
+    budget_usd:        plan.budget_usd,
+    cost_so_far_usd:   '0',
+  });
+
+  if (pipelineErr) throw new Error(`Pipeline insert failed: ${pipelineErr.message}`);
+
+  const agentToTaskId = new Map<string, string>();
+  for (const t of plan.tasks) {
+    agentToTaskId.set(t.agent, randomUUID());
+  }
+
+  const taskRows = plan.tasks.map((t: PlannedTask) => {
+    const taskId    = agentToTaskId.get(t.agent)!;
+    const depsUuids = t.depends_on
+      .map((dep) => agentToTaskId.get(dep))
+      .filter((uid): uid is string => uid !== undefined);
+
+    let status: string;
+    if (t.status === 'reused')       status = 'skipped';
+    else if (depsUuids.length === 0) status = 'pending';
+    else                             status = 'waiting';
+
+    return {
+      id:            taskId,
+      pipeline_id:   pipelineId,
+      agent_name:    t.agent,
+      depends_on:    depsUuids,
+      status,
+      input_context: null,
+      output:        t.status === 'reused' ? { source_knowledge_id: t.source_knowledge_id } : null,
+      retry_count:   0,
+    };
+  });
+
+  if (taskRows.length > 0) {
+    const { error: tasksErr } = await supabase.from('tasks').insert(taskRows);
+    if (tasksErr) throw new Error(`Tasks insert failed: ${tasksErr.message}`);
+  }
+
+  return { pipeline_id: pipelineId, task_count: taskRows.length };
+}
+
+// ── 7. createNewPipeline ──────────────────────────────────────────────────────
 // Planeja DAG, insere pipeline com status='pending' e tasks.
 // Usado no approve_plan quando não há plan_preview no DB.
 

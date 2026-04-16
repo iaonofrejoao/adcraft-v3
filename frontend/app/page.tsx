@@ -4,10 +4,10 @@ import { useSearchParams } from 'next/navigation'
 import { MessageList } from '@/components/chat/MessageList'
 import { MessageInput } from '@/components/chat/MessageInput'
 import { NotificationBell } from '@/components/layout/NotificationBell'
-import type { ChatMessage } from '@/lib/types/chat'
+import type { ChatMessage, ToolCallRecord } from '@/lib/types/chat'
 import type { PipelinePlan } from '@/lib/jarvis/planner'
 
-export type { ChatMessage }
+export type { ChatMessage, ToolCallRecord }
 
 // ── Hook SSE ──────────────────────────────────────────────────────────────────
 
@@ -180,6 +180,35 @@ function useJarvisChat(conversationId: string | null) {
                 ))
                 break
 
+              case 'tool_call':
+                setMessages((prev) => prev.map((m) => {
+                  if (m.id !== assistantId) return m
+                  const call: ToolCallRecord = {
+                    name:  event.name as string,
+                    input: event.input as Record<string, unknown>,
+                  }
+                  return {
+                    ...m,
+                    statusMessage: `Usando ${event.name as string}…`,
+                    toolCalls: [...(m.toolCalls ?? []), call],
+                  }
+                }))
+                break
+
+              case 'tool_result': {
+                const toolName = event.name as string
+                setMessages((prev) => prev.map((m) => {
+                  if (m.id !== assistantId) return m
+                  const calls = (m.toolCalls ?? []).map((c) =>
+                    c.name === toolName && c.output === undefined
+                      ? { ...c, output: event.output, is_error: event.is_error as boolean | undefined }
+                      : c,
+                  )
+                  return { ...m, toolCalls: calls, statusMessage: 'Pensando…' }
+                }))
+                break
+              }
+
               case 'message':
                 setMessages((prev) => prev.map((m) =>
                   m.id === assistantId
@@ -285,7 +314,7 @@ function ChatPageInner() {
         <div className="flex items-center gap-2">
           <h1 className="text-sm font-semibold text-on-surface">Jarvis</h1>
           <span className="text-xs px-1.5 py-0.5 rounded-full bg-brand-muted text-brand">
-            gemini-2.5-flash
+            claude-opus-4-6
           </span>
         </div>
         <NotificationBell />

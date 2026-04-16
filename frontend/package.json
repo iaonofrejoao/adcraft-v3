@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.55.1",
     "@supabase/supabase-js": "^2.103.0",
     "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",

@@ -34,12 +34,13 @@ export interface AgentCapability {
 }
 
 export const AGENT_REGISTRY: Record<AgentName, AgentCapability> = {
+  // ── Agentes migrados para Anthropic Claude ────────────────────────────────
   avatar_research: {
     requires: ['product'],
     produces: ['avatar'],
     cacheable: true,
     freshness_days: 60,
-    model: 'gemini-2.5-pro',
+    model: 'claude-opus-4-6',   // Fase A: persona + profundidade criativa
     max_input_tokens: 4000,
   },
   market_research: {
@@ -47,7 +48,7 @@ export const AGENT_REGISTRY: Record<AgentName, AgentCapability> = {
     produces: ['market'],
     cacheable: true,
     freshness_days: 30,
-    model: 'gemini-2.5-pro',
+    model: 'claude-opus-4-6',   // Fase A: decisão crítica de viabilidade
     max_input_tokens: 4000,
   },
   angle_generator: {
@@ -55,14 +56,14 @@ export const AGENT_REGISTRY: Record<AgentName, AgentCapability> = {
     produces: ['angles'],
     cacheable: true,
     freshness_days: 30,
-    model: 'gemini-2.5-pro',
+    model: 'claude-opus-4-6',   // Fase A: alto impacto no resultado criativo
     max_input_tokens: 8000,
   },
   copy_hook_generator: {
     requires: ['product', 'avatar', 'angles'],
     produces: ['copy_components'],
     cacheable: false,
-    model: 'gemini-2.5-pro',
+    model: 'claude-opus-4-6',   // Fase A: qualidade de escrita crítica
     max_input_tokens: 10000,
     modes: ['full', 'hooks_only', 'bodies_only', 'ctas_only'],
   },
@@ -70,24 +71,25 @@ export const AGENT_REGISTRY: Record<AgentName, AgentCapability> = {
     requires: ['copy_components'],
     produces: ['compliance_results'],
     cacheable: false,
-    model: 'gemini-2.5-flash',
+    model: 'claude-sonnet-4-6', // Fase A: análise baseada em regras, custo-benefício
     max_input_tokens: 6000,
   },
-  video_maker: {
-    requires: ['copy_combinations_selected', 'product'],
-    produces: ['video_assets'],
-    cacheable: false,
-    model: 'gemini-2.5-flash',
-    max_input_tokens: 4000,
-  },
-  // Agente de manutenção (cron) — sem pipeline, sem artifacts de pipeline.
-  // Não é selecionável pelo planner (requires/produces vazios).
   niche_curator: {
     requires: [],
     produces: [],
     cacheable: false,
-    model: 'gemini-2.5-flash',
+    model: 'claude-sonnet-4-6', // Fase A: curadoria repetitiva, volume alto
     max_input_tokens: 16000,
+  },
+  // ── Agentes que permanecem no Gemini (Veo 3 / lógica pura) ───────────────
+  // Agente de manutenção (cron) — sem pipeline, sem artifacts de pipeline.
+  // Não é selecionável pelo planner (requires/produces vazios).
+  video_maker: {
+    requires: ['copy_combinations_selected', 'product'],
+    produces: ['video_assets'],
+    cacheable: false,
+    model: 'gemini-2.5-flash',  // Mantém: integração Veo 3 (Fase A fora de escopo)
+    max_input_tokens: 4000,
   },
 };
 
@@ -109,7 +111,8 @@ export const GOAL_TO_DELIVERABLE: Record<GoalName, ArtifactType> = {
 
 // Modelo do Jarvis (framework, não agente rastreável — regra 17 nota)
 // Centralizado aqui para facilitar rastreabilidade de modelo.
-export const JARVIS_MODEL = 'gemini-2.5-flash';
+// Fase B: migrado para Claude Opus 4.6 com tool use (PLANO_EXECUCAO_V2 Fase B).
+export const JARVIS_MODEL = 'claude-opus-4-6';
 
 // Budgets padrão por goal (PRD seção 10)
 export const GOAL_BUDGET_DEFAULTS: Record<GoalName, number> = {

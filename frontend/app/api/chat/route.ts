@@ -5,11 +5,11 @@
 //   1. Resolve @mentions (produto por SKU/nome) e /goals via reference-resolver
 //   2. Classifica intent: list_products | create_pipeline | approve_plan |
 //      check_status | general_question
-//   3. list_products   → listProducts() → stream message com lista
+//   3. list_products   → Claude agent com contexto de produtos
 //   4. create_pipeline → planPipeline() → persiste plan_preview → stream plan_preview + mermaid
 //   5. approve_plan    → transiciona plan_preview → pending OU createNewPipeline()
 //   6. check_status    → getPipelineStatus() → stream pipeline_status
-//   7. general_question → Gemini Flash com contexto enriquecido → stream message
+//   7. general_question → Claude agent com tool use (DB, web, arquivos, execução)
 //   8. Persiste messages em conversation
 //
 // SSE events emitidos:
@@ -19,32 +19,31 @@
 //   { type: 'plan_preview',          plan, pipeline_id }
 //   { type: 'pipeline_created',      pipeline_id, task_count }
 //   { type: 'pipeline_status',       pipeline }
+//   { type: 'tool_call',             name, input }
+//   { type: 'tool_result',           name, output, is_error }
 //   { type: 'message',               content }
 //   { type: 'error',                 error }
 //   { type: 'done' }
 //
-// PLANO_EXECUCAO 5.2 | PRD seção 4.3
+// PLANO_EXECUCAO_V2 Fase B | PRD seção 4.3
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
-import * as fs from 'fs';
-import * as path from 'path';
 
 import { resolveReferences, extractProduct, extractGoal } from '@/lib/jarvis/reference-resolver';
 import { planPipeline, type PipelinePlan } from '@/lib/jarvis/planner';
-import type { PlannedTask } from '@/lib/jarvis/dag-builder';
-import { JARVIS_MODEL, type GoalName } from '@/lib/agent-registry';
+import type { GoalName } from '@/lib/agent-registry';
 import {
   listProducts,
   getProductKnowledge,
   getPipelineStatus,
   createNewPipeline,
-  type Product,
+  persistPlanPreview,
   type PipelineWithTasks,
 } from '@/lib/jarvis/actions';
-import { loadConversationHistory, type GeminiContent } from '@/lib/jarvis/loadConversationHistory';
+import { callJarvisClaude } from '@/lib/jarvis/claude-agent';
 
 // ── Supabase service client ───────────────────────────────────────────────────
 
@@ -65,6 +64,8 @@ type SSEPayload =
   | { type: 'plan_preview';          plan: PipelinePlan; pipeline_id: string }
   | { type: 'pipeline_created';      pipeline_id: string; task_count: number }
   | { type: 'pipeline_status';       pipeline: unknown }
+  | { type: 'tool_call';             name: string; input: unknown }
+  | { type: 'tool_result';           name: string; output: unknown; is_error?: boolean }
   | { type: 'message';               content: string }
   | { type: 'error';                 error: string }
   | { type: 'done' };
@@ -75,9 +76,7 @@ const ChatRequestSchema = z.object({
   message:             z.string().min(1).max(4000),
   conversation_id:     z.string().uuid().optional(),
   user_id:             z.string().uuid().optional(),
-  /** pipeline_id de um plano_preview aguardando aprovação no DB */
   pending_pipeline_id: z.string().uuid().optional(),
-  /** dados do plano pendente quando não há registro no DB (fluxo novo) */
   pending_plan: z.object({
     product_id:      z.string().uuid(),
     goal:            z.string(),
@@ -95,10 +94,6 @@ type Intent =
   | 'check_status'
   | 'general_question';
 
-/**
- * Detecta se o usuário quer forçar reprocessamento, ignorando cache.
- * Retorna true para qualquer padrão de "refazer do zero" no texto.
- */
 function detectForceRefresh(text: string): boolean {
   const lower = text.toLowerCase();
   return (
@@ -114,9 +109,6 @@ function detectForceRefresh(text: string): boolean {
   );
 }
 
-/**
- * Detecta goal a partir de palavras-chave no texto (fallback quando não há /ação).
- */
 function detectGoalFromText(message: string): GoalName | null {
   const lower = message.toLowerCase();
   if (/\bavatar\b|p[uú]blico.alvo|persona\b/.test(lower)) return 'avatar_only';
@@ -128,14 +120,13 @@ function detectGoalFromText(message: string): GoalName | null {
 }
 
 function classifyIntent(
-  message: string,
-  hasProduct: boolean,
-  hasGoal: boolean,
+  message:            string,
+  hasProduct:         boolean,
+  hasGoal:            boolean,
   hasPendingPipeline: boolean,
 ): Intent {
   const lower = message.toLowerCase().trim();
 
-  // list_products — perguntas sobre catálogo
   const listPatterns = [
     'quais produtos', 'meus produtos', 'produtos que eu tenho',
     'listar produtos', 'o que eu tenho', 'que produtos',
@@ -143,7 +134,6 @@ function classifyIntent(
   if (listPatterns.some((w) => lower.includes(w))) return 'list_products';
   if (/^(listar|lista|ver)\s+(meus\s+)?produtos/.test(lower)) return 'list_products';
 
-  // approve_plan — usuário confirma plano pendente
   if (hasPendingPipeline) {
     const approveWords = [
       'sim', 'ok', 'aprovar', 'executar', 'pode executar', 'confirmar',
@@ -153,12 +143,9 @@ function classifyIntent(
     if (approveWords.some((w) => lower.includes(w))) return 'approve_plan';
   }
 
-  // create_pipeline — produto + goal identificados
   if (hasProduct && hasGoal) return 'create_pipeline';
-  // goal sem produto → Jarvis pede o produto
   if (hasGoal && !hasProduct) return 'general_question';
 
-  // check_status — perguntas sobre progresso
   const statusWords = [
     'status', 'progresso', 'andamento', 'como est[aá]', 'como t[aá]',
     'quanto falta', 'terminou', 'concluiu', 'pipeline', 'rodando', 'executando',
@@ -168,193 +155,15 @@ function classifyIntent(
   return 'general_question';
 }
 
-// ── Persistência do pipeline como plan_preview ────────────────────────────────
-
-interface PersistedPipeline {
-  pipeline_id: string;
-  task_count:  number;
-}
-
-async function getNextProductVersion(
-  product_id: string,
-  supabase: ReturnType<typeof getServiceClient>,
-): Promise<number> {
-  const { data } = await supabase
-    .from('pipelines')
-    .select('product_version')
-    .eq('product_id', product_id)
-    .order('product_version', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return data ? (data.product_version as number) + 1 : 1;
-}
-
-async function persistPlanPreview(
-  plan: PipelinePlan,
-  forceRefresh: boolean,
-  supabase: ReturnType<typeof getServiceClient>,
-): Promise<PersistedPipeline> {
-  const pipelineId     = randomUUID();
-  const productVersion = await getNextProductVersion(plan.product_id, supabase);
-
-  const { error: pipelineErr } = await supabase.from('pipelines').insert({
-    id:                pipelineId,
-    product_id:        plan.product_id,
-    goal:              plan.goal,
-    deliverable_agent: plan.deliverable,
-    plan:              {
-      tasks:              plan.tasks,
-      checkpoints:        plan.checkpoints,
-      mermaid:            plan.mermaid,
-      estimated_cost_usd: plan.estimated_cost_usd,
-      product_sku:        plan.product_sku,
-      product_name:       plan.product_name,
-    },
-    state:             {},
-    status:            'plan_preview',
-    product_version:   productVersion,
-    force_refresh:     forceRefresh,
-    budget_usd:        plan.budget_usd,
-    cost_so_far_usd:   '0',
-  });
-
-  if (pipelineErr) throw new Error(`Pipeline insert failed: ${pipelineErr.message}`);
-
-  // Insere tasks com status waiting/pending (sem executar ainda)
-  const agentToTaskId = new Map<string, string>();
-  for (const t of plan.tasks) {
-    agentToTaskId.set(t.agent, randomUUID());
-  }
-
-  const taskRows = plan.tasks.map((t: PlannedTask) => {
-    const taskId    = agentToTaskId.get(t.agent)!;
-    const depsUuids = t.depends_on
-      .map((dep) => agentToTaskId.get(dep))
-      .filter((uid): uid is string => uid !== undefined);
-
-    let status: string;
-    if (t.status === 'reused')       status = 'skipped';
-    else if (depsUuids.length === 0) status = 'pending';
-    else                             status = 'waiting';
-
-    return {
-      id:            taskId,
-      pipeline_id:   pipelineId,
-      agent_name:    t.agent,
-      depends_on:    depsUuids,
-      status,
-      input_context: null,
-      output:        t.status === 'reused' ? { source_knowledge_id: t.source_knowledge_id } : null,
-      retry_count:   0,
-    };
-  });
-
-  if (taskRows.length > 0) {
-    const { error: tasksErr } = await supabase.from('tasks').insert(taskRows);
-    if (tasksErr) throw new Error(`Tasks insert failed: ${tasksErr.message}`);
-  }
-
-  return { pipeline_id: pipelineId, task_count: taskRows.length };
-}
-
-// ── Gemini Flash para geração de texto ────────────────────────────────────────
-// Usa REST API diretamente. systemInstruction inclui prompt base + contexto real.
-
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-
-let _jarvisPrompt: string | null = null;
-function getJarvisPrompt(): string {
-  if (_jarvisPrompt) return _jarvisPrompt;
-  _jarvisPrompt = fs.readFileSync(
-    path.join(process.cwd(), '..', 'workers', 'agents', 'prompts', 'jarvis.md'),
-    'utf-8',
-  ).trim();
-  return _jarvisPrompt;
-}
-
-async function callJarvisGemini(
-  systemInstruction: string,
-  userMessage: string,
-  history: GeminiContent[] = [],
-): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return 'GEMINI_API_KEY não configurada — não consigo responder esta pergunta.';
-
-  const url = `${GEMINI_BASE}/models/${JARVIS_MODEL}:generateContent?key=${apiKey}`;
-
-  const body = {
-    system_instruction: { parts: [{ text: systemInstruction }] },
-    contents: [
-      ...history,
-      { role: 'user', parts: [{ text: userMessage }] },
-    ],
-    generation_config: { temperature: 0.7, max_output_tokens: 1024 },
-  };
-
-  const resp = await fetch(url, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(body),
-  });
-
-  if (!resp.ok) {
-    const err = await resp.text();
-    console.error('[chat/jarvis] Gemini error:', err);
-    return 'Desculpe, não consegui processar sua pergunta no momento.';
-  }
-
-  const data = await resp.json() as {
-    candidates?: Array<{ content: { parts: Array<{ text?: string }> } }>;
-  };
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Sem resposta.';
-}
-
-// ── Contexto enriquecido para Gemini ─────────────────────────────────────────
-
-async function buildSystemInstruction(opts: {
-  product:        { id: string; name: string; sku: string } | null;
-  supabase:       ReturnType<typeof getServiceClient>;
-  intent:         Intent;
-  extraContext?:  string;
-}): Promise<string> {
-  const { product, supabase, intent, extraContext } = opts;
-
-  const products = await listProducts(supabase);
-  const productsList = products.slice(0, 5)
-    .map((p) => `• ${p.sku} — ${p.name}`)
-    .join('\n') || 'nenhum';
-
-  const parts: string[] = [
-    getJarvisPrompt(),
-    '',
-    '=== ESTADO ATUAL ===',
-    `Produtos cadastrados:\n${productsList}`,
-    `Último intent detectado: ${intent}`,
-  ];
-
-  if (product) {
-    const knowledge = await getProductKnowledge(product.id, supabase);
-    const knownTypes = knowledge.map((k) => k.artifact_type).join(', ') || 'nenhum';
-    parts.push(`Produto mencionado: ${product.name} (${product.sku})`);
-    parts.push(`Dados disponíveis para este produto: ${knownTypes}`);
-  }
-
-  if (extraContext) {
-    parts.push('', extraContext);
-  }
-
-  return parts.join('\n');
-}
-
 // ── Persistência de messages ──────────────────────────────────────────────────
 
 async function saveMessage(
-  supabase: ReturnType<typeof getServiceClient>,
+  supabase:       ReturnType<typeof getServiceClient>,
   conversationId: string,
-  role: 'user' | 'assistant',
-  content: string,
-  pipelineId?: string,
-  refs?: unknown,
+  role:           'user' | 'assistant',
+  content:        string,
+  pipelineId?:    string,
+  refs?:          unknown,
 ): Promise<void> {
   const { error } = await supabase.from('messages').insert({
     id:              randomUUID(),
@@ -393,7 +202,6 @@ export async function POST(req: Request) {
 
   const supabase = getServiceClient();
 
-  // Garante que existe uma conversa
   let conversationId    = input.conversation_id;
   const isNewConversation = !conversationId;
   if (!conversationId) {
@@ -420,20 +228,16 @@ export async function POST(req: Request) {
       const emit = (payload: SSEPayload) => controller.enqueue(sseChunk(payload));
 
       try {
-        // 1. Se a conversa foi criada agora, informa o cliente antes de tudo
         if (isNewConversation && conversationId) {
           emit({ type: 'conversation_created', conversation_id: conversationId });
         }
 
-        // 2. Persiste mensagem do usuário
         if (conversationId) {
           await saveMessage(supabase, conversationId, 'user', input.message);
         }
 
-        // 2. Resolve referências @produto e /goal
         emit({ type: 'status', message: 'Analisando sua mensagem...' });
 
-        // Passa o service client para evitar bloqueio RLS com o anon key
         const resolved = await resolveReferences(input.message, supabase);
 
         emit({
@@ -442,7 +246,6 @@ export async function POST(req: Request) {
           hasAmbiguity: resolved.hasAmbiguity,
         });
 
-        // Ambiguidade: Jarvis pede ao usuário que escolha o produto
         if (resolved.hasAmbiguity) {
           const ambiguous = resolved.mentions.filter((m) => m.ambiguous);
           emit({ type: 'references_ambiguous', mentions: ambiguous });
@@ -462,11 +265,8 @@ export async function POST(req: Request) {
         }
 
         const product = extractProduct(resolved);
-        // Goal: /ação explícita OU keywords no texto
-        const goal = extractGoal(resolved) ?? detectGoalFromText(input.message);
+        const goal    = extractGoal(resolved) ?? detectGoalFromText(input.message);
 
-        // Defensive lookup: se pending_pipeline_id não veio (ex: reload de página),
-        // busca pipeline em plan_preview via última mensagem desta conversa.
         let effectivePendingPipelineId = input.pending_pipeline_id ?? null;
         if (!effectivePendingPipelineId && conversationId) {
           const { data: recentMsgs } = await supabase
@@ -503,33 +303,25 @@ export async function POST(req: Request) {
           emit({ type: 'status', message: 'Buscando seus produtos...' });
 
           const products = await listProducts(supabase);
+          const extraContext = products.length === 0
+            ? 'O usuário não tem nenhum produto cadastrado ainda. Sugira criar um produto via /produtos.'
+            : `Produtos cadastrados do usuário:\n${
+                products
+                  .map((p) => `• ${p.sku} — ${p.name} (criado em ${new Date(p.created_at).toLocaleDateString('pt-BR')})`)
+                  .join('\n')
+              }`;
 
-          let extraContext: string;
-          if (products.length === 0) {
-            extraContext = 'O usuário não tem nenhum produto cadastrado ainda. Sugira criar um produto via /produtos.';
-          } else {
-            const rows = products.map(
-              (p) => `• ${p.sku} — ${p.name} (criado em ${new Date(p.created_at).toLocaleDateString('pt-BR')})`,
-            );
-            extraContext = `Produtos cadastrados do usuário:\n${rows.join('\n')}`;
-          }
-
-          const systemInstruction = await buildSystemInstruction({
-            product: null,
+          const replyContent = await callJarvisClaude({
+            userMessage:    input.message,
+            conversationId: conversationId!,
             supabase,
-            intent,
+            emit:           emit as (e: { type: string; [k: string]: unknown }) => void,
             extraContext,
           });
 
-          const history = conversationId
-            ? await loadConversationHistory(conversationId, supabase)
-            : [];
-          const replyContent = await callJarvisGemini(systemInstruction, input.message, history);
-
-          if (conversationId) {
+          if (conversationId && replyContent) {
             await saveMessage(supabase, conversationId, 'assistant', replyContent);
           }
-          emit({ type: 'message', content: replyContent });
         }
 
         // ── create_pipeline ───────────────────────────────────────────────────
@@ -541,7 +333,6 @@ export async function POST(req: Request) {
           plan.product_sku  = product.sku;
           plan.product_name = product.name;
 
-          // Persiste como plan_preview — aguarda aprovação do usuário
           const { pipeline_id } = await persistPlanPreview(plan, forceRefresh, supabase);
 
           emit({ type: 'plan_preview', plan, pipeline_id });
@@ -558,7 +349,6 @@ export async function POST(req: Request) {
           emit({ type: 'status', message: 'Aprovando plano e enfileirando tarefas...' });
 
           if (effectivePendingPipelineId) {
-            // Fluxo plan_preview no DB: transiciona para pending
             const { data: pipeline, error: fetchErr } = await supabase
               .from('pipelines')
               .select('id, status')
@@ -593,9 +383,7 @@ export async function POST(req: Request) {
               }
               emit({ type: 'message', content: replyContent });
             }
-
           } else if (input.pending_plan) {
-            // Fluxo sem plan_preview no DB: cria pipeline diretamente
             const { product_id, goal: pendingGoal, product_version } = input.pending_plan;
             const newPipeline = await createNewPipeline(
               product_id,
@@ -672,7 +460,7 @@ export async function POST(req: Request) {
           }
         }
 
-        // ── general_question ──────────────────────────────────────────────────
+        // ── general_question → Claude agent com tool use ───────────────────────
         else {
           emit({ type: 'status', message: 'Pensando...' });
 
@@ -694,27 +482,29 @@ export async function POST(req: Request) {
                 const taskSummary = pd.tasks
                   .map((t) => `${t.agent_name}:${t.status}`)
                   .join(', ');
-                extraContext = `Pipeline ativo: ${pd.goal} (${pd.status}) — ${taskSummary}`;
+                extraContext = `Pipeline ativo do produto mencionado: ${pd.goal} (${pd.status}) — ${taskSummary}`;
               }
+            }
+
+            // Injeta conhecimento disponível do produto
+            const knowledge = await getProductKnowledge(product.id, supabase);
+            if (knowledge.length > 0) {
+              const knownTypes = knowledge.map((k) => k.artifact_type).join(', ');
+              extraContext += `\nDados disponíveis para ${product.name} (${product.sku}): ${knownTypes}`;
             }
           }
 
-          const systemInstruction = await buildSystemInstruction({
-            product,
+          const replyContent = await callJarvisClaude({
+            userMessage:    input.message,
+            conversationId: conversationId!,
             supabase,
-            intent,
-            extraContext: extraContext || undefined,
+            emit:           emit as (e: { type: string; [k: string]: unknown }) => void,
+            extraContext:   extraContext || undefined,
           });
 
-          const history = conversationId
-            ? await loadConversationHistory(conversationId, supabase)
-            : [];
-          const replyContent = await callJarvisGemini(systemInstruction, input.message, history);
-
-          if (conversationId) {
+          if (conversationId && replyContent) {
             await saveMessage(supabase, conversationId, 'assistant', replyContent);
           }
-          emit({ type: 'message', content: replyContent });
         }
 
       } catch (err: unknown) {

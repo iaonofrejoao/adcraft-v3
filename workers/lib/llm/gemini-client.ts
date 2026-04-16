@@ -23,6 +23,16 @@ import { injectLearnings, AGENT_LEARNING_TYPES } from '../../../frontend/lib/kno
 import { executeSearchWeb, WEB_SEARCH_TOOL } from '../../../frontend/lib/tools/web-search';
 import { executeReadPage, READ_PAGE_TOOL } from '../../../frontend/lib/tools/read-page';
 import { createOrGetCache } from './prompt-cache';
+import {
+  callAgentClaude,
+  BudgetExceededError,
+  type CallAgentParams,
+  type CallAgentResult,
+  type LLMUsage,
+} from './claude-provider';
+
+// Re-exports: tipos públicos vivem em claude-provider.ts (dependência unidirecional)
+export { BudgetExceededError, type CallAgentParams, type CallAgentResult, type LLMUsage } from './claude-provider';
 
 // ── Tipos Gemini REST API ─────────────────────────────────────────────────────
 
@@ -79,47 +89,7 @@ function calcCost(
   return billableInput * pIn + cachedTokens * pCac + outputTokens * pOut;
 }
 
-// ── Erro de budget excedido ───────────────────────────────────────────────────
-export class BudgetExceededError extends Error {
-  constructor(
-    public readonly pipelineId: string,
-    public readonly budgetUsd: number,
-    public readonly costSoFar: number,
-  ) {
-    super(
-      `Pipeline ${pipelineId}: budget $${budgetUsd} exceeded ` +
-      `(cost so far: $${costSoFar.toFixed(4)})`,
-    );
-    this.name = 'BudgetExceededError';
-  }
-}
-
-// ── Tipos públicos ────────────────────────────────────────────────────────────
-export interface CallAgentParams {
-  agent_name:   AgentName;
-  /** Null para tasks de manutenção (ex: niche_curator sem pipeline) */
-  pipeline_id:  string | null;
-  product_id?:  string;
-  niche_id?:    string;
-  /** Slug legível do nicho para compor a cache key */
-  niche_slug?:  string;
-  /** Mensagem do usuário: contexto dinâmico do produto/state */
-  dynamic_input: string;
-  /** Para copy_hook_generator */
-  mode?: CopyMode;
-}
-
-export interface LLMUsage {
-  input_tokens:  number;
-  cached_tokens: number;
-  output_tokens: number;
-}
-
-export interface CallAgentResult {
-  output:   Record<string, unknown> | string;
-  usage:    LLMUsage;
-  cost_usd: number;
-}
+// Tipos públicos e BudgetExceededError re-exportados de claude-provider.ts (acima).
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -375,6 +345,11 @@ export async function callEmbedding(params: CallEmbeddingParams): Promise<number
 export async function callAgent(params: CallAgentParams): Promise<CallAgentResult> {
   const cap   = AGENT_REGISTRY[params.agent_name];
   const model = cap.model;
+
+  // Roteamento: modelos Claude → provider Anthropic
+  if (model.startsWith('claude-')) {
+    return callAgentClaude(params);
+  }
 
   // ── 1. System prompt base ─────────────────────────────────────────────────
   let basePrompt = loadPrompt(params.agent_name);

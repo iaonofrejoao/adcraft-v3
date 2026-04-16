@@ -1,0 +1,95 @@
+{
+  "summary": "Mulher americana de 45-58 anos, em perimenopausa ou menopausa, que sempre foi ativa e disciplinada mas viu a barriga aparecer do nada nos últimos 2-4 anos. Já tentou dieta, academia e outros suplementos — nada funcionou como antes. Está cansada emocionalmente, não de tentar, mas de tentar e não ver resultado. Não busca ser magra, busca se sentir ela mesma novamente: caber na roupa favorita, ter energia para o dia e parar de se sentir traída pelo próprio corpo.",
+
+  "full_profile": {
+    "fictional_name": "Sandra",
+    "age_range": "45-58",
+    "gender": "Feminino",
+    "location": "Subúrbios dos EUA (Texas, Flórida, Carolinas — estados com alto consumo de nutra no CB)",
+    "income_level": "Classe média a média-alta (pode gastar $79-$294 em suplemento sem culpa excessiva)",
+    "education": "Ensino superior completo ou técnico — pesquisa antes de comprar, lê ingredientes",
+    "occupation": "Profissional de meia-carreira ou mãe que voltou ao mercado: enfermeira, professora, assistente administrativa, proprietária de pequeno negócio"
+  },
+
+  "psychographic": {
+    "primary_pain": "Eu faço tudo certo — como bem, não exagero, ainda malho — e a balança não sai do lugar. A barriga apareceu do nada depois dos 45 e nada que eu faço faz ela ir embora. Parece que meu corpo simplesmente parou de funcionar.",
+
+    "secondary_pains": [
+      "Sinto vergonha de aparecer em fotos de família — fujo da câmera ou fico atrás de todo mundo",
+      "Estou sempre cansada mesmo dormindo 7-8 horas, o que me faz comer mais açúcar pra aguentar o dia",
+      "Sinto que perdi o controle do corpo que sempre conheci — como se ele não fosse mais meu",
+      "Meu marido/parceiro não fala nada mas eu sinto que minha autoconfiança na intimidade sumiu",
+      "Gastei dinheiro em suplementos antes que não fizeram nada — tenho medo de ser enganada de novo"
+    ],
+
+    "primary_desire": "Quero voltar a caber nas roupas que ficaram guardadas no armário. Não preciso de corpo de modelo — só quero me sentir bem quando me olho no espelho, ter energia de verdade e parar de sentir que estou lutando contra mim mesma todo dia.",
+
+    "secondary_desires": [
+      "Ter energia estável ao longo do dia sem precisar de café o tempo todo",
+      "Sentir que finalmente encontrou algo que funciona para o metabolismo dela especificamente",
+      "Ser exemplo para as filhas de que é possível cuidar de si mesma depois dos 40",
+      "Perder especificamente a gordura da barriga (não quer 'emagrecer geral', quer achatar o abdômen)"
+    ],
+
+    "tried_before": [
+      "Weight Watchers / contar calorias — funcionou dos 30 aos 40, parou de funcionar",
+      "Academia 3-5x por semana — ganhou músculo mas a barriga não saiu",
+      "Dieta low-carb / keto — perdeu rápido no início, voltou tudo em 3 meses",
+      "Termogênicos com cafeína — ansiosa, coração acelerado, não aguentou continuar",
+      "Chás e 'hacks' do TikTok — orange peel hack, inositol, magnésio — alguns ajudaram no sono mas não no peso",
+      "Jejum intermitente — difícil de manter na rotina de trabalho e família",
+      "Consulta médica — médico disse 'é a idade, é normal' sem solução concreta"
+    ],
+
+    "objections": [
+      "Já comprei suplemento antes que não fez nada — como sei que esse é diferente?",
+      "Parece mais um produto milagroso com marketing bonito",
+      "É caro demais para testar sem garantia real de funcionar",
+      "Os ingredientes são naturais mesmo ou tem estimulante escondido? Não aguento mais coração acelerado",
+      "Vai funcionar para o meu metabolismo ou só para quem tem genética boa?",
+      "Posso tomar junto com minha medicação de pressão / tireóide?"
+    ],
+
+    "language_style": "Direta e emocional, mas sem drama exagerado. Fala de frustração com leveza ('dá pra rir mas também dá vontade de chorar'). Usa comparação temporal — 'antes eu conseguia', 'quando eu tinha 35'. Descreve o problema pelo sintoma concreto (barriga, calça, energia) não pelo termo médico. Confia mais em outras mulheres que passaram pelo mesmo do que em especialistas."
+  },
+
+  "verbatim_expressions": [
+    "No matter what I do, the scale just won't budge",
+    "I went to sleep and woke up feeling like I was 20 pounds heavier",
+    "I began to believe that unless I was willing to crash diet and live on celery sticks, losing weight was going to be virtually impossible at my age",
+    "It feels like just yesterday I could eat pretty much anything without a second thought, and then BAM — my pants stopped fitting",
+    "I've tried strict dieting, exhausting workouts, and a cabinet full of miracle supplements and nothing worked",
+    "The number on the scale was slowly creeping up and my pants were tighter than usual — and I hadn't changed a thing",
+    "I'd ramp up my workouts but the results just weren't there. It was disheartening, to say the least"
+  ],
+
+  "buying_triggers": [
+    "Garantia longa (90 dias) — reduz risco percebido de 'jogar dinheiro fora de novo'",
+    "Depoimentos de mulheres na mesma faixa etária com resultados em 30-60 dias",
+    "Mecanismo explicado de forma simples (metabolismo hormonal, não 'queima gordura genérico')",
+    "Sem estimulantes — esse ponto específico converte quem já teve má experiência com termogênicos",
+    "Tom de 'não é sua culpa, é hormonal' — tira a culpa e abre a escuta"
+  ],
+
+  "ad_angles_that_work": [
+    "MECANISMO: 'A razão pela qual dieta e academia parou de funcionar depois dos 40 não é força de vontade — é o metabolismo hormonal'",
+    "HISTÓRIA: Mulher de 52 anos mostra calça que não cabia há 3 anos agora fechando",
+    "PROVA SOCIAL: 'Por que 25.000 mulheres acima de 45 estão tomando isso de manhã'",
+    "CURIOSIDADE: 'O truque da casca de laranja que virou viral no TikTok tem base científica real?'",
+    "AUTORIDADE INVERTIDA: 'Meu médico disse que era só a idade — então eu decidi pesquisar por conta própria'"
+  ],
+
+  "data_sources": [
+    "https://mlrb.net/weight-gain-menopause-reddit/",
+    "https://girlfriend.aarp.org/health/think-you-cant-lose-weight-after-menopause-think-again",
+    "https://finance.yahoo.com/news/citrusburn-addresses-orange-peel-hack-001300628.html",
+    "https://www.globenewswire.com/news-release/2025/12/19/3208258/0/en/CitrusBurn-Addresses-Orange-Peel-Hack-Trend-Citrus-Burn-Extract-Research-for-Menopause-Metabolism-Support.html",
+    "https://nationaltoday.com/us/va/virginia-beach/news/2026/03/30/new-citrus-based-supplement-targets-metabolic-lock-after-40/",
+    "https://www.myglu.org/supplement-review/citrusburn-reviews/",
+    "https://hollyherman.com/citrusburn-weight-loss/",
+    "https://holistic.radianthealthbliss.com/2026/04/citrusburn-review-can-it-really-support.html",
+    "https://forumhealth.com/blog/4-ways-women-can-battle-weight-loss-resistance-after-40-and-beyond/",
+    "https://cbsnooper.com/products/MITOLYN",
+    "https://www.clickbank.com/blog/clickbank-top-offers/"
+  ]
+}

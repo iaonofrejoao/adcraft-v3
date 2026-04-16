@@ -70,7 +70,7 @@ Confirme que existem no `.env` da raiz:
 
 ### Grupo 2 — Testes de API (com criação, com cleanup)
 
-7. `POST /api/products` com payload válido retorna 200 + sku gerado (4 letras)
+7. `POST /api/products` com payload válido retorna 201 + sku gerado (4 letras)
 8. `POST /api/products` com payload inválido (sem name) retorna 422 com `details.fieldErrors`
 9. `POST /api/products` com URL inválida retorna 422 ou 400
 10. `POST /api/products` 2x com mesmo nome — SKU diferente em cada (trigger de unique)

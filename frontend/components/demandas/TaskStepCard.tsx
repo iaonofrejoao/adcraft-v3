@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import {
   ChevronDown, ChevronRight, RefreshCw, Clock, CheckCircle2,
   XCircle, AlertTriangle, Bot, Users, BarChart2, Lightbulb,
@@ -121,6 +122,13 @@ export function TaskStepCard({ task, index, isLast, onRerun }: TaskStepCardProps
     setRerunLoading(true)
     try {
       await onRerun(task.id)
+      toast.success(`Agente "${label}" re-executado`, {
+        description: 'O step foi re-enfileirado para execução.',
+      })
+    } catch {
+      toast.error('Erro ao re-executar agente', {
+        description: 'Verifique os logs e tente novamente.',
+      })
     } finally {
       setRerunLoading(false)
       setRerunOpen(false)

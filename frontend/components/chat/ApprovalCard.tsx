@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface ApprovalCardProps {
   approvalId:   string
@@ -15,14 +16,21 @@ export function ApprovalCard({ approvalId, approvalType, payload, onResolve }: A
   async function handleDecision(decision: 'approved' | 'rejected') {
     setLoading(true)
     try {
-      // Para budget_exceeded, apenas resolve o approval
-      await fetch(`/api/approvals/${approvalId}`, {
+      const res = await fetch(`/api/approvals/${approvalId}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ status: decision }),
       })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       setResolved(decision)
       onResolve(approvalId, decision)
+      if (decision === 'approved') {
+        toast.success('Pipeline continuado', { description: 'A execução foi aprovada e segue.' })
+      } else {
+        toast('Pipeline pausado', { description: 'A execução foi pausada aguardando ação.' })
+      }
+    } catch {
+      toast.error('Erro ao processar decisão', { description: 'Tente novamente ou verifique a conexão.' })
     } finally {
       setLoading(false)
     }

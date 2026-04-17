@@ -107,6 +107,9 @@ export async function executeTriggerAgent(
   const cachedCount   = plan.tasks.filter((t) => t.status === 'reused').length;
   const toRunCount    = taskCount;
 
+  const pipelineShortId = persisted.pipeline_id.slice(0, 4).toUpperCase();
+  const demandaLink = `[Demanda ${product.name} #${pipelineShortId}](/demandas?pipeline=${persisted.pipeline_id})`;
+
   return {
     status:        'plan_preview_shown',
     pipeline_id:   persisted.pipeline_id,
@@ -116,9 +119,11 @@ export async function executeTriggerAgent(
     cached_count:  cachedCount,
     estimated_cost_usd: plan.estimated_cost_usd,
     budget_usd:    plan.budget_usd,
+    demanda_link_markdown: demandaLink,
     instructions:
       'O preview do plano foi exibido ao usuário. ' +
       'Apresente um resumo conciso do plano e instrua o usuário a clicar ' +
-      '"Executar" no card de preview ou digitar "sim, pode executar" para confirmar.',
+      '"Executar" no card de preview ou digitar "sim, pode executar" para confirmar. ' +
+      `Use OBRIGATORIAMENTE este link markdown na sua resposta: ${demandaLink}`,
   };
 }

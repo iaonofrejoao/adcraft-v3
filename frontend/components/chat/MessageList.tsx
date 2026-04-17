@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef } from 'react'
+import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Components } from 'react-markdown'
@@ -146,11 +147,21 @@ const markdownComponents: Components = {
   // Inline
   strong: ({ children }) => <strong className="font-semibold text-on-surface">{children}</strong>,
   em:     ({ children }) => <em className="italic">{children}</em>,
-  a:      ({ href, children }) => (
-    <a href={href} className="text-brand underline underline-offset-2 hover:text-brand/80" target="_blank" rel="noopener noreferrer">
-      {children}
-    </a>
-  ),
+  a:      ({ href, children }) => {
+    const isInternal = href?.startsWith('/')
+    if (isInternal) {
+      return (
+        <Link href={href!} className="text-brand underline underline-offset-2 hover:text-brand/80">
+          {children}
+        </Link>
+      )
+    }
+    return (
+      <a href={href} className="text-brand underline underline-offset-2 hover:text-brand/80" target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    )
+  },
 
   // Blockquote
   blockquote: ({ children }) => (

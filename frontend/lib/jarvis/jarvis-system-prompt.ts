@@ -78,7 +78,18 @@ agentes especializados para criar criativos completos a partir de um produto:
 Prefira resolver com uma única chamada de tool. Evite chamar múltiplas tools em
 paralelo a menos que as informações sejam independentes entre si. Sempre
 apresente o resultado de uma tool de forma clara, sem repetir o JSON bruto.
+
+## Links de navegação
+
+Ao referenciar entidades navegáveis da plataforma, use links markdown com nome legível:
+- Demandas/pipelines: [Demanda NomeProduto #abcd](/demandas?pipeline=uuid-completo)
+- Produtos: [NomeProduto](/products/SKU)
+- Copies: [Copies NomeProduto](/products/SKU/copies)
+
+O link deve aparecer no texto da resposta para que o usuário possa navegar sem reload.
+Produtos inativos não devem ser disparados em pipelines sem confirmação explícita do usuário.
 `;
+
 
 export async function buildJarvisSystemPrompt(
   supabase: SupabaseClient,

@@ -277,32 +277,55 @@ export default function PipelineDetailPage({
             </p>
           </div>
         ) : (
-          <div className="max-w-3xl">
-            {/* Legenda de steps */}
-            <div className="flex items-center gap-1.5 mb-6">
-              <CheckCircle2 size={12} strokeWidth={1.5} className="text-status-done-text" />
-              <span className="text-[11px] text-on-surface-muted">Concluído</span>
-              <span className="text-on-surface-muted mx-2">·</span>
-              <RefreshCw size={12} strokeWidth={1.5} className="text-[#60A5FA]" />
-              <span className="text-[11px] text-on-surface-muted">Rodando</span>
-              <span className="text-on-surface-muted mx-2">·</span>
-              <Clock size={12} strokeWidth={1.5} className="text-on-surface-muted" />
-              <span className="text-[11px] text-on-surface-muted">Pendente</span>
-              <span className="text-on-surface-muted mx-2">·</span>
-              <XCircle size={12} strokeWidth={1.5} className="text-status-failed-text" />
-              <span className="text-[11px] text-on-surface-muted">Falhou</span>
-            </div>
+          <div className="max-w-3xl space-y-6">
+            {/* Resultado final — output do último agente concluído */}
+            {(() => {
+              const lastDone = [...pipeline.tasks]
+                .reverse()
+                .find((t) => (t.status === 'completed' || t.status === 'skipped') && t.output)
+              if (!lastDone?.output) return null
+              return (
+                <div className="bg-surface-container border border-status-done-text/20 rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle2 size={14} strokeWidth={1.5} className="text-status-done-text" />
+                    <h3 className="text-[13px] font-semibold text-on-surface">Resultado gerado</h3>
+                    <span className="font-mono text-[10px] text-on-surface-muted uppercase tracking-wide">
+                      {lastDone.agent_name.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <pre className="text-[11px] text-on-surface-variant font-mono leading-relaxed overflow-x-auto max-h-80 whitespace-pre-wrap break-words">
+                    {JSON.stringify(lastDone.output, null, 2)}
+                  </pre>
+                </div>
+              )
+            })()}
 
-            {/* Cards de steps */}
-            {pipeline.tasks.map((task, index) => (
-              <TaskStepCard
-                key={task.id}
-                task={task}
-                index={index}
-                isLast={index === pipeline.tasks.length - 1}
-                onRerun={(taskId) => rerunTask(taskId).then(() => undefined)}
-              />
-            ))}
+            {/* Legenda + steps */}
+            <div>
+              <div className="flex items-center gap-1.5 mb-6">
+                <CheckCircle2 size={12} strokeWidth={1.5} className="text-status-done-text" />
+                <span className="text-[11px] text-on-surface-muted">Concluído</span>
+                <span className="text-on-surface-muted mx-2">·</span>
+                <RefreshCw size={12} strokeWidth={1.5} className="text-[#60A5FA]" />
+                <span className="text-[11px] text-on-surface-muted">Rodando</span>
+                <span className="text-on-surface-muted mx-2">·</span>
+                <Clock size={12} strokeWidth={1.5} className="text-on-surface-muted" />
+                <span className="text-[11px] text-on-surface-muted">Pendente</span>
+                <span className="text-on-surface-muted mx-2">·</span>
+                <XCircle size={12} strokeWidth={1.5} className="text-status-failed-text" />
+                <span className="text-[11px] text-on-surface-muted">Falhou</span>
+              </div>
+
+              {pipeline.tasks.map((task, index) => (
+                <TaskStepCard
+                  key={task.id}
+                  task={task}
+                  index={index}
+                  isLast={index === pipeline.tasks.length - 1}
+                  onRerun={(taskId) => rerunTask(taskId).then(() => undefined)}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>

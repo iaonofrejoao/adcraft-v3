@@ -1,9 +1,10 @@
 'use client'
-import type { ElementType } from 'react'
+import { type ElementType, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   UserRound, MapPin, Briefcase, BookOpen, Heart,
-  AlertCircle, MessageCircle, ExternalLink, RefreshCw,
+  AlertCircle, MessageCircle, ExternalLink, RefreshCw, Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -122,6 +123,27 @@ export function PersonasTabSkeleton() {
 
 /* ── Empty state ────────────────────────────────────────────────────── */
 export function PersonasTabEmpty({ sku }: { sku: string }) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+
+  async function handleGenerate() {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/pipelines', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ product_sku: sku, goal: 'avatar_only' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erro ao iniciar pipeline')
+      router.push(`/demandas/${data.pipeline_id}`)
+    } catch {
+      router.push(`/?msg=@${sku}+/avatar`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
       <div className="w-14 h-14 rounded-xl bg-surface-container border border-white/5 flex items-center justify-center">
@@ -130,18 +152,20 @@ export function PersonasTabEmpty({ sku }: { sku: string }) {
       <div className="text-center space-y-1">
         <p className="text-sm font-semibold text-on-surface">Nenhuma persona encontrada</p>
         <p className="text-[0.6875rem] text-on-surface-variant">
-          Solicite ao Jarvis para construir o perfil do comprador ideal
+          Clique abaixo para construir o perfil do comprador ideal
         </p>
       </div>
-      <Link
-        href={`/?msg=@${sku}+/avatar`}
-        className="text-sm px-4 py-2 rounded font-medium text-[#131314]
+      <button
+        onClick={handleGenerate}
+        disabled={loading}
+        className="flex items-center gap-2 text-sm px-4 py-2 rounded font-medium text-[#131314]
           bg-gradient-to-br from-[#F28705] to-[#FFB690]
           hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
-          transition-shadow duration-150"
+          transition-shadow duration-150 disabled:opacity-60"
       >
-        Gerar persona via Jarvis
-      </Link>
+        {loading && <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />}
+        {loading ? 'Iniciando…' : 'Gerar persona'}
+      </button>
     </div>
   )
 }

@@ -30,6 +30,7 @@ export async function GET(req: Request) {
   const sku        = searchParams.get('sku');
   const productId  = searchParams.get('product_id');
   const statusRaw  = searchParams.get('status');
+  const goalRaw    = searchParams.get('goal');
   const dateFrom   = searchParams.get('date_from');
   const dateTo     = searchParams.get('date_to');
   const limit      = Math.min(Math.max(1, parseInt(searchParams.get('limit')  ?? '50',  10) || 50),  200);
@@ -37,6 +38,10 @@ export async function GET(req: Request) {
 
   const statusList = statusRaw
     ? statusRaw.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  const goalList = goalRaw
+    ? goalRaw.split(',').map((g) => g.trim()).filter(Boolean)
     : [];
 
   const supabase = getServiceClient();
@@ -71,7 +76,10 @@ export async function GET(req: Request) {
     .range(offset, offset + limit - 1);
 
   if (resolvedProductId) query = query.eq('product_id', resolvedProductId);
+  // Sempre exclui pipelines deletados, a menos que o filtro inclua 'deleted' explicitamente
   if (statusList.length)  query = query.in('status', statusList);
+  else                    query = query.neq('status', 'deleted');
+  if (goalList.length)    query = query.in('goal', goalList);
   if (dateFrom)           query = query.gte('created_at', dateFrom);
   if (dateTo)             query = query.lte('created_at', dateTo);
 
@@ -139,4 +147,62 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json({ pipelines: result, total: count ?? result.length });
+}
+
+// ── POST /api/pipelines — cria e dispara um pipeline diretamente ──────────────
+//
+// Body: { product_sku: string, goal: 'market_only' | 'avatar_only' | 'angles_only' | 'copy_only' | 'creative_full' }
+// Resposta: { pipeline_id: string, task_count: number }
+
+import { z } from 'zod';
+import { createNewPipeline, getNextProductVersion } from '@/lib/jarvis/actions';
+import type { GoalName } from '@/lib/agent-registry';
+
+const VALID_GOALS: GoalName[] = ['market_only', 'avatar_only', 'angles_only', 'copy_only', 'creative_full'];
+
+const LaunchSchema = z.object({
+  product_sku: z.string().min(1),
+  goal:        z.enum(['market_only', 'avatar_only', 'angles_only', 'copy_only', 'creative_full']),
+});
+
+export async function POST(req: Request) {
+  let body: unknown;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const parsed = LaunchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.flatten() }, { status: 422 });
+  }
+
+  const { product_sku, goal } = parsed.data;
+  const supabase = getServiceClient();
+
+  // 1. Resolve product by SKU
+  const { data: product, error: productErr } = await supabase
+    .from('products')
+    .select('id, name')
+    .eq('sku', product_sku)
+    .maybeSingle();
+
+  if (productErr || !product) {
+    return NextResponse.json({ error: 'Produto não encontrado' }, { status: 404 });
+  }
+
+  try {
+    // 2. Versão do produto
+    const productVersion = await getNextProductVersion(product.id, supabase);
+
+    // 3. Cria o pipeline com status='pending' — worker inicia automaticamente
+    const pipeline = await createNewPipeline(product.id, goal as GoalName, productVersion, supabase);
+
+    return NextResponse.json({ pipeline_id: pipeline.id, task_count: pipeline.tasks.length });
+  } catch (err) {
+    console.error('[POST /api/pipelines] error:', err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Erro ao criar pipeline' },
+      { status: 500 }
+    );
+  }
 }

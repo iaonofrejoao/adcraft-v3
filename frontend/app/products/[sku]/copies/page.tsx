@@ -2,9 +2,13 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronRight, Pencil } from 'lucide-react'
+import { Pencil } from 'lucide-react'
+import {
+  ProductDetailHeader,
+  ProductDetailLoading,
+} from '@/components/detalhes-produto'
+import type { Product } from '@/components/detalhes-produto'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { Skeleton }    from '@/components/ui/skeleton'
 import { AprovacaoBoard } from '@/components/aprovacao-componentes'
 
 interface Pipeline {
@@ -13,12 +17,6 @@ interface Pipeline {
   status:          string
   cost_so_far_usd: string
   created_at:      string
-}
-
-interface Product {
-  id:   string
-  name: string
-  sku:  string
 }
 
 export default function CopiesPage() {
@@ -51,31 +49,62 @@ export default function CopiesPage() {
   const currentPipeline = pipelines.find((p) => p.id === activePipeline)
 
   /* ── Loading ── */
-  if (loading) {
+  if (loading) return <ProductDetailLoading />
+
+  /* ── Not found ── */
+  if (!product) {
     return (
-      <div className="flex flex-col h-full bg-surface">
-        <div className="bg-surface-low px-8 pt-6 pb-4 shrink-0 space-y-2">
-          <Skeleton className="h-3 w-48 bg-surface-highest" />
-          <Skeleton className="h-7 w-64 bg-surface-highest" />
-          <Skeleton className="h-3 w-80 bg-surface-highest" />
-        </div>
-        <div className="flex-1 px-8 py-6">
-          <Skeleton className="h-16 w-full rounded-xl bg-surface-highest mb-6" />
-          <div className="grid grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-48 rounded-xl bg-surface-highest" />
-            ))}
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center h-full gap-3 bg-surface">
+        <p className="text-sm text-on-surface-variant">Produto não encontrado: {sku}</p>
+        <Link href="/products" className="text-sm text-brand hover:underline">← Voltar</Link>
       </div>
     )
   }
 
-  /* ── Empty ── */
-  if (!activePipeline || pipelines.length === 0) {
-    return (
-      <div className="flex flex-col h-full bg-surface">
-        <CopiesHeader product={product} sku={sku} pipelines={[]} activePipeline={null} currentPipeline={undefined} onPipelineChange={() => {}} />
+  /* ── Main ── */
+  return (
+    <div className="flex flex-col h-full bg-surface overflow-y-auto">
+      <ProductDetailHeader product={product} sku={sku!} />
+
+      {/* Copies toolbar */}
+      <div className="shrink-0 px-8 py-3 bg-surface flex items-center justify-between gap-3 border-b border-outline-variant/10">
+        <div className="flex items-center gap-3">
+          {pipelines.length > 1 && (
+            <select
+              value={activePipeline ?? ''}
+              onChange={(e) => setActivePipeline(e.target.value)}
+              className="h-9 px-3 text-xs rounded-lg bg-surface-container border border-white/5
+                text-on-surface outline-none
+                focus:border-brand focus:ring-2 focus:ring-brand/20
+                transition-all duration-150"
+            >
+              {pipelines.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.goal} · {new Date(p.created_at).toLocaleDateString('pt-BR')}
+                </option>
+              ))}
+            </select>
+          )}
+          {currentPipeline && (
+            <StatusBadge
+              status={currentPipeline.status as 'running' | 'done' | 'failed' | 'pending' | 'paused'}
+            />
+          )}
+        </div>
+
+        <Link
+          href={`/?msg=@${sku}+/copy`}
+          className="text-sm px-3 py-1.5 rounded font-medium text-primary-foreground
+            bg-gradient-to-br from-brand to-brand-end
+            hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
+            transition-shadow duration-150"
+        >
+          Nova copy via Jarvis
+        </Link>
+      </div>
+
+      {/* Content */}
+      {!activePipeline || pipelines.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1 gap-4 py-24">
           <div className="w-14 h-14 rounded-xl bg-surface-container border border-white/5 flex items-center justify-center">
             <Pencil size={22} strokeWidth={1.5} className="text-on-surface-muted" />
@@ -96,115 +125,15 @@ export default function CopiesPage() {
             Gerar copy com Jarvis
           </Link>
         </div>
-      </div>
-    )
-  }
-
-  /* ── Main ── */
-  return (
-    <div className="flex flex-col h-full bg-surface overflow-y-auto">
-      <CopiesHeader
-        product={product}
-        sku={sku}
-        pipelines={pipelines}
-        activePipeline={activePipeline}
-        currentPipeline={currentPipeline}
-        onPipelineChange={setActivePipeline}
-      />
-
-      <div className="flex-1 px-8 py-6 pb-10">
-        <AprovacaoBoard
-          sku={sku}
-          pipelineId={activePipeline}
-          productId={product?.id ?? ''}
-        />
-      </div>
+      ) : (
+        <div className="flex-1 px-8 py-6 pb-10">
+          <AprovacaoBoard
+            sku={sku!}
+            pipelineId={activePipeline}
+            productId={product.id}
+          />
+        </div>
+      )}
     </div>
-  )
-}
-
-/* ── Page header ─────────────────────────────────────────────────── */
-interface CopiesHeaderProps {
-  product:          Product | null
-  sku:              string
-  pipelines:        Pipeline[]
-  activePipeline:   string | null
-  currentPipeline:  Pipeline | undefined
-  onPipelineChange: (id: string) => void
-}
-
-function CopiesHeader({
-  product, sku, pipelines, activePipeline, currentPipeline, onPipelineChange,
-}: CopiesHeaderProps) {
-  return (
-    <header className="bg-surface-low shrink-0 px-8 pt-6 pb-5">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-[0.6875rem] font-medium mb-3">
-        <Link
-          href="/products"
-          className="text-on-surface-variant/60 hover:text-on-surface-variant transition-colors duration-150"
-        >
-          Produtos
-        </Link>
-        <ChevronRight size={10} strokeWidth={1.5} className="text-on-surface-muted/40" />
-        <Link
-          href={`/products/${sku}`}
-          className="bg-brand-muted text-brand font-mono px-1.5 py-0.5 rounded hover:bg-brand/20 transition-colors duration-150"
-        >
-          {sku}
-        </Link>
-        <ChevronRight size={10} strokeWidth={1.5} className="text-on-surface-muted/40" />
-        <span className="text-on-surface-variant">Copies</span>
-      </nav>
-
-      {/* Title row */}
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[1.75rem] font-bold tracking-tight text-on-surface">
-            Aprovação de componentes
-          </h1>
-          <p className="text-sm text-on-surface-variant mt-1 max-w-xl">
-            Aprove os componentes que vão para combinação. Você precisa de pelo menos
-            1 hook, 1 body e 1 CTA aprovados.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Pipeline selector */}
-          {pipelines.length > 1 && (
-            <select
-              value={activePipeline ?? ''}
-              onChange={(e) => onPipelineChange(e.target.value)}
-              className="h-9 px-3 text-xs rounded-lg bg-surface-container border border-white/5
-                text-on-surface outline-none
-                focus:border-brand focus:ring-2 focus:ring-brand/20
-                transition-all duration-150"
-            >
-              {pipelines.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.goal} · {new Date(p.created_at).toLocaleDateString('pt-BR')}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {currentPipeline && (
-            <StatusBadge
-              status={currentPipeline.status as 'running' | 'done' | 'failed' | 'pending' | 'paused'}
-            />
-          )}
-
-          <Link
-            href={`/?msg=@${sku}+/copy`}
-            className="text-sm px-3 py-1.5 rounded font-medium text-primary-foreground
-              bg-gradient-to-br from-brand to-brand-end
-              hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
-              transition-shadow duration-150"
-          >
-            Nova copy via Jarvis
-          </Link>
-        </div>
-      </div>
-    </header>
   )
 }

@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Sparkles,
   HeartPulse,
+  Loader2,
 } from "lucide-react"
 import { Dialog, DialogPortal, DialogOverlay } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -21,13 +22,15 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { AFFILIATE_PLATFORMS } from "@/lib/constants"
+import { AFFILIATE_PLATFORMS, DEFAULT_USER_ID, PRODUCT_DEFAULTS } from "@/lib/constants"
+import { toast } from "sonner"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface ProductRegistrationData {
   tab: "url" | "manual"
   url?: string
+  name?: string
   platform?: string
 }
 
@@ -55,35 +58,72 @@ export function CadastrarProdutoModal({
 }: CadastrarProdutoModalProps) {
   const [tab, setTab] = useState<Tab>("url")
   const [url, setUrl] = useState("")
+  const [name, setName] = useState("")
   const [platform, setPlatform] = useState("")
   const [extracted, setExtracted] = useState<ExtractedProduct | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   function handleUrlChange(value: string) {
     setUrl(value)
-    // Reset extraction when URL is cleared
     if (!value.trim()) setExtracted(null)
   }
 
   function handleUrlBlur() {
-    // Simulate Jarvis extraction — replace with real hook call when ready
-    if (url.trim()) {
-      setExtracted({
-        name: "Mitolyn — Metabolic Blend",
-        description:
-          "Advanced metabolic support formula designed to optimize energy levels and support natural weight management through botanical extracts.",
-        niche: "Saúde & Bem-estar",
-        status: "URL_READY",
-      })
+    // Auto-suggest name from URL domain if name is still empty
+    if (url.trim() && !name.trim()) {
+      try {
+        const hostname = new URL(url).hostname.replace(/^www\./, "")
+        const suggested = hostname.split(".")[0]
+        setName(suggested.charAt(0).toUpperCase() + suggested.slice(1))
+      } catch {
+        // URL inválida — mantém name em branco
+      }
     }
   }
 
-  function handleSubmit() {
-    onSubmit?.({ tab, url, platform })
-    onOpenChange(false)
+  async function handleSubmit() {
+    if (!url.trim() || !name.trim()) return
+    setIsSubmitting(true)
+    setSubmitError(null)
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: DEFAULT_USER_ID,
+          name: name.trim(),
+          product_url: url.trim(),
+          platform: platform || undefined,
+          commission_percent: PRODUCT_DEFAULTS.commissionPercent,
+          ticket_price: PRODUCT_DEFAULTS.ticketPrice,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error ?? "Erro ao criar produto")
+      }
+      toast.success("Produto cadastrado!", {
+        description: `${name.trim()} foi adicionado com sucesso.`,
+      })
+      onSubmit?.({ tab, url, name, platform })
+      handleClose()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao criar produto"
+      toast.error("Falha ao cadastrar produto", { description: msg })
+      setSubmitError(msg)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   function handleClose() {
     onOpenChange(false)
+    setUrl("")
+    setName("")
+    setPlatform("")
+    setExtracted(null)
+    setSubmitError(null)
   }
 
   return (
@@ -153,8 +193,10 @@ export function CadastrarProdutoModal({
             <TabsContent value="url" className="px-8 py-6 space-y-6 mt-0">
               <UrlTabContent
                 url={url}
+                name={name}
                 onUrlChange={handleUrlChange}
                 onUrlBlur={handleUrlBlur}
+                onNameChange={setName}
                 extracted={extracted}
                 platform={platform}
                 onPlatformChange={setPlatform}
@@ -166,21 +208,36 @@ export function CadastrarProdutoModal({
           </Tabs>
 
           {/* Footer */}
-          <footer className="px-8 py-4 flex items-center justify-end gap-3 bg-surface-high/30">
-            <Button
-              variant="ghost"
-              className="text-on-surface-variant hover:text-on-surface transition-colors duration-150"
-              onClick={handleClose}
-            >
-              Cancelar
-            </Button>
-            <Button
-              className="bg-brand-gradient text-primary-foreground font-semibold hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-shadow duration-150"
-              onClick={handleSubmit}
-            >
-              Continuar
-              <ArrowRight strokeWidth={1.5} size={16} />
-            </Button>
+          <footer className="px-8 py-4 flex items-center justify-between gap-3 bg-surface-high/30">
+            {submitError ? (
+              <p className="text-xs text-destructive truncate">{submitError}</p>
+            ) : (
+              <span />
+            )}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                className="text-on-surface-variant hover:text-on-surface transition-colors duration-150"
+                onClick={handleClose}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="bg-brand-gradient text-primary-foreground font-semibold hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-shadow duration-150"
+                onClick={handleSubmit}
+                disabled={isSubmitting || !url.trim() || !name.trim()}
+              >
+                {isSubmitting ? (
+                  <Loader2 strokeWidth={1.5} size={16} className="animate-spin" />
+                ) : (
+                  <>
+                    Continuar
+                    <ArrowRight strokeWidth={1.5} size={16} />
+                  </>
+                )}
+              </Button>
+            </div>
           </footer>
         </RadixDialog.Content>
       </DialogPortal>
@@ -192,8 +249,10 @@ export function CadastrarProdutoModal({
 
 interface UrlTabContentProps {
   url: string
+  name: string
   onUrlChange: (value: string) => void
   onUrlBlur: () => void
+  onNameChange: (value: string) => void
   extracted: ExtractedProduct | null
   platform: string
   onPlatformChange: (value: string) => void
@@ -201,8 +260,10 @@ interface UrlTabContentProps {
 
 function UrlTabContent({
   url,
+  name,
   onUrlChange,
   onUrlBlur,
+  onNameChange,
   extracted,
   platform,
   onPlatformChange,
@@ -239,7 +300,24 @@ function UrlTabContent({
         </p>
       </div>
 
-      {/* Extracted Product Card */}
+      {/* Nome do produto */}
+      <div className="space-y-2">
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+          Nome do produto
+        </label>
+        <Input
+          placeholder="Ex: CitrusBurn"
+          value={name}
+          onChange={(e) => onNameChange(e.target.value)}
+          className={cn(
+            "h-10 bg-surface-low border-outline-variant/20",
+            "text-on-surface placeholder:text-on-surface-muted",
+            "focus-visible:border-brand focus-visible:ring-brand/20",
+          )}
+        />
+      </div>
+
+      {/* Extracted Product Card — só exibe quando há extração real */}
       {extracted && (
         <div className="relative bg-surface-container rounded-lg p-4 border border-brand/20 flex gap-4 items-start overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-brand/[0.05] to-transparent pointer-events-none" />
@@ -266,7 +344,7 @@ function UrlTabContent({
 
       {/* Quick-glance Fields */}
       <div className="grid grid-cols-2 gap-4">
-        {/* Nicho Sugerido — read-only */}
+        {/* Nicho Sugerido — read-only, preenchido após extração */}
         <div className="space-y-1.5">
           <label className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
             Nicho Sugerido

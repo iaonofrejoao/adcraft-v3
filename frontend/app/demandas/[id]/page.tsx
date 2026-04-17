@@ -1,6 +1,5 @@
 'use client'
 import Link from 'next/link'
-import { use } from 'react'
 import {
   ArrowLeft, RefreshCw, Download, Clock,
   CheckCircle2, XCircle, AlertTriangle, Zap,
@@ -29,7 +28,7 @@ function formatDate(iso: string): string {
 
 function formatDuration(startIso: string, endIso: string | null): string {
   const end  = endIso ? new Date(endIso) : new Date()
-  const diff = end.getTime() - new Date(startIso).getTime()
+  const diff = Math.max(0, end.getTime() - new Date(startIso).getTime())
   const s    = Math.round(diff / 1000)
   if (s < 60) return `${s}s`
   const m = Math.floor(s / 60)
@@ -93,9 +92,9 @@ function StatItem({ label, value, icon, highlight }: StatItemProps) {
 export default function PipelineDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }) {
-  const { id } = use(params)
+  const { id } = params
   const { pipeline, isLoading, error, reload, rerunTask } = usePipelineDetail(id)
 
   const [rerunAllOpen, setRerunAllOpen] = useState(false)

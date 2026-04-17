@@ -1,8 +1,9 @@
 'use client'
 import Link from 'next/link'
+import { useState, useEffect, useRef } from 'react'
 import {
   ChevronRight, Download, RefreshCw,
-  ArrowUpDown, Package,
+  ArrowUpDown, Package, Trash2, AlertTriangle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -24,7 +25,7 @@ function formatDate(iso: string): string {
 
 function formatDuration(startIso: string, endIso: string | null): string {
   const end  = endIso ? new Date(endIso) : new Date()
-  const diff = end.getTime() - new Date(startIso).getTime()
+  const diff = Math.max(0, end.getTime() - new Date(startIso).getTime())
   const s    = Math.round(diff / 1000)
   if (s < 60) return `${s}s`
   const m = Math.floor(s / 60)
@@ -71,13 +72,14 @@ function TableSkeleton() {
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 export interface PipelineTableProps {
-  pipelines:  PipelineRow[]
-  total:      number
-  isLoading:  boolean
-  page:       number
-  pageSize:   number
-  onSetPage:  (p: number) => void
+  pipelines:   PipelineRow[]
+  total:       number
+  isLoading:   boolean
+  page:        number
+  pageSize:    number
+  onSetPage:   (p: number) => void
   onRowClick?: (id: string) => void
+  onDelete?:   (id: string) => void
 }
 
 // ── Componente ────────────────────────────────────────────────────────────────
@@ -90,7 +92,27 @@ export function PipelineTable({
   pageSize,
   onSetPage,
   onRowClick,
+  onDelete,
 }: PipelineTableProps) {
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Auto-cancela confirm após 3s
+  useEffect(() => {
+    if (!confirmingId) return
+    confirmTimer.current = setTimeout(() => setConfirmingId(null), 3000)
+    return () => { if (confirmTimer.current) clearTimeout(confirmTimer.current) }
+  }, [confirmingId])
+
+  function handleDeleteClick(e: React.MouseEvent, id: string) {
+    e.stopPropagation()
+    if (confirmingId === id) {
+      setConfirmingId(null)
+      onDelete?.(id)
+    } else {
+      setConfirmingId(id)
+    }
+  }
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   if (isLoading) return <TableSkeleton />
@@ -224,20 +246,40 @@ export function PipelineTable({
                 {/* Ações */}
                 <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      title="Exportar JSON"
-                      onClick={() => exportPipeline(p)}
-                      className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
-                    >
-                      <Download size={13} strokeWidth={1.5} />
-                    </button>
-                    <Link
-                      href={`/demandas/${p.id}`}
-                      className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
-                      title="Ver detalhes"
-                    >
-                      <ChevronRight size={13} strokeWidth={1.5} />
-                    </Link>
+                    {confirmingId === p.id ? (
+                      <button
+                        title="Confirmar exclusão"
+                        onClick={(e) => handleDeleteClick(e, p.id)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#F87171] bg-[rgba(248,113,113,0.12)] hover:bg-[rgba(248,113,113,0.2)] border border-[#F87171]/30 transition-colors animate-pulse"
+                      >
+                        <AlertTriangle size={11} strokeWidth={1.5} />
+                        Excluir?
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          title="Exportar JSON"
+                          onClick={() => exportPipeline(p)}
+                          className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                        >
+                          <Download size={13} strokeWidth={1.5} />
+                        </button>
+                        <Link
+                          href={`/demandas/${p.id}`}
+                          className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                          title="Ver detalhes"
+                        >
+                          <ChevronRight size={13} strokeWidth={1.5} />
+                        </Link>
+                        <button
+                          title="Excluir demanda"
+                          onClick={(e) => handleDeleteClick(e, p.id)}
+                          className="p-1.5 rounded-md text-on-surface-muted hover:text-[#F87171] hover:bg-[rgba(248,113,113,0.08)] transition-colors"
+                        >
+                          <Trash2 size={13} strokeWidth={1.5} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>

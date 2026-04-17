@@ -16,6 +16,7 @@ interface ProductDetailHeaderProps {
 const TABS = [
   { label: 'Mercado',   href: (sku: string) => `/products/${sku}/mercado`   },
   { label: 'Personas',  href: (sku: string) => `/products/${sku}/personas`  },
+  { label: 'Ângulos',   href: (sku: string) => `/products/${sku}/angulos`   },
   { label: 'Copy',      href: (sku: string) => `/products/${sku}/copies`    },
   { label: 'Criativos', href: (sku: string) => `/products/${sku}/criativos` },
   { label: 'Campanhas', href: (sku: string) => `/products/${sku}/campanhas` },
@@ -140,7 +141,7 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
                     'border-b border-brand/60 outline-none focus:border-brand',
                     'min-w-[200px] w-auto'
                   )}
-                  style={{ width: `${Math.max(nameValue.length, 10)}ch` }}
+                  style={{ width: `${Math.max((nameValue ?? '').length, 10)}ch` }}
                   autoFocus
                 />
                 {savingName && (

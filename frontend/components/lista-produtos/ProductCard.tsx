@@ -107,9 +107,16 @@ export function ProductCard({ product: p }: ProductCardProps) {
         {/* Top row: nome + ícone de configurações */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-on-surface truncate">
-              {p.name}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-on-surface truncate">
+                {p.name}
+              </h3>
+              {p.status !== 'active' && (
+                <span className="shrink-0 text-[0.5625rem] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-on-surface-muted/10 text-on-surface-muted ring-1 ring-on-surface-muted/20">
+                  Inativo
+                </span>
+              )}
+            </div>
             <p className="font-mono text-[0.6875rem] tracking-[0.02em] text-on-surface-muted mt-0.5">
               {[p.niche?.name, p.platform].filter(Boolean).join(' • ') || p.sku}
             </p>

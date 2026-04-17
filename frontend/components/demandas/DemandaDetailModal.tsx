@@ -65,7 +65,7 @@ function formatRelative(iso: string): string {
 
 function formatDuration(start: string, end: string | null): string {
   const endDate = end ? new Date(end) : new Date()
-  const s = Math.round((endDate.getTime() - new Date(start).getTime()) / 1000)
+  const s = Math.max(0, Math.round((endDate.getTime() - new Date(start).getTime()) / 1000))
   if (s < 60) return `${s}s`
   const m = Math.floor(s / 60)
   if (m < 60) return `${m}min`
@@ -144,9 +144,6 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
 
   // Running agent: última task em status 'running'
   const runningTask = pipeline?.tasks.find((t) => t.status === 'running')
-
-  // Últimas 3 tasks (invertidas = mais recentes primeiro)
-  const lastThree = [...(pipeline?.tasks ?? [])].reverse().slice(0, 3)
 
   return (
     <Dialog open={!!pipelineId} onOpenChange={(open) => !open && onClose()}>
@@ -253,30 +250,6 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
                 )}
               </div>
 
-              {/* ── Seção 3 — Últimas atualizações ───────────────────────── */}
-              {lastThree.length > 0 && (
-                <div className="border-t border-white/5 pt-3 space-y-2">
-                  <p className="text-[0.6875rem] font-bold uppercase tracking-widest text-on-surface-muted">
-                    Últimas atualizações
-                  </p>
-                  {lastThree.map((task) => (
-                    <div key={task.id} className="flex items-center gap-2.5 text-[0.75rem]">
-                      <StatusDot status={task.status} />
-                      <span className="flex-1 text-on-surface-variant truncate">
-                        {agentLabel(task.agent_name)}
-                      </span>
-                      <span className="text-on-surface-muted font-mono shrink-0">
-                        {task.completed_at
-                          ? formatRelative(task.completed_at)
-                          : task.started_at
-                            ? formatRelative(task.started_at)
-                            : formatRelative(task.created_at)
-                        }
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </>
           ) : (
             <p className="text-sm text-on-surface-muted text-center py-4">

@@ -2,9 +2,14 @@
 import { useProducts } from '@/hooks/useProducts'
 import { CadastrarProdutoModal } from '@/components/cadastrar-produto'
 import { ProductsHeader, ProductGrid } from '@/components/lista-produtos'
+import { Switch } from '@/components/ui/switch'
 
 export default function ProductsPage() {
-  const { products, isLoading, isModalOpen, openModal, closeModal, refetch } = useProducts()
+  const {
+    products, isLoading, isModalOpen,
+    showInactive, setShowInactive,
+    openModal, closeModal, refetch,
+  } = useProducts()
 
   return (
     <div className="flex flex-col h-full bg-surface">
@@ -21,7 +26,22 @@ export default function ProductsPage() {
         onSubmit={() => refetch()}
       />
 
-      <div className="flex-1 overflow-y-auto px-6 py-5">
+      {/* Filtro de inativos */}
+      <div className="flex items-center gap-2 px-6 pt-3 pb-1">
+        <Switch
+          checked={showInactive}
+          onCheckedChange={setShowInactive}
+          id="show-inactive"
+        />
+        <label
+          htmlFor="show-inactive"
+          className="text-[0.75rem] text-on-surface-muted cursor-pointer select-none"
+        >
+          Mostrar inativos
+        </label>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-6 py-4">
         <ProductGrid
           products={products}
           isLoading={isLoading}

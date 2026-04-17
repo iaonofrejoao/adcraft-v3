@@ -1,7 +1,9 @@
 // GET /api/products/:sku — retorna produto pelo SKU
+// PATCH /api/products/:sku — atualiza nome e/ou status
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -19,7 +21,7 @@ export async function GET(
 
   const { data: product, error } = await supabase
     .from('products')
-    .select('id, name, sku, platform, target_language, ticket_price, commission_percent, product_url, affiliate_link, niche_id, created_at')
+    .select('id, name, sku, platform, target_language, ticket_price, commission_percent, product_url, affiliate_link, niche_id, status, created_at, updated_at')
     .eq('sku', sku)
     .maybeSingle();
 
@@ -31,4 +33,54 @@ export async function GET(
   }
 
   return NextResponse.json({ product });
+}
+
+// ── PATCH ─────────────────────────────────────────────────────────────────────
+
+const PatchSchema = z.object({
+  name:   z.string().min(1).max(200).optional(),
+  status: z.enum(['active', 'inactive', 'archived']).optional(),
+}).refine((d) => d.name !== undefined || d.status !== undefined, {
+  message: 'Pelo menos um campo deve ser fornecido',
+});
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: { sku: string } }
+) {
+  const { sku } = params;
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  const parsed = PatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', details: parsed.error.flatten() },
+      { status: 422 }
+    );
+  }
+
+  const supabase = getServiceClient();
+
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (parsed.data.name   !== undefined) patch.name   = parsed.data.name;
+  if (parsed.data.status !== undefined) patch.status = parsed.data.status;
+
+  const { data, error: updateErr } = await supabase
+    .from('products')
+    .update(patch)
+    .eq('sku', sku)
+    .select('id, name, sku, status, updated_at')
+    .single();
+
+  if (updateErr) {
+    return NextResponse.json({ error: updateErr.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data);
 }

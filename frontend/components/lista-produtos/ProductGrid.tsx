@@ -19,16 +19,18 @@ export function ProductGrid({ products, isLoading, onAddProduct }: ProductGridPr
           <div key={i} className="bg-surface-container border border-white/5 rounded-xl p-4 flex flex-col gap-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 space-y-2">
-                <Skeleton className="h-3 w-20 bg-surface-highest" />
                 <Skeleton className="h-4 w-40 bg-surface-highest" />
+                <Skeleton className="h-3 w-24 bg-surface-highest" />
               </div>
-              <Skeleton className="h-5 w-16 rounded bg-surface-highest" />
+              <Skeleton className="h-3 w-3 rounded bg-surface-highest" />
             </div>
-            <Skeleton className="h-3 w-32 bg-surface-highest" />
-            <div className="flex gap-2 pt-1">
-              <Skeleton className="h-7 w-16 rounded bg-surface-highest" />
-              <Skeleton className="h-7 w-24 rounded bg-surface-highest" />
+            <Skeleton className="h-3 w-20 bg-surface-highest" />
+            <div className="flex gap-2.5">
+              {Array.from({ length: 5 }).map((_, j) => (
+                <Skeleton key={j} className="h-4 w-4 rounded bg-surface-highest" />
+              ))}
             </div>
+            <Skeleton className="h-2.5 w-28 bg-surface-highest" />
           </div>
         ))}
       </div>

@@ -1,8 +1,11 @@
 'use client'
+import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronRight, Tag } from 'lucide-react'
+import { ChevronRight, Pencil, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Switch } from '@/components/ui/switch'
 import type { Product } from './types'
 
 interface ProductDetailHeaderProps {
@@ -31,6 +34,71 @@ function formatRelativeDate(iso: string): string {
 export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) {
   const pathname = usePathname()
 
+  // ── Name editing ────────────────────────────────────────────────────────────
+  const [editingName, setEditingName]   = useState(false)
+  const [nameValue,   setNameValue]     = useState(product.name)
+  const [savingName,  setSavingName]    = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const startEdit = useCallback(() => {
+    setEditingName(true)
+    setNameValue(product.name)
+    setTimeout(() => inputRef.current?.select(), 0)
+  }, [product.name])
+
+  const cancelEdit = useCallback(() => {
+    setEditingName(false)
+    setNameValue(product.name)
+  }, [product.name])
+
+  const saveName = useCallback(async () => {
+    const trimmed = nameValue.trim()
+    if (!trimmed || trimmed === product.name) {
+      cancelEdit()
+      return
+    }
+    setSavingName(true)
+    try {
+      const res = await fetch(`/api/products/${sku}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Erro ao salvar')
+      toast.success('Nome atualizado')
+      setEditingName(false)
+      // Atualiza o valor local para refletir sem reload
+      setNameValue(trimmed)
+    } catch (err) {
+      toast.error((err as Error).message)
+    } finally {
+      setSavingName(false)
+    }
+  }, [nameValue, product.name, sku, cancelEdit])
+
+  // ── Status toggle ────────────────────────────────────────────────────────────
+  const [status,       setStatus]      = useState(product.status ?? 'active')
+  const [savingStatus, setSavingStatus] = useState(false)
+
+  const toggleStatus = useCallback(async (checked: boolean) => {
+    const newStatus = checked ? 'active' : 'inactive'
+    setSavingStatus(true)
+    try {
+      const res = await fetch(`/api/products/${sku}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Erro ao salvar')
+      setStatus(newStatus)
+      toast.success(newStatus === 'active' ? 'Produto ativado' : 'Produto desativado')
+    } catch (err) {
+      toast.error((err as Error).message)
+    } finally {
+      setSavingStatus(false)
+    }
+  }, [sku])
+
   return (
     <header className="bg-surface-low shrink-0">
       {/* Top bar: breadcrumb + actions */}
@@ -50,25 +118,73 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
             </span>
           </nav>
 
-          {/* Title row */}
-          <div className="flex items-center gap-3 mt-1">
+          {/* Title row: sku + nome editável + status switch */}
+          <div className="flex items-center gap-3 mt-1 group">
             <span className="font-mono text-brand text-base font-medium">{sku}</span>
-            <h1 className="text-[1.75rem] font-semibold tracking-[-0.02em] text-on-surface">
-              {product.name}
-            </h1>
+
+            {editingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  value={nameValue}
+                  onChange={(e) => setNameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveName()
+                    if (e.key === 'Escape') cancelEdit()
+                  }}
+                  onBlur={saveName}
+                  disabled={savingName}
+                  className={cn(
+                    'text-[1.75rem] font-semibold tracking-[-0.02em] text-on-surface bg-transparent',
+                    'border-b border-brand/60 outline-none focus:border-brand',
+                    'min-w-[200px] w-auto'
+                  )}
+                  style={{ width: `${Math.max(nameValue.length, 10)}ch` }}
+                  autoFocus
+                />
+                {savingName && (
+                  <Loader2 size={16} strokeWidth={1.5} className="text-brand animate-spin shrink-0" />
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={startEdit}
+                title="Clique para editar o nome"
+                className="flex items-center gap-2 group/name"
+              >
+                <h1 className="text-[1.75rem] font-semibold tracking-[-0.02em] text-on-surface">
+                  {nameValue}
+                </h1>
+                <Pencil
+                  size={14}
+                  strokeWidth={1.5}
+                  className="text-on-surface-muted/0 group-hover/name:text-on-surface-muted transition-colors shrink-0"
+                />
+              </button>
+            )}
+
+            {/* Status switch */}
+            <div className="flex items-center gap-2 ml-2">
+              <Switch
+                checked={status === 'active'}
+                onCheckedChange={toggleStatus}
+                disabled={savingStatus}
+                id="product-status"
+              />
+              <label
+                htmlFor="product-status"
+                className={cn(
+                  'text-[0.75rem] font-medium cursor-pointer select-none transition-colors',
+                  status === 'active' ? 'text-green-400' : 'text-on-surface-muted'
+                )}
+              >
+                {status === 'active' ? 'Ativo' : 'Inativo'}
+              </label>
+            </div>
           </div>
 
           {/* Metadata row */}
           <div className="flex items-center gap-3 mt-1 text-[0.8125rem] text-on-surface-variant/70">
-            {product.niche_id && (
-              <>
-                <span className="flex items-center gap-1">
-                  <Tag size={12} strokeWidth={1.5} />
-                  Nicho: {product.niche_id}
-                </span>
-                <span className="w-1 h-1 bg-white/20 rounded-full" />
-              </>
-            )}
             <span className="font-mono">{product.platform}</span>
             <span className="w-1 h-1 bg-white/20 rounded-full" />
             <span>Cadastrado {formatRelativeDate(product.created_at)}</span>
@@ -91,16 +207,8 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
           </div>
         </div>
 
-        {/* Action buttons */}
+        {/* Action button */}
         <div className="flex items-center gap-3 shrink-0 pt-1">
-          <Link
-            href={`/products/${sku}/copies`}
-            className="px-4 py-2 rounded-lg border border-outline-variant/20
-              text-on-surface text-sm font-medium
-              hover:bg-surface-high transition-colors duration-150"
-          >
-            Ver copies
-          </Link>
           <Link
             href={`/?msg=@${sku}`}
             className="px-4 py-2 rounded-lg text-sm font-bold text-[#131314]
@@ -117,7 +225,7 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
       {/* Tab navigation */}
       <nav className="flex gap-6 px-8">
         {TABS.map(({ label, href }) => {
-          const target  = href(sku)
+          const target   = href(sku)
           const isActive = pathname === target
           return (
             <Link

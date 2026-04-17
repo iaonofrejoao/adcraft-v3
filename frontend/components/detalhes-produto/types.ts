@@ -9,7 +9,9 @@ export interface Product {
   product_url: string
   affiliate_link: string
   niche_id: string | null
+  status?: string
   created_at: string
+  updated_at?: string
 }
 
 export interface Pipeline {

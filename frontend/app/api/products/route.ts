@@ -16,13 +16,23 @@ import { z } from 'zod';
 
 // ── GET /api/products ─────────────────────────────────────────────────────────
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const showInactive = searchParams.get('show_inactive') === 'true';
+
     const supabase = getServiceClient();
-    const { data, error } = await supabase
+
+    let query = supabase
       .from('products')
-      .select('id, name, sku, platform, target_language, ticket_price, commission_percent, created_at, niches(name)')
+      .select('id, name, sku, platform, target_language, ticket_price, commission_percent, status, created_at, niches(name)')
       .order('created_at', { ascending: false });
+
+    if (!showInactive) {
+      query = query.neq('status', 'inactive').neq('status', 'archived');
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 

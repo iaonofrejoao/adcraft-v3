@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, varchar, jsonb, integer, boolean, numeric, timestamp, customType } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, varchar, jsonb, integer, boolean, numeric, timestamp, bigint, customType } from "drizzle-orm/pg-core";
 
 const vector = customType<{ data: number[]; driverData: string }>({
   dataType() {
@@ -44,6 +44,15 @@ export const products = pgTable("products", {
   target_language: text("target_language").default('pt-BR'),
   ticket_price: numeric("ticket_price", { precision: 10, scale: 2 }),
   commission_percent: numeric("commission_percent", { precision: 10, scale: 2 }),
+  // VSL — Fase D
+  vsl_url: text("vsl_url"),
+  vsl_source: text("vsl_source"),
+  vsl_uploaded_at: timestamp("vsl_uploaded_at"),
+  vsl_duration_seconds: integer("vsl_duration_seconds"),
+  vsl_file_size_bytes: bigint("vsl_file_size_bytes", { mode: "number" }),
+  // Status e score
+  viability_score: numeric("viability_score", { precision: 4, scale: 2 }),
+  status: text("status").default('active'),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });

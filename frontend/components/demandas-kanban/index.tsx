@@ -32,9 +32,10 @@ const COLUMNS: ColumnConfig[] = [
 
 export interface KanbanBoardProps extends UseTasksReturn {
   filterPipelineId?: string
+  onCardClick?: (pipelineId: string) => void
 }
 
-export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId }: KanbanBoardProps) {
+export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId, onCardClick }: KanbanBoardProps) {
   // Merge 'skipped' into 'done' — skipped = resultado reutilizado, semântica de concluído
   const mergedByStatus: typeof tasksByStatus = {
     ...tasksByStatus,
@@ -110,6 +111,7 @@ export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId }: Kanb
               key={col.id}
               {...col}
               tasks={filteredByStatus[col.id] ?? []}
+              onCardClick={onCardClick}
             />
           ))}
         </div>

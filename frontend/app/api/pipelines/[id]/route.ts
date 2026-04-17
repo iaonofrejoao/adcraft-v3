@@ -48,19 +48,33 @@ export async function GET(
     .eq('pipeline_id', id)
     .eq('status', 'pending');
 
+  // Enrich: produto associado
+  let product: { name: string; sku: string } | null = null;
+  if (pipeline.product_id) {
+    const { data: prod } = await supabase
+      .from('products')
+      .select('name, sku')
+      .eq('id', pipeline.product_id)
+      .maybeSingle();
+    if (prod) product = prod;
+  }
+
   // Progresso: % de tasks completed (exclui reused/skipped)
   const allTasks = tasks ?? [];
   const executedTasks = allTasks.filter((t) => t.status !== 'skipped');
-  const completedTasks = executedTasks.filter((t) => t.status === 'completed');
+  const completedTasks = executedTasks.filter((t) => t.status === 'completed' || t.status === 'done');
   const progress = executedTasks.length > 0
     ? Math.round((completedTasks.length / executedTasks.length) * 100)
     : 0;
 
   return NextResponse.json({
     ...pipeline,
+    product,
     tasks: allTasks,
     pending_approvals: approvals ?? [],
     progress_pct: progress,
+    tasks_total: allTasks.length,
+    tasks_done:  completedTasks.length,
   });
 }
 

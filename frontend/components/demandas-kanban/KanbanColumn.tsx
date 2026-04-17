@@ -10,9 +10,10 @@ export interface KanbanColumnProps {
   icon: LucideIcon
   colorClass: string
   tasks: Task[]
+  onCardClick?: (pipelineId: string) => void
 }
 
-export function KanbanColumn({ label, icon: Icon, colorClass, tasks }: KanbanColumnProps) {
+export function KanbanColumn({ label, icon: Icon, colorClass, tasks, onCardClick }: KanbanColumnProps) {
   return (
     <div className="w-[280px] shrink-0 flex flex-col min-h-0 h-full">
       {/* Cabeçalho da coluna */}
@@ -35,7 +36,13 @@ export function KanbanColumn({ label, icon: Icon, colorClass, tasks }: KanbanCol
                 <p className="text-[12px] text-[#6B6460]">Nenhuma tarefa</p>
               </div>
             ) : (
-              tasks.map((task) => <TaskCard key={task.id} task={task} />)
+              tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onClick={() => onCardClick?.(task.pipeline_id)}
+              />
+            ))
             )}
           </div>
         </ScrollArea>

@@ -1,5 +1,5 @@
 'use client'
-import { Suspense, useCallback } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { LayoutGrid, Table2, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -7,6 +7,7 @@ import { usePipelines, type PipelineFilters as Filters } from '@/hooks/usePipeli
 import { PipelineTable } from '@/components/demandas/PipelineTable'
 import { PipelineFilters } from '@/components/demandas/PipelineFilters'
 import { KanbanBoard } from '@/components/demandas-kanban'
+import { DemandaDetailModal } from '@/components/demandas/DemandaDetailModal'
 import { useTasks } from '@/hooks/useTasks'
 
 // ── URL ↔ filter helpers ──────────────────────────────────────────────────────
@@ -35,7 +36,7 @@ function filtersToParams(f: Filters, base: URLSearchParams): URLSearchParams {
 
 // ── Vista Kanban (tasks-level) ────────────────────────────────────────────────
 
-function KanbanView() {
+function KanbanView({ onCardClick }: { onCardClick: (pipelineId: string) => void }) {
   const params           = useSearchParams()
   const filterPipelineId = params.get('pipeline') ?? undefined
   const { tasks, isLoading, tasksByStatus } = useTasks()
@@ -46,13 +47,14 @@ function KanbanView() {
       isLoading={isLoading}
       tasksByStatus={tasksByStatus}
       filterPipelineId={filterPipelineId}
+      onCardClick={onCardClick}
     />
   )
 }
 
 // ── Vista Tabela (pipelines-level) ────────────────────────────────────────────
 
-function TableView() {
+function TableView({ onRowClick }: { onRowClick: (id: string) => void }) {
   const params   = useSearchParams()
   const router   = useRouter()
   const pathname = usePathname()
@@ -108,6 +110,7 @@ function TableView() {
           page={page}
           pageSize={pageSize}
           onSetPage={setPage}
+          onRowClick={onRowClick}
         />
       </div>
     </div>
@@ -119,8 +122,10 @@ function TableView() {
 type ViewMode = 'table' | 'kanban'
 
 function DemandasContent() {
-  const router       = useSearchParams()
-  const view: ViewMode = (router.get('view') as ViewMode) ?? 'table'
+  const searchParams = useSearchParams()
+  const view: ViewMode = (searchParams.get('view') as ViewMode) ?? 'table'
+
+  const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null)
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-surface">
@@ -141,8 +146,17 @@ function DemandasContent() {
 
       {/* Conteúdo */}
       <div className="flex-1 min-h-0">
-        {view === 'table' ? <TableView /> : <KanbanView />}
+        {view === 'table'
+          ? <TableView onRowClick={setSelectedPipelineId} />
+          : <KanbanView onCardClick={setSelectedPipelineId} />
+        }
       </div>
+
+      {/* Modal de detalhes */}
+      <DemandaDetailModal
+        pipelineId={selectedPipelineId}
+        onClose={() => setSelectedPipelineId(null)}
+      />
     </div>
   )
 }

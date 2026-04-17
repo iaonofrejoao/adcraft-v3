@@ -86,9 +86,10 @@ function formatRelative(iso: string): string {
 
 export interface TaskCardProps {
   task: Task
+  onClick?: () => void
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, onClick }: TaskCardProps) {
   const iconName = AGENT_ICONS[task.agent_name.replace(/_/g, '-')]
   const IconComp = iconName ? (LUCIDE_MAP[iconName] ?? Bot) : Bot
 
@@ -106,6 +107,10 @@ export function TaskCard({ task }: TaskCardProps) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       className={cn(
         'bg-[#1C1B1C] p-4 rounded-xl border-l-2 shadow-sm',
         'hover:bg-[#201F20] transition-colors duration-150 cursor-pointer group relative',
@@ -193,7 +198,10 @@ export function TaskCard({ task }: TaskCardProps) {
       </div>
 
       {/* Dropdown — aparece no hover */}
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+      <div
+        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

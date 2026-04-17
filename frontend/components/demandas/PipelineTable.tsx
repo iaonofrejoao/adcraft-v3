@@ -77,6 +77,7 @@ export interface PipelineTableProps {
   page:       number
   pageSize:   number
   onSetPage:  (p: number) => void
+  onRowClick?: (id: string) => void
 }
 
 // ── Componente ────────────────────────────────────────────────────────────────
@@ -88,6 +89,7 @@ export function PipelineTable({
   page,
   pageSize,
   onSetPage,
+  onRowClick,
 }: PipelineTableProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
@@ -147,6 +149,7 @@ export function PipelineTable({
             {pipelines.map((p) => (
               <tr
                 key={p.id}
+                onClick={() => onRowClick?.(p.id)}
                 className="hover:bg-surface-container/50 transition-colors group cursor-pointer"
               >
                 {/* ID */}
@@ -219,11 +222,11 @@ export function PipelineTable({
                 </td>
 
                 {/* Ações */}
-                <td className="py-3 px-3">
+                <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       title="Exportar JSON"
-                      onClick={(e) => { e.stopPropagation(); exportPipeline(p) }}
+                      onClick={() => exportPipeline(p)}
                       className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
                     >
                       <Download size={13} strokeWidth={1.5} />

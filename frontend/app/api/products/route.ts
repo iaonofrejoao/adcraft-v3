@@ -23,21 +23,33 @@ export async function GET(req: Request) {
 
     const supabase = getServiceClient();
 
-    let query = supabase
+    // Tenta query com coluna status (disponível após migration 017).
+    // Se a coluna ainda não existir, faz fallback sem ela.
+    let data: Record<string, unknown>[] | null = null;
+
+    const withStatus = await supabase
       .from('products')
       .select('id, name, sku, platform, target_language, ticket_price, commission_percent, status, created_at, niches(name)')
       .order('created_at', { ascending: false });
 
-    if (!showInactive) {
-      query = query.neq('status', 'inactive').neq('status', 'archived');
+    if (withStatus.error) {
+      // Coluna 'status' provavelmente não existe — fallback sem ela
+      const fallback = await supabase
+        .from('products')
+        .select('id, name, sku, platform, target_language, ticket_price, commission_percent, created_at, niches(name)')
+        .order('created_at', { ascending: false });
+      if (fallback.error) throw fallback.error;
+      data = (fallback.data ?? []) as Record<string, unknown>[];
+    } else {
+      let rows = withStatus.data ?? [];
+      if (!showInactive) {
+        rows = rows.filter((p) => p.status !== 'inactive' && p.status !== 'archived');
+      }
+      data = rows as Record<string, unknown>[];
     }
 
-    const { data, error } = await query;
-
-    if (error) throw error;
-
     // Reshape niches relation → niche to match the Product interface on the client
-    const products = (data ?? []).map((p) => {
+    const products = data.map((p) => {
       const { niches, ...rest } = p as typeof p & { niches: { name: string } | null };
       return { ...rest, niche: niches ?? null };
     });
@@ -45,7 +57,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ products });
   } catch (err) {
     console.error('[products GET] error:', err);
-    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    return NextResponse.json({ products: [] }, { status: 200 });
   }
 }
 

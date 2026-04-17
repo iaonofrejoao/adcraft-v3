@@ -36,9 +36,11 @@ export function useProducts(): UseProductsReturn {
       const url = showInactive ? '/api/products?show_inactive=true' : '/api/products'
       const res = await fetch(url)
       const data = await res.json()
-      setProducts(data.products ?? data ?? [])
+      const list = data?.products
+      setProducts(Array.isArray(list) ? list : [])
     } catch (err) {
       console.error('[useProducts] fetch failed', err)
+      setProducts([])
     } finally {
       setIsLoading(false)
     }

@@ -21,7 +21,7 @@ export async function GET(
 
   const { data: product, error } = await supabase
     .from('products')
-    .select('id, name, sku, platform, target_language, ticket_price, commission_percent, product_url, affiliate_link, niche_id, status, created_at, updated_at')
+    .select('id, name, sku, platform, target_country, target_language, ticket_price, commission_percent, product_url, affiliate_link, niche_id, status, created_at, updated_at')
     .eq('sku', sku)
     .maybeSingle();
 
@@ -38,11 +38,14 @@ export async function GET(
 // ── PATCH ─────────────────────────────────────────────────────────────────────
 
 const PatchSchema = z.object({
-  name:   z.string().min(1).max(200).optional(),
-  status: z.enum(['active', 'inactive', 'archived']).optional(),
-}).refine((d) => d.name !== undefined || d.status !== undefined, {
-  message: 'Pelo menos um campo deve ser fornecido',
-});
+  name:            z.string().min(1).max(200).optional(),
+  status:          z.enum(['active', 'inactive', 'archived']).optional(),
+  target_country:  z.string().max(10).optional(),
+  target_language: z.string().max(20).optional(),
+}).refine(
+  (d) => d.name !== undefined || d.status !== undefined || d.target_country !== undefined || d.target_language !== undefined,
+  { message: 'Pelo menos um campo deve ser fornecido' }
+);
 
 export async function PATCH(
   req: Request,
@@ -68,8 +71,10 @@ export async function PATCH(
   const supabase = getServiceClient();
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (parsed.data.name   !== undefined) patch.name   = parsed.data.name;
-  if (parsed.data.status !== undefined) patch.status = parsed.data.status;
+  if (parsed.data.name            !== undefined) patch.name            = parsed.data.name;
+  if (parsed.data.status          !== undefined) patch.status          = parsed.data.status;
+  if (parsed.data.target_country  !== undefined) patch.target_country  = parsed.data.target_country;
+  if (parsed.data.target_language !== undefined) patch.target_language = parsed.data.target_language;
 
   const { data, error: updateErr } = await supabase
     .from('products')

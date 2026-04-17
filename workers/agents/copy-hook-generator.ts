@@ -53,6 +53,7 @@ export async function runCopyHookGenerator(task: TaskRow): Promise<Record<string
 
 [Contexto do Produto]:
 Produto: ${product.name}
+País alvo: ${(product as any).target_country || 'BR'}
 Língua: ${product.target_language || 'pt-BR'}
 Ângulo a seguir: ${angle_context.primary_angle || 'N/A'}
 

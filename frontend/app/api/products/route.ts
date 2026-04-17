@@ -29,14 +29,14 @@ export async function GET(req: Request) {
 
     const withStatus = await supabase
       .from('products')
-      .select('id, name, sku, platform, target_language, ticket_price, commission_percent, status, created_at, niches(name)')
+      .select('id, name, sku, platform, target_country, target_language, ticket_price, commission_percent, status, created_at, niches(name)')
       .order('created_at', { ascending: false });
 
     if (withStatus.error) {
       // Coluna 'status' provavelmente não existe — fallback sem ela
       const fallback = await supabase
         .from('products')
-        .select('id, name, sku, platform, target_language, ticket_price, commission_percent, created_at, niches(name)')
+        .select('id, name, sku, platform, target_country, target_language, ticket_price, commission_percent, created_at, niches(name)')
         .order('created_at', { ascending: false });
       if (fallback.error) throw fallback.error;
       data = (fallback.data ?? []) as Record<string, unknown>[];

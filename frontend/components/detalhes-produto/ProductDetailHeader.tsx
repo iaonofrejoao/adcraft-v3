@@ -2,11 +2,35 @@
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronRight, Pencil, Loader2 } from 'lucide-react'
+import { ChevronRight, Pencil, Loader2, Globe } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
 import type { Product } from './types'
+
+// ── Country / Language mapping ────────────────────────────────────────────────
+
+const COUNTRIES = [
+  { code: 'BR', flag: '🇧🇷', label: 'Brasil',        language: 'pt-BR' },
+  { code: 'PT', flag: '🇵🇹', label: 'Portugal',       language: 'pt-PT' },
+  { code: 'US', flag: '🇺🇸', label: 'Estados Unidos', language: 'en-US' },
+  { code: 'GB', flag: '🇬🇧', label: 'Reino Unido',    language: 'en-GB' },
+  { code: 'ES', flag: '🇪🇸', label: 'Espanha',        language: 'es-ES' },
+  { code: 'MX', flag: '🇲🇽', label: 'México',         language: 'es-MX' },
+  { code: 'AR', flag: '🇦🇷', label: 'Argentina',      language: 'es-AR' },
+  { code: 'CO', flag: '🇨🇴', label: 'Colômbia',       language: 'es-CO' },
+  { code: 'CL', flag: '🇨🇱', label: 'Chile',          language: 'es-CL' },
+  { code: 'PE', flag: '🇵🇪', label: 'Peru',           language: 'es-PE' },
+  { code: 'FR', flag: '🇫🇷', label: 'França',         language: 'fr-FR' },
+  { code: 'DE', flag: '🇩🇪', label: 'Alemanha',       language: 'de-DE' },
+  { code: 'IT', flag: '🇮🇹', label: 'Itália',         language: 'it-IT' },
+] as const
+
+type CountryCode = typeof COUNTRIES[number]['code']
+
+function getCountry(code: string) {
+  return COUNTRIES.find((c) => c.code === code) ?? COUNTRIES[0]
+}
 
 interface ProductDetailHeaderProps {
   product: Product
@@ -81,6 +105,29 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
   // ── Status toggle ────────────────────────────────────────────────────────────
   const [status,       setStatus]      = useState(product.status ?? 'active')
   const [savingStatus, setSavingStatus] = useState(false)
+
+  // ── Country / Language ───────────────────────────────────────────────────────
+  const [country,       setCountry]      = useState(product.target_country ?? 'BR')
+  const [savingCountry, setSavingCountry] = useState(false)
+
+  const saveCountry = useCallback(async (code: string) => {
+    const found = getCountry(code)
+    setSavingCountry(true)
+    try {
+      const res = await fetch(`/api/products/${sku}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_country: found.code, target_language: found.language }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Erro ao salvar')
+      setCountry(found.code)
+      toast.success(`País atualizado: ${found.label} (${found.language})`)
+    } catch (err) {
+      toast.error((err as Error).message)
+    } finally {
+      setSavingCountry(false)
+    }
+  }, [sku])
 
   const toggleStatus = useCallback(async (checked: boolean) => {
     const newStatus = checked ? 'active' : 'inactive'
@@ -206,6 +253,34 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
                 </span>
               </>
             )}
+            <span className="w-1 h-1 bg-white/20 rounded-full" />
+            {/* Country / Language selector */}
+            <div className="flex items-center gap-1.5">
+              <Globe size={12} strokeWidth={1.5} className="text-on-surface-muted/60 shrink-0" />
+              <div className="relative">
+                <select
+                  value={country}
+                  disabled={savingCountry}
+                  onChange={(e) => saveCountry(e.target.value)}
+                  className={cn(
+                    'appearance-none bg-transparent text-[0.8125rem] text-on-surface-variant/70',
+                    'border-none outline-none cursor-pointer hover:text-on-surface transition-colors',
+                    'pr-1',
+                    savingCountry && 'opacity-50 pointer-events-none'
+                  )}
+                  title="País de destino (afeta idioma e adaptações culturais de todos os materiais gerados)"
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code} className="bg-surface-container text-on-surface">
+                      {c.flag} {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {savingCountry && (
+                <Loader2 size={11} strokeWidth={1.5} className="text-brand animate-spin shrink-0" />
+              )}
+            </div>
           </div>
         </div>
 

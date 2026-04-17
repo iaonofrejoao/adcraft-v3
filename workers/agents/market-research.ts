@@ -42,9 +42,13 @@ export async function runMarketResearch(task: TaskRow): Promise<Record<string, u
     const dynamicInput = `Faça a pesquisa de mercado para este produto e gere o laudo de viabilidade.
 Produto: ${product.name}
 Nicho Principal: ${product.niche_id}
+País alvo: ${(product as any).target_country || 'BR'}
+Idioma dos materiais: ${product.target_language || 'pt-BR'}
 Ticket de Venda Estimado: R$${product.ticket_price || 0.0}
 Comissão: ${product.commission_percent || 0.0}%
 Promessa Principal identificada antes: "${product_context.main_promise || 'Promessa não identificada'}"
+
+IMPORTANTE: Todo o conteúdo gerado (análise, copy, persona) deve ser adaptado cultural e linguisticamente para o país "${(product as any).target_country || 'BR'}" no idioma "${product.target_language || 'pt-BR'}".`
 
 ${serializeContext(ctx)}
 

@@ -41,6 +41,7 @@ export const products = pgTable("products", {
   name: text("name").notNull(),
   platform: varchar("platform", { length: 100 }),
   niche_id: uuid("niche_id").references(() => niches.id),
+  target_country: text("target_country").default('BR'),
   target_language: text("target_language").default('pt-BR'),
   ticket_price: numeric("ticket_price", { precision: 10, scale: 2 }),
   commission_percent: numeric("commission_percent", { precision: 10, scale: 2 }),

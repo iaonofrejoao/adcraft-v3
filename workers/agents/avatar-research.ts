@@ -44,6 +44,8 @@ export async function runAvatarResearch(task: TaskRow): Promise<Record<string, u
     const market_context = ctx.context_json.market as any || {};
 
     const dynamicInput = `O produto chama-se "${product.name}" (Nicho: ${product.niche_id}).
+País alvo: ${(product as any).target_country || 'BR'}
+Idioma: ${product.target_language || 'pt-BR'}
 Promessa Principal detectada: "${product_context.main_promise || 'Sem promessa'}"
 Descrição inicial: "${product_context.avatar_description || ''}"
 Dores listadas: ${JSON.stringify(product_context.pain_points_identified || [])}
@@ -51,7 +53,8 @@ Nível de competição: ${market_context.competition_level || 'medium'}
 
 ${serializeContext(ctx)}
 
-Realize buscas via ferramenta para cavar o psicológico da persona. Sintetize quem é conforme o formato JSON requerido.`;
+Realize buscas via ferramenta para cavar o psicológico da persona. Sintetize quem é conforme o formato JSON requerido.
+IMPORTANTE: A persona deve ser construída com referências culturais, expressões, dores e aspirações específicas do país "${(product as any).target_country || 'BR'}" no idioma "${product.target_language || 'pt-BR'}".`;
 
     // 4. Chamada LLM
     const result = await callAgent({

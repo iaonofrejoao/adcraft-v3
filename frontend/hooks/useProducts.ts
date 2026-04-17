@@ -7,6 +7,7 @@ export interface Product {
   sku: string
   platform: string
   status: string
+  target_country: string
   target_language: string
   ticket_price: string | null
   commission_percent: string | null

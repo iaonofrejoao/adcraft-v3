@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import {
   Clock, RefreshCw, MessageSquare, CheckCircle2, XCircle, Zap, X,
   type LucideIcon,
@@ -8,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { KanbanColumn } from './KanbanColumn'
-import { KanbanFilters } from './KanbanFilters'
+import { KanbanFilters, type KanbanFiltersValue } from './KanbanFilters'
 import type { UseTasksReturn } from '@/hooks/useTasks'
 
 // ── Definição das colunas ─────────────────────────────────────────────────────
@@ -33,23 +34,39 @@ const COLUMNS: ColumnConfig[] = [
 export interface KanbanBoardProps extends UseTasksReturn {
   filterPipelineId?: string
   onCardClick?: (pipelineId: string) => void
+  onDelete?:    (pipelineId: string) => void
 }
 
-export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId, onCardClick }: KanbanBoardProps) {
+export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId, onCardClick, onDelete }: KanbanBoardProps) {
+  const [filters, setFilters] = useState<KanbanFiltersValue>({ search: '', goal: 'all' })
+
   // Merge 'skipped' into 'done' — skipped = resultado reutilizado, semântica de concluído
   const mergedByStatus: typeof tasksByStatus = {
     ...tasksByStatus,
     done: [...(tasksByStatus['done'] ?? []), ...(tasksByStatus['skipped'] ?? [])],
   }
 
-  const filteredByStatus = filterPipelineId
-    ? Object.fromEntries(
-        Object.entries(mergedByStatus).map(([status, tasks]) => [
-          status,
-          tasks.filter((t) => t.pipeline_id === filterPipelineId),
-        ])
-      )
-    : mergedByStatus
+  // Aplica filtros: pipeline específico, busca por nome de produto, filtro de goal
+  const filteredByStatus = Object.fromEntries(
+    Object.entries(mergedByStatus).map(([status, tasks]) => {
+      let list = tasks
+      if (filterPipelineId) {
+        list = list.filter((t) => t.pipeline_id === filterPipelineId)
+      }
+      if (filters.search.trim()) {
+        const q = filters.search.trim().toLowerCase()
+        list = list.filter(
+          (t) =>
+            t.pipeline?.product?.name?.toLowerCase().includes(q) ||
+            t.pipeline_id.slice(0, 8).toLowerCase().includes(q)
+        )
+      }
+      if (filters.goal !== 'all') {
+        list = list.filter((t) => t.agent_name === filters.goal)
+      }
+      return [status, list]
+    })
+  )
 
   if (isLoading) {
     return (
@@ -68,7 +85,7 @@ export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId, onCard
   return (
     <div className="flex flex-col h-full overflow-hidden bg-[#131314]">
       {/* Cabeçalho da página */}
-      <div className="flex items-end justify-between px-6 pt-6 pb-5 shrink-0">
+      <div className="flex items-end justify-between px-6 pt-6 pb-4 shrink-0 flex-wrap gap-3">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-[#E8E3DD] leading-none">
             Demandas
@@ -77,7 +94,7 @@ export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId, onCard
             Pipelines em andamento e histórico operacional da rede AdCraft.
           </p>
         </div>
-        <KanbanFilters />
+        <KanbanFilters value={filters} onChange={setFilters} />
       </div>
 
       {/* Banner de filtro ativo */}
@@ -112,6 +129,7 @@ export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId, onCard
               {...col}
               tasks={filteredByStatus[col.id] ?? []}
               onCardClick={onCardClick}
+              onDelete={onDelete}
             />
           ))}
         </div>

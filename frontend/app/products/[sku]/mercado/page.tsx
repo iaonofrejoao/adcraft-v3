@@ -14,7 +14,6 @@ import {
 } from '@/components/produto-tabs/MercadoTab'
 import type { MarketArtifactData } from '@/components/produto-tabs/MercadoTab'
 import { useProductKnowledge } from '@/hooks/useProductKnowledge'
-import { VSLUpload } from '@/components/products/VSLUpload'
 
 export default function MercadoPage() {
   const { sku } = useParams<{ sku: string }>()
@@ -46,22 +45,7 @@ export default function MercadoPage() {
     <div className="flex flex-col h-full bg-surface overflow-y-auto">
       <ProductDetailHeader product={product} sku={sku!} />
 
-      <section className="flex-1 px-8 py-6 pb-10 max-w-4xl w-full space-y-8">
-        {/* VSL — insumo do produto */}
-        <div className="bg-surface-container rounded-xl p-5 border border-white/5">
-          <h2 className="text-sm font-semibold text-on-surface mb-1">
-            VSL — Vídeo de Vendas
-          </h2>
-          <p className="text-[0.75rem] text-on-surface-muted mb-4">
-            Vincule o VSL do produto para que os agentes possam analisá-lo.
-          </p>
-          <VSLUpload
-            sku={sku!}
-            currentUrl={(product as unknown as { vsl_url?: string }).vsl_url ?? null}
-          />
-        </div>
-
-        {/* Estudo de mercado */}
+      <section className="flex-1 px-8 py-6 pb-10 max-w-4xl w-full">
         {loadingKnowledge ? (
           <MercadoTabSkeleton />
         ) : !knowledge ? (

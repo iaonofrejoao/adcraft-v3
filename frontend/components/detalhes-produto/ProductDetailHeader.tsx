@@ -19,6 +19,7 @@ const TABS = [
   { label: 'Copy',      href: (sku: string) => `/products/${sku}/copies`    },
   { label: 'Criativos', href: (sku: string) => `/products/${sku}/criativos` },
   { label: 'Campanhas', href: (sku: string) => `/products/${sku}/campanhas` },
+  { label: 'VSL',       href: (sku: string) => `/products/${sku}/vsl`       },
   { label: 'Histórico', href: (sku: string) => `/products/${sku}/historico` },
 ] as const
 

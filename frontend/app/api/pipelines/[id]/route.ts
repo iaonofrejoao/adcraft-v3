@@ -37,7 +37,7 @@ export async function GET(
   // Busca tasks do pipeline ordenadas por criação
   const { data: tasks } = await supabase
     .from('tasks')
-    .select('id, agent_name, mode, depends_on, status, error, retry_count, started_at, completed_at, created_at')
+    .select('id, agent_name, mode, depends_on, status, input_context, output, error, retry_count, started_at, completed_at, created_at')
     .eq('pipeline_id', id)
     .order('created_at', { ascending: true });
 
@@ -86,9 +86,13 @@ interface PatchBody {
 }
 
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
-  plan_preview: ['pending', 'cancelled'],
-  paused:       ['pending', 'cancelled'],
-  pending:      ['cancelled'],
+  plan_preview: ['pending', 'cancelled', 'deleted'],
+  paused:       ['pending', 'cancelled', 'deleted'],
+  pending:      ['cancelled', 'deleted'],
+  running:      ['deleted'],
+  failed:       ['deleted'],
+  cancelled:    ['deleted'],
+  completed:    ['deleted'],
 };
 
 export async function PATCH(
@@ -139,6 +143,37 @@ export async function PATCH(
 
   if (updateErr) {
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
+  }
+
+  // Quando o plano é aprovado (plan_preview → pending), promove tasks 'waiting'
+  // cujas dependências são todas 'skipped' (artifacts cacheados).
+  // Garante que pipelines criados antes do fix também funcionem.
+  if (body.status === 'pending') {
+    const { data: allTasks } = await supabase
+      .from('tasks')
+      .select('id, status, depends_on')
+      .eq('pipeline_id', id);
+
+    if (allTasks && allTasks.length > 0) {
+      const skippedIds = new Set(
+        allTasks.filter((t) => t.status === 'skipped').map((t) => t.id as string),
+      );
+
+      const toPromote = allTasks
+        .filter((t) => {
+          if (t.status !== 'waiting') return false;
+          const deps: string[] = (t.depends_on as string[]) ?? [];
+          return deps.length > 0 && deps.every((d) => skippedIds.has(d));
+        })
+        .map((t) => t.id as string);
+
+      if (toPromote.length > 0) {
+        await supabase
+          .from('tasks')
+          .update({ status: 'pending' })
+          .in('id', toPromote);
+      }
+    }
   }
 
   return NextResponse.json(updated);

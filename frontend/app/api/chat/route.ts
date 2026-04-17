@@ -31,10 +31,13 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 import { resolveReferences, extractProduct, extractGoal } from '@/lib/jarvis/reference-resolver';
 import { planPipeline, type PipelinePlan } from '@/lib/jarvis/planner';
 import type { GoalName } from '@/lib/agent-registry';
+import { JARVIS_MODEL } from '@/lib/agent-registry';
 import {
   listProducts,
   getProductKnowledge,
@@ -43,7 +46,7 @@ import {
   persistPlanPreview,
   type PipelineWithTasks,
 } from '@/lib/jarvis/actions';
-import { callJarvisClaude } from '@/lib/jarvis/claude-agent';
+import { loadConversationHistory, type GeminiContent } from '@/lib/jarvis/loadConversationHistory';
 
 // ── Supabase service client ───────────────────────────────────────────────────
 
@@ -84,6 +87,111 @@ const ChatRequestSchema = z.object({
   }).optional(),
   force_refresh: z.boolean().optional().default(false),
 });
+
+// ── Gemini REST API ───────────────────────────────────────────────────────────
+
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+let _jarvisPrompt: string | null = null;
+function getJarvisPrompt(): string {
+  if (_jarvisPrompt) return _jarvisPrompt;
+  _jarvisPrompt = fs.readFileSync(
+    path.join(process.cwd(), '..', 'workers', 'agents', 'prompts', 'jarvis.md'),
+    'utf-8',
+  ).trim();
+  return _jarvisPrompt;
+}
+
+// Timeout para chamadas Jarvis ao Gemini: 30s é suficiente para respostas
+// conversacionais simples (sem tool use). Previne o SSE ficar pendurado.
+const JARVIS_GEMINI_TIMEOUT_MS = 30_000;
+
+async function callJarvisGemini(
+  systemInstruction: string,
+  userMessage: string,
+  history: GeminiContent[] = [],
+): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return 'GEMINI_API_KEY não configurada — não consigo responder esta pergunta.';
+
+  const url = `${GEMINI_BASE}/models/${JARVIS_MODEL}:generateContent?key=${apiKey}`;
+
+  const body = {
+    system_instruction: { parts: [{ text: systemInstruction }] },
+    contents: [
+      ...history,
+      { role: 'user', parts: [{ text: userMessage }] },
+    ],
+    generation_config: { temperature: 0.7, max_output_tokens: 2048 },
+  };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), JARVIS_GEMINI_TIMEOUT_MS);
+
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+      signal:  controller.signal,
+    });
+  } catch (err: unknown) {
+    const isTimeout = err instanceof Error && err.name === 'AbortError';
+    console.error('[chat/jarvis] fetch error:', isTimeout ? 'timeout (30s)' : err);
+    return isTimeout
+      ? 'A resposta demorou mais que o esperado. Tente novamente.'
+      : 'Desculpe, não consegui processar sua pergunta no momento.';
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!resp.ok) {
+    const err = await resp.text();
+    console.error('[chat/jarvis] Gemini error:', err);
+    return 'Desculpe, não consegui processar sua pergunta no momento.';
+  }
+
+  const data = await resp.json() as {
+    candidates?: Array<{ content: { parts: Array<{ text?: string }> } }>;
+  };
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Sem resposta.';
+}
+
+async function buildSystemInstruction(opts: {
+  product:       { id: string; name: string; sku: string } | null;
+  supabase:      ReturnType<typeof getServiceClient>;
+  intent:        Intent;
+  extraContext?: string;
+}): Promise<string> {
+  const { product, supabase, intent, extraContext } = opts;
+
+  const products = await listProducts(supabase);
+  const productsList = products.slice(0, 5)
+    .map((p) => `• ${p.sku} — ${p.name}`)
+    .join('\n') || 'nenhum';
+
+  const parts: string[] = [
+    getJarvisPrompt(),
+    '',
+    '=== ESTADO ATUAL ===',
+    `Produtos cadastrados:\n${productsList}`,
+    `Último intent detectado: ${intent}`,
+  ];
+
+  if (product) {
+    const knowledge = await getProductKnowledge(product.id, supabase);
+    const knownTypes = knowledge.map((k) => k.artifact_type).join(', ') || 'nenhum';
+    parts.push(`Produto mencionado: ${product.name} (${product.sku})`);
+    parts.push(`Dados disponíveis para este produto: ${knownTypes}`);
+  }
+
+  if (extraContext) {
+    parts.push('', extraContext);
+  }
+
+  return parts.join('\n');
+}
 
 // ── Intent classifier ─────────────────────────────────────────────────────────
 
@@ -311,17 +419,20 @@ export async function POST(req: Request) {
                   .join('\n')
               }`;
 
-          const replyContent = await callJarvisClaude({
-            userMessage:    input.message,
-            conversationId: conversationId!,
+          const systemInstruction = await buildSystemInstruction({
+            product: null,
             supabase,
-            emit:           emit as (e: { type: string; [k: string]: unknown }) => void,
+            intent,
             extraContext,
           });
-
+          const history = conversationId
+            ? await loadConversationHistory(conversationId, supabase)
+            : [];
+          const replyContent = await callJarvisGemini(systemInstruction, input.message, history);
           if (conversationId && replyContent) {
             await saveMessage(supabase, conversationId, 'assistant', replyContent);
           }
+          emit({ type: 'message', content: replyContent });
         }
 
         // ── create_pipeline ───────────────────────────────────────────────────
@@ -349,22 +460,28 @@ export async function POST(req: Request) {
           emit({ type: 'status', message: 'Aprovando plano e enfileirando tarefas...' });
 
           if (effectivePendingPipelineId) {
-            const { data: pipeline, error: fetchErr } = await supabase
+            // Aprovação atômica: UPDATE com WHERE status='plan_preview' garante
+            // idempotência — dois cliques simultâneos nunca ativam o pipeline duas vezes.
+            const { data: updated, error: updateErr } = await supabase
               .from('pipelines')
-              .select('id, status')
+              .update({ status: 'pending' })
               .eq('id', effectivePendingPipelineId)
+              .eq('status', 'plan_preview')
+              .select('id, status')
               .maybeSingle();
 
-            if (fetchErr || !pipeline) {
-              emit({ type: 'error', error: 'Pipeline não encontrado' });
-            } else if (pipeline.status !== 'plan_preview') {
-              emit({ type: 'error', error: `Pipeline já está em status '${pipeline.status}'` });
-            } else {
-              await supabase
+            if (updateErr) {
+              emit({ type: 'error', error: 'Erro ao aprovar pipeline' });
+            } else if (!updated) {
+              // Nenhuma linha atualizada: pipeline não estava em plan_preview
+              const { data: current } = await supabase
                 .from('pipelines')
-                .update({ status: 'pending' })
-                .eq('id', effectivePendingPipelineId);
-
+                .select('status')
+                .eq('id', effectivePendingPipelineId)
+                .maybeSingle();
+              const currentStatus = current?.status ?? 'desconhecido';
+              emit({ type: 'error', error: `Pipeline já está em status '${currentStatus}' — não é possível aprovar novamente` });
+            } else {
               const { count } = await supabase
                 .from('tasks')
                 .select('id', { count: 'exact', head: true })
@@ -460,7 +577,7 @@ export async function POST(req: Request) {
           }
         }
 
-        // ── general_question → Claude agent com tool use ───────────────────────
+        // ── general_question → Gemini ─────────────────────────────────────────
         else {
           emit({ type: 'status', message: 'Pensando...' });
 
@@ -494,17 +611,21 @@ export async function POST(req: Request) {
             }
           }
 
-          const replyContent = await callJarvisClaude({
-            userMessage:    input.message,
-            conversationId: conversationId!,
+          const systemInstruction = await buildSystemInstruction({
+            product,
             supabase,
-            emit:           emit as (e: { type: string; [k: string]: unknown }) => void,
-            extraContext:   extraContext || undefined,
+            intent,
+            extraContext: extraContext || undefined,
           });
+          const history = conversationId
+            ? await loadConversationHistory(conversationId, supabase)
+            : [];
+          const replyContent = await callJarvisGemini(systemInstruction, input.message, history);
 
           if (conversationId && replyContent) {
             await saveMessage(supabase, conversationId, 'assistant', replyContent);
           }
+          emit({ type: 'message', content: replyContent });
         }
 
       } catch (err: unknown) {

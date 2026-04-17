@@ -8,7 +8,7 @@ import {
     copyComponents,
     approvals,
 } from '../../frontend/lib/schema/index';
-import { callAgent } from '../lib/llm/gemini-client';
+import { callAgent, parseAgentOutput } from '../lib/llm/gemini-client';
 import { saveArtifact } from '../lib/knowledge';
 import { generateVideoClip, type AspectRatioVeo } from '../lib/veo3-client';
 import {
@@ -208,11 +208,7 @@ async function processCombination(params: {
         dynamic_input: dynamicInput,
     });
 
-    const storyboard = (
-        typeof llmResult.output === 'string'
-            ? JSON.parse(llmResult.output)
-            : llmResult.output
-    ) as Storyboard;
+    const storyboard = parseAgentOutput(llmResult, 'video_maker') as unknown as Storyboard;
 
     // ── b. Gera clipes VEO 3 para cada cena ──────────────────────────────────
     const clipBuffers: Buffer[] = [];

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../lib/db';
 import { pipelines, products } from '../../frontend/lib/schema/index';
 import { buildContext, serializeContext } from '../lib/context-builder';
-import { callAgent } from '../lib/llm/gemini-client';
+import { callAgent, parseAgentOutput } from '../lib/llm/gemini-client';
 import { saveCopyComponents, type CopyComponentInput } from '../lib/knowledge';
 import { type TaskRow } from '../task-runner';
 import { type CopyMode } from '../../frontend/lib/agent-registry';
@@ -77,7 +77,7 @@ Crie variações esmagadoras e textos instintivos. Retorne o JSON seguindo exata
     });
 
     // 5. Mapeamento e Persistência
-    const output = typeof result.output === 'string' ? JSON.parse(result.output) : result.output;
+    const output = parseAgentOutput(result, 'copy_hook_generator');
     const components: CopyComponentInput[] = [];
 
     // Hooks

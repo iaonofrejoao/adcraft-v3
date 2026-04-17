@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../lib/db';
 import { pipelines, products } from '../../frontend/lib/schema/index';
 import { buildContext, serializeContext } from '../lib/context-builder';
-import { callAgent } from '../lib/llm/gemini-client';
+import { callAgent, parseAgentOutput } from '../lib/llm/gemini-client';
 import { saveArtifact } from '../lib/knowledge';
 import { type TaskRow } from '../task-runner';
 
@@ -48,7 +48,7 @@ Ticket de Venda Estimado: R$${product.ticket_price || 0.0}
 Comissão: ${product.commission_percent || 0.0}%
 Promessa Principal identificada antes: "${product_context.main_promise || 'Promessa não identificada'}"
 
-IMPORTANTE: Todo o conteúdo gerado (análise, copy, persona) deve ser adaptado cultural e linguisticamente para o país "${(product as any).target_country || 'BR'}" no idioma "${product.target_language || 'pt-BR'}".`
+IMPORTANTE: Todo o conteúdo gerado (análise, copy, persona) deve ser adaptado cultural e linguisticamente para o país "${(product as any).target_country || 'BR'}" no idioma "${product.target_language || 'pt-BR'}".
 
 ${serializeContext(ctx)}
 
@@ -65,7 +65,7 @@ Calcule a margem e busque o volume de concorrências. Se a margem for baixa ou a
     });
 
     // 5. Persistência
-    const output = typeof result.output === 'string' ? JSON.parse(result.output) : result.output;
+    const output = parseAgentOutput(result, 'market_research');
 
     await saveArtifact({
         product_id: product.id as string,

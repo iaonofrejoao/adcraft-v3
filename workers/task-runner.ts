@@ -9,7 +9,7 @@ import { execSync } from 'node:child_process';
 import { eq, sql } from 'drizzle-orm';
 import { db } from './lib/db';
 import { tasks, pipelines } from '../frontend/lib/schema/index';
-import { seedNextTasks, isPipelineComplete, hasPipelineFailed } from './lib/seed-next-task';
+import { seedNextTasks, isPipelineComplete, hasPipelineFailed, promoteOrphanedWaitingTasks } from './lib/seed-next-task';
 import { BudgetExceededError } from './lib/llm/gemini-client';
 
 // Agentes
@@ -37,8 +37,11 @@ function getGitCommit(): string {
   }
 }
 
-const POLL_INTERVAL_MS = 5_000;    // 5 segundos
-const MAX_RETRIES      = 3;
+const POLL_INTERVAL_MS   = 5_000;   // 5 segundos
+const MAX_RETRIES        = 3;
+// 15 min: dá headroom suficiente para gemini-2.5-pro com thinking + read_page.
+// O callAgent tem timeout interno de 12 min — o reaper é o backstop.
+const REAPER_TIMEOUT_MIN = 15;
 
 type AgentName =
   | 'avatar_research'
@@ -94,30 +97,43 @@ async function executeTask(task: TaskRow): Promise<void> {
   return output as any; // runner é responsável por persistir via writeArtifact
 }
 
-// ── Reaper: tasks presas em running > 10 minutos ──────────────────────────────
+// ── Reaper: tasks presas em running > REAPER_TIMEOUT_MIN ─────────────────────
+// Nota: este reaper in-process é o backstop local. A migration
+// db/016_external_reaper_cron.sql instala um pg_cron independente que
+// protege mesmo quando o worker está completamente down.
 
 async function reapStuckTasks(): Promise<void> {
   const reaped = await db.execute(sql`
     UPDATE tasks
     SET
       status       = 'failed',
-      error        = 'Task timed out — running for more than 10 minutes without completion',
+      error        = 'Task timed out — running for more than ' || ${REAPER_TIMEOUT_MIN} || ' minutes without completion',
       completed_at = NOW()
     WHERE status     = 'running'
-      AND started_at < NOW() - INTERVAL '10 minutes'
-    RETURNING id, pipeline_id, agent_name
+      AND started_at < NOW() - (${REAPER_TIMEOUT_MIN} || ' minutes')::interval
+    RETURNING id, pipeline_id, agent_name, started_at
   `);
 
-  const rows = reaped as unknown as { id: string; pipeline_id: string | null; agent_name: string }[];
+  const rows = reaped as unknown as {
+    id: string;
+    pipeline_id: string | null;
+    agent_name: string;
+    started_at: string;
+  }[];
 
   if (!rows || rows.length === 0) return;
 
-  console.warn(
-    `[reaper] reaped ${rows.length} stuck task(s):`,
-    rows.map((t) => `${t.agent_name}/${t.id.slice(0, 8)}`).join(', '),
-  );
+  for (const t of rows) {
+    const durationMin = t.started_at
+      ? Math.round((Date.now() - new Date(t.started_at).getTime()) / 60_000)
+      : '?';
+    console.warn(
+      `[reaper] reaped stuck task: ${t.agent_name}/${t.id.slice(0, 8)} — ` +
+      `running for ~${durationMin}min (pipeline: ${t.pipeline_id?.slice(0, 8) ?? 'none'})`,
+    );
+  }
 
-  // Marca pipelines afetados como failed também (só se ainda pending/running)
+  // Marca pipelines afetados como failed (só se ainda em pending/running)
   const pipelineIds = [...new Set(rows.map((t) => t.pipeline_id).filter(Boolean))] as string[];
   for (const pid of pipelineIds) {
     await db.execute(sql`
@@ -133,6 +149,7 @@ async function reapStuckTasks(): Promise<void> {
 
 async function runOnce(): Promise<void> {
   await reapStuckTasks();
+  await promoteOrphanedWaitingTasks();
   // Captura o ID da task reclamada dentro da transação para evitar corrida entre workers.
   // O padrão anterior buscava "a task running mais recente", o que podia retornar a task
   // de outro worker quando dois processos iniciavam ao mesmo tempo.
@@ -148,7 +165,7 @@ async function runOnce(): Promise<void> {
         AND  NOT EXISTS (
                SELECT 1 FROM tasks dep
                WHERE  dep.id::text = ANY(t.depends_on)
-                 AND  dep.status  != 'completed'
+                 AND  dep.status  NOT IN ('completed', 'skipped')
              )
       ORDER BY t.created_at
       LIMIT  1
@@ -179,6 +196,22 @@ async function runOnce(): Promise<void> {
 
   try {
     await executeTask(runningTask);
+
+    // Zombie-safe: verifica se o reaper não marcou a task como failed durante a execução.
+    // Isso pode ocorrer se o agente levou mais que REAPER_TIMEOUT_MIN mas o callAgent
+    // interno concluiu eventualmente. Neste caso, NÃO sobrescrevemos o status.
+    const [taskState] = await db.execute<{ status: string }>(sql`
+      SELECT status FROM tasks WHERE id = ${runningTask.id}
+    `) as unknown as Array<{ status: string }>;
+
+    if (taskState?.status !== 'running') {
+      console.warn(
+        `[task-runner] task ${runningTask.id} (${runningTask.agent_name}) completou ` +
+        `mas status já é '${taskState?.status}' — reaper disparou durante a execução. ` +
+        `Output descartado para evitar sobrescrita.`,
+      );
+      return;
+    }
 
     // Sucesso: marca completed
     await db

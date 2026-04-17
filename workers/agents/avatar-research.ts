@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../lib/db';
 import { pipelines, products } from '../../frontend/lib/schema/index';
 import { buildContext, serializeContext } from '../lib/context-builder';
-import { callAgent } from '../lib/llm/gemini-client';
+import { callAgent, parseAgentOutput } from '../lib/llm/gemini-client';
 import { saveArtifact } from '../lib/knowledge';
 import { type TaskRow } from '../task-runner';
 
@@ -67,7 +67,7 @@ IMPORTANTE: A persona deve ser construída com referências culturais, expressõ
     });
 
     // 5. Persistência
-    const output = typeof result.output === 'string' ? JSON.parse(result.output) : result.output;
+    const output = parseAgentOutput(result, 'avatar_research');
 
     await saveArtifact({
         product_id: product.id as string,

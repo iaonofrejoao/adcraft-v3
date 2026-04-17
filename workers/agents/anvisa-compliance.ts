@@ -2,7 +2,7 @@ import { eq, and } from 'drizzle-orm';
 import { db } from '../lib/db';
 import { pipelines, products, copyComponents } from '../../frontend/lib/schema/index';
 import { buildContext, serializeContext } from '../lib/context-builder';
-import { callAgent } from '../lib/llm/gemini-client';
+import { callAgent, parseAgentOutput } from '../lib/llm/gemini-client';
 import { updateComplianceStatus } from '../lib/knowledge';
 import { type TaskRow } from '../task-runner';
 
@@ -71,8 +71,8 @@ Analise cada um. Se houver erro crítico em qualquer um, reporte no JSON e marqu
     });
 
     // 6. Atualização de status
-    const output = typeof result.output === 'string' ? JSON.parse(result.output) : result.output;
-    const issues = output.issues || [];
+    const output = parseAgentOutput(result, 'anvisa_compliance');
+    const issues: any[] = Array.isArray(output.issues) ? output.issues : [];
 
     // Mapeia resultados por tag
     // Regra: se a tag aparece nas issues com critical, ela é rejected. Se não, approved.

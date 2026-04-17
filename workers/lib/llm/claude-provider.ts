@@ -239,17 +239,47 @@ async function logCall(
   });
 }
 
+// ── Timeout total ─────────────────────────────────────────────────────────────
+//
+// Espelha a proteção de gemini-client.ts: garante que a execução Claude falha
+// limpa antes do reaper DB (15 min). Claude SDK não expõe AbortController por
+// chamada, então usamos Promise.race no loop inteiro.
+
+const CLAUDE_TOTAL_TIMEOUT_MS = 12 * 60_000; // 12 min (3 min de margem vs reaper)
+
+function withTimeoutClaude<T>(promise: Promise<T>, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`[timeout] ${label} exceeded ${CLAUDE_TOTAL_TIMEOUT_MS / 60_000}min limit`)),
+      CLAUDE_TOTAL_TIMEOUT_MS,
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 // ── Função principal ──────────────────────────────────────────────────────────
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const MAX_ROUNDS = 12;
+// 8 rounds: alinhado com gemini-client.ts (reduzido de 12)
+const MAX_ROUNDS = 8;
 
 /**
  * Chama um agente via Anthropic Claude com tool use loop e prompt caching.
  * Regra 18: chamado por gemini-client.ts::callAgent — nunca diretamente.
+ *
+ * Proteção contra zombie: toda a execução é wrapeada em withTimeoutClaude()
+ * com limite de 12 min — falha limpa antes do reaper DB (15 min).
  */
 export async function callAgentClaude(params: CallAgentParams): Promise<CallAgentResult> {
+  return withTimeoutClaude(
+    _callAgentClaudeImpl(params),
+    `callAgentClaude(${params.agent_name})`,
+  );
+}
+
+async function _callAgentClaudeImpl(params: CallAgentParams): Promise<CallAgentResult> {
   const cap   = AGENT_REGISTRY[params.agent_name];
   const model = cap.model;
 

@@ -178,6 +178,29 @@ export interface PersonasTabProps {
 }
 
 export function PersonasTab({ data, createdAt, sku }: PersonasTabProps) {
+  const router = useRouter()
+  const [regenLoading,  setRegenLoading]  = useState(false)
+  const [regenConfirm, setRegenConfirm] = useState(false)
+
+  async function handleRegen() {
+    setRegenConfirm(false)
+    setRegenLoading(true)
+    try {
+      const res = await fetch('/api/pipelines', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ product_sku: sku, goal: 'avatar_only' }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error ?? 'Erro ao iniciar')
+      router.push(`/demandas/${d.pipeline_id}`)
+    } catch {
+      router.push(`/?msg=@${sku}+/avatar`)
+    } finally {
+      setRegenLoading(false)
+    }
+  }
+
   const { full_profile: fp, psychographic: psy } = data
 
   return (
@@ -196,13 +219,25 @@ export function PersonasTab({ data, createdAt, sku }: PersonasTabProps) {
               </p>
             </div>
           </div>
-          <Link
-            href={`/?msg=@${sku}+/avatar`}
-            className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-brand transition-colors duration-150 shrink-0"
-          >
-            <RefreshCw size={12} strokeWidth={1.5} />
-            Nova persona
-          </Link>
+          {regenConfirm ? (
+            <span className="flex items-center gap-2 text-xs shrink-0">
+              <span className="text-on-surface-muted">Confirmar?</span>
+              <button onClick={handleRegen} className="text-brand font-medium hover:underline">Sim</button>
+              <button onClick={() => setRegenConfirm(false)} className="text-on-surface-muted hover:underline">Não</button>
+            </span>
+          ) : (
+            <button
+              onClick={() => setRegenConfirm(true)}
+              disabled={regenLoading}
+              className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-brand transition-colors duration-150 shrink-0 disabled:opacity-50"
+            >
+              {regenLoading
+                ? <Loader2 size={12} strokeWidth={1.5} className="animate-spin" />
+                : <RefreshCw size={12} strokeWidth={1.5} />
+              }
+              {regenLoading ? 'Iniciando…' : 'Nova persona'}
+            </button>
+          )}
         </div>
         <p className="mt-4 text-[0.8125rem] leading-relaxed text-on-surface-variant">{data.summary}</p>
       </div>

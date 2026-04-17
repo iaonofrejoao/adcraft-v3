@@ -210,6 +210,34 @@ export function MercadoTabEmpty({ sku }: { sku: string }) {
 }
 
 /* ── Main component ─────────────────────────────────────────────────── */
+/* ── Refazer helper ─────────────────────────────────────────────────── */
+function useRegenerate(sku: string, goal: string) {
+  const router = useRouter()
+  const [loading,  setLoading]  = useState(false)
+  const [confirm,  setConfirm]  = useState(false)
+
+  async function run() {
+    setConfirm(false)
+    setLoading(true)
+    try {
+      const res = await fetch('/api/pipelines', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ product_sku: sku, goal }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erro ao iniciar')
+      router.push(`/demandas/${data.pipeline_id}`)
+    } catch {
+      router.push(`/?msg=@${sku}+/market-research`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { loading, confirm, setConfirm, run }
+}
+
 export interface MercadoTabProps {
   data:      MarketArtifactData
   createdAt: string
@@ -217,6 +245,8 @@ export interface MercadoTabProps {
 }
 
 export function MercadoTab({ data, createdAt, sku }: MercadoTabProps) {
+  const regen = useRegenerate(sku, 'market_only')
+
   const margin = typeof data.estimated_margin_brl === 'number'
     ? `R$ ${data.estimated_margin_brl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
     : '–'
@@ -259,12 +289,23 @@ export function MercadoTab({ data, createdAt, sku }: MercadoTabProps) {
           <MetricRow
             label="Atualizar análise"
             value={
-              <Link
-                href={`/?msg=@${sku}+/market-research`}
-                className="text-xs text-brand hover:underline"
-              >
-                Regerar via Jarvis →
-              </Link>
+              regen.confirm ? (
+                <span className="flex items-center gap-2 text-xs">
+                  <span className="text-on-surface-muted">Confirmar?</span>
+                  <button onClick={regen.run} className="text-brand font-medium hover:underline">Sim</button>
+                  <button onClick={() => regen.setConfirm(false)} className="text-on-surface-muted hover:underline">Não</button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => regen.setConfirm(true)}
+                  disabled={regen.loading}
+                  className="flex items-center gap-1 text-xs text-brand hover:underline disabled:opacity-50"
+                >
+                  {regen.loading
+                    ? <><Loader2 size={11} strokeWidth={1.5} className="animate-spin" /> Iniciando…</>
+                    : 'Refazer análise →'}
+                </button>
+              )
             }
           />
         </div>

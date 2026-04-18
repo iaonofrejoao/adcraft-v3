@@ -1,3 +1,19 @@
+// @deprecated — Descomissionado em favor do Claude Code como orquestrador central.
+// NÃO executar este arquivo. A orquestração agora ocorre via Claude Code (Ultron)
+// usando os scripts em scripts/ e as skills em .claude/skills/agents/.
+//
+// O que foi substituído:
+//   - Chamadas LLM (gemini-client / claude-provider) → Claude Code executa os agentes
+//   - Fila de tasks → Claude Code cria via scripts/pipeline/create.ts
+//   - Chaining → Claude Code orquestra via .claude/pipelines/full-pipeline.yaml
+//
+// O que continua rodando (separado):
+//   - workers/lib/embeddings/gemini-embeddings.ts → background worker de vetores
+//   - workers/agents/learning-extractor.ts → chamado via scripts/learning/extract.ts
+//
+// Arquivo mantido para referência histórica. Pode ser deletado após 60 dias.
+// Descomissionado em: 2026-04-18
+//
 // Polling loop principal dos workers.
 // Regra 7: usa FOR UPDATE SKIP LOCKED para evitar concorrência entre instâncias.
 // Regra 8: falha com retries esgotados → pipeline 'failed' + notificação.

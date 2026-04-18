@@ -1,0 +1,171 @@
+name: full_pipeline
+description: Pipeline completo de 18 agentes — da análise do produto ao plano de escala
+version: "2.0"
+
+# Como usar:
+#   "Roda pipeline completo para o produto X (product_id: UUID)"
+#   "Roda pipeline pesquisa para o produto X (product_id: UUID)"
+#   "Retoma pipeline pipeline_id: UUID"
+
+# Tipos de pipeline disponíveis
+types:
+  full:        [pesquisa, criativo, lancamento]
+  pesquisa:    [pesquisa]
+  criativo:    [criativo]
+  lancamento:  [lancamento]
+
+phases:
+
+  # ─── FASE 1: PESQUISA ────────────────────────────────────────────────────────
+  - name: pesquisa
+    description: Estratégia e planejamento — entender produto, mercado e persona
+    agents:
+
+      - id: vsl_analysis
+        name: "Análise de VSL / Página"
+        skill: .claude/skills/agents/vsl-analysis.md
+        depends_on: []
+        produces: product
+        parallel_group: null
+        notes: "Ponto de entrada. Sem este artefato nenhum outro agente tem contexto."
+
+      - id: market_research
+        name: "Viabilidade de Mercado"
+        skill: .claude/skills/agents/market-research.md
+        depends_on: []
+        produces: market
+        parallel_group: pesquisa_inicial
+        notes: "Pode rodar em paralelo com vsl_analysis e avatar_research."
+
+      - id: avatar_research
+        name: "Construção de Persona"
+        skill: .claude/skills/agents/avatar-research.md
+        depends_on: []
+        produces: avatar
+        parallel_group: pesquisa_inicial
+        notes: "Pode rodar em paralelo com vsl_analysis e market_research."
+
+      - id: benchmark_intelligence
+        name: "Benchmark Intelligence"
+        skill: .claude/skills/agents/benchmark-intelligence.md
+        depends_on: [market_research]
+        produces: benchmark
+        parallel_group: null
+
+      - id: angle_generator
+        name: "Estratégia de Ângulos"
+        skill: .claude/skills/agents/angle-generator.md
+        depends_on: [vsl_analysis, market_research, avatar_research]
+        produces: angles
+        parallel_group: null
+
+      - id: campaign_strategy
+        name: "Estratégia de Campanha"
+        skill: .claude/skills/agents/campaign-strategy.md
+        depends_on: [market_research, avatar_research, angle_generator, benchmark_intelligence]
+        produces: campaign_strategy
+        parallel_group: null
+
+  # ─── FASE 2: CRIATIVO ────────────────────────────────────────────────────────
+  - name: criativo
+    description: Roteiro, copy e vídeo — produção dos materiais criativos
+    agents:
+
+      - id: script_writer
+        name: "Roteiro"
+        skill: .claude/skills/agents/script-writer.md
+        depends_on: [angle_generator, campaign_strategy]
+        produces: script
+        parallel_group: criativo_base
+
+      - id: copywriting
+        name: "Copywriting"
+        skill: .claude/skills/agents/copywriting.md
+        depends_on: [avatar_research, angle_generator, campaign_strategy]
+        produces: copy_components
+        parallel_group: criativo_base
+        save_script: scripts/copy/save-components.ts
+
+      - id: character_generator
+        name: "Geração de Personagem"
+        skill: .claude/skills/agents/character-generator.md
+        depends_on: [avatar_research]
+        produces: character
+        parallel_group: criativo_base
+
+      - id: keyframe_generator
+        name: "Keyframes"
+        skill: .claude/skills/agents/keyframe-generator.md
+        depends_on: [script_writer, character_generator]
+        produces: keyframes
+        parallel_group: null
+
+      - id: video_maker
+        name: "Vídeo por Cena"
+        skill: .claude/skills/agents/video-maker.md
+        depends_on: [script_writer, copywriting, keyframe_generator]
+        produces: video_assets
+        parallel_group: null
+
+      - id: creative_director
+        name: "Creative Director"
+        skill: .claude/skills/agents/creative-director.md
+        depends_on: [copywriting, video_maker]
+        produces: creative_brief
+        parallel_group: null
+
+  # ─── FASE 3: LANÇAMENTO ──────────────────────────────────────────────────────
+  - name: lancamento
+    description: Tráfego e escala — compliance, estrutura de ads e análise
+    agents:
+
+      - id: compliance_check
+        name: "Compliance Check"
+        skill: .claude/skills/agents/compliance-check.md
+        depends_on: [copywriting, creative_director]
+        produces: compliance_results
+        parallel_group: pre_launch
+        save_script: scripts/copy/update-compliance.ts
+
+      - id: utm_builder
+        name: "Estruturação de UTMs"
+        skill: .claude/skills/agents/utm-builder.md
+        depends_on: [campaign_strategy]
+        produces: utms
+        parallel_group: pre_launch
+
+      - id: facebook_ads
+        name: "Facebook Ads"
+        skill: .claude/skills/agents/facebook-ads.md
+        depends_on: [compliance_check, utm_builder]
+        produces: facebook_ads
+        parallel_group: ads_setup
+
+      - id: google_ads
+        name: "Google Ads"
+        skill: .claude/skills/agents/google-ads.md
+        depends_on: [compliance_check, utm_builder]
+        produces: google_ads
+        parallel_group: ads_setup
+
+      - id: performance_analysis
+        name: "Análise de Performance"
+        skill: .claude/skills/agents/performance-analysis.md
+        depends_on: [facebook_ads, google_ads]
+        produces: performance_report
+        parallel_group: null
+        notes: "Requer dados reais de performance — pode ser executado separadamente após período de veiculação."
+
+      - id: scaling_strategy
+        name: "Scaling"
+        skill: .claude/skills/agents/scaling-strategy.md
+        depends_on: [performance_analysis]
+        produces: scaling_plan
+        parallel_group: null
+
+# ─── CONFIGURAÇÕES GLOBAIS ─────────────────────────────────────────────────────
+defaults:
+  save_script: scripts/artifact/save.ts
+  complete_task_script: scripts/pipeline/complete-task.ts
+  vector_search_before: [market_research, avatar_research, benchmark_intelligence]
+  post_pipeline_script: scripts/learning/extract.ts

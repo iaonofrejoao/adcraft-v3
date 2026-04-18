@@ -333,10 +333,11 @@ function ChatPageInner() {
   )
 }
 
+// Jarvis temporariamente desativado — motor migrado para Claude Code (Ultron).
+// Os arquivos de UI estão preservados para reativação futura.
+// Para reativar: remover o redirect abaixo e restaurar o export original.
+import { redirect } from 'next/navigation'
+
 export default function ChatPage() {
-  return (
-    <Suspense fallback={<div className="flex flex-col h-full" />}>
-      <ChatPageInner />
-    </Suspense>
-  )
+  redirect('/demandas')
 }

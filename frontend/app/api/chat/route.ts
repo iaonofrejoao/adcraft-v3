@@ -292,7 +292,16 @@ async function saveMessage(
 
 // ── Handler principal ─────────────────────────────────────────────────────────
 
-export async function POST(req: Request) {
+// Jarvis desativado — motor migrado para Claude Code (Ultron). 2026-04-18
+export async function POST(_req: Request) {
+  return new Response(
+    JSON.stringify({ error: 'Jarvis temporariamente desativado. Use o Claude Code (Ultron) para orquestrar pipelines.' }),
+    { status: 503, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function POST_DISABLED(req: Request) {
   let input: z.infer<typeof ChatRequestSchema>;
   try {
     const raw    = await req.json();
@@ -647,4 +656,4 @@ export async function POST(req: Request) {
       'X-Accel-Buffering': 'no',
     },
   });
-}
+} // fim POST_DISABLED

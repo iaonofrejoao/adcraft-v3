@@ -11,63 +11,96 @@ Stack: Next.js 14 App Router, Tailwind, TypeScript, Shadcn/ui, Supabase, Drizzle
 
 ## Skills obrigatórios
 Antes de criar ou editar qualquer componente de UI, leia:
-- `.claude/skills/frontend-adcraft.md`   → design system Kinetic Console
-- `.claude/skills/stitch-to-adcraft.md`  → conversão de layouts Stitch
+- `.claude/skills/dev/frontend-adcraft.md`   → design system Kinetic Console
+- `.claude/skills/dev/stitch-to-adcraft.md`  → conversão de layouts Stitch
+
+Antes de executar ou modificar qualquer agente de pipeline, leia:
+- `.claude/skills/agents/_pipeline.md`       → orquestração, scripts, checkpoint
+
+## Orquestração Claude Code (Ultron)
+
+### Como disparar um pipeline
+```
+"Roda pipeline completo para o produto X (product_id: UUID)"
+"Roda pipeline pesquisa para o produto X (product_id: UUID)"
+"Retoma pipeline pipeline_id: UUID"
+```
+
+### Fluxo de execução
+1. `npx tsx scripts/pipeline/create.ts --product-id <uuid> [--type full|pesquisa|criativo|lancamento]`
+2. Ler `.claude/pipelines/full-pipeline.yaml` para ordem e dependências
+3. Spawnar cada agente em sequência (Agent tool) com o skill correspondente
+4. Cada agente grava no banco via `scripts/artifact/save.ts`
+5. Ao final: `npx tsx scripts/learning/extract.ts --pipeline-id <uuid>`
+
+### Scripts disponíveis
+| Script | Uso |
+|--------|-----|
+| `scripts/pipeline/create.ts` | Cria pipeline + tasks no banco |
+| `scripts/pipeline/status.ts` | Consulta estado atual do pipeline |
+| `scripts/pipeline/complete-task.ts` | Marca task como concluída |
+| `scripts/artifact/save.ts` | Salva artefato em product_knowledge |
+| `scripts/artifact/get.ts` | Lê artefato de um pipeline |
+| `scripts/copy/save-components.ts` | Salva hooks/bodies/CTAs em copy_components |
+| `scripts/copy/update-compliance.ts` | Atualiza status de compliance por tag |
+| `scripts/learning/extract.ts` | Extrai learnings pós-pipeline |
+| `scripts/search/vector.ts` | Busca semântica nos learnings do nicho |
+
+### Skills dos agentes
+Cada agente tem seu skill em `.claude/skills/agents/<agente>.md` com:
+- Papel e contexto necessário
+- Metodologia e fontes de pesquisa
+- Formato exato do output (schema do banco)
+- Script de salvamento
+
+### Workers — status atual
+| Processo | Status | Como executar |
+|----------|--------|--------------|
+| `task-runner.ts` | ❌ DESCOMISSIONADO | Não executar |
+| `workers/agents/*.ts` | ❌ DESCOMISSIONADOS | Substituídos pelos skills |
+| `gemini-client.ts` | ❌ NÃO INVOCAR | Não mais usado |
+| `lib/embeddings/gemini-embeddings.ts` | ✅ ATIVO | `npx tsx workers/lib/embeddings/gemini-embeddings.ts` |
+| `agents/learning-extractor.ts` | ✅ ATIVO | Via `scripts/learning/extract.ts` |
+| `cron/learning-aggregator-cron.ts` | ✅ ATIVO | Cron job externo |
 
 ## Estrutura do projeto
-- `frontend/`          → Next.js 14 App Router
-- `workers/`           → agentes Node.js (tsx --watch, hot reload ativo)
-- `workers/agents/`    → 7 agentes de IA (Gemini default; Claude disponível como opção)
-- `workers/cron/`      → jobs periódicos (learning-aggregator-cron.ts)
-- `db/`                → migrations SQL Supabase (V2 em migrations/v2/)
-- `stitch/[tela]/`     → exports do Google Stitch (html, DESIGN.md, png)
-- `.claude/skills/`    → skills do Claude Code
+- `frontend/`                → Next.js 14 App Router (visualização read-only)
+- `workers/`                 → DEPRECATED (ver workers/README-DEPRECATED.md). Manter embeddings + learning-extractor.
+- `workers/cron/`            → jobs periódicos (learning-aggregator-cron.ts) — ainda ativo
+- `db/`                      → migrations SQL Supabase (V2 em migrations/v2/)
+- `stitch/[tela]/`           → exports do Google Stitch (html, DESIGN.md, png)
+- `.claude/skills/dev/`      → skills de desenvolvimento (frontend, DB, deploy, etc.)
+- `.claude/skills/agents/`   → skills de execução dos 18 agentes
+- `.claude/pipelines/`       → definição do pipeline (DAG, dependências, ordem)
+- `scripts/`                 → DB bridge scripts para orquestração Claude Code
 
-## Estado das Fases V2 (última atualização: 2026-04-16)
+## Estado das Fases V2 (última atualização: 2026-04-18)
 
 | Fase | Status | Resumo |
 |------|--------|--------|
-| A — Migração Claude | ↩️ revertido | Provider padrão revertido para Gemini (2.5-pro/flash); Claude mantido como opção |
-| B — Jarvis tool use | ✅ 95% | 11 tools, loop 25 rounds, SSE, prompt cache. Faltam: write tools + confirmação modal |
+| A — Migração Claude | ↩️ revertido | Provider padrão revertido para Gemini; Claude mantido como opção |
+| B — Jarvis tool use | ⏸️ pausado | Arquivos preservados. Jarvis desativado — motor migrado para Claude Code |
 | C — Tela Demandas | ✅ 80% | Lista + detalhe com timeline. Pendente: logs WebSocket em tempo real |
 | D — Tela Produto | ✅ 70% | 6 sub-abas funcionais. Pendente: diff de copy, score de viabilidade |
-| E — Memória cumulativa | ✅ 90% | Extrator + aggregator + 3 tools Jarvis. Pendente: validação busca vetorial |
+| E — Memória cumulativa | ✅ 90% | Extrator + aggregator + busca vetorial via scripts/search/vector.ts |
 | F — Polish + testes | ⬜ 0% | FilterBar, keyboard shortcuts, Playwright E2E, docs — não iniciado |
+| G — Ultron (Claude Code) | ✅ 100% | 18 agent skills + pipeline DAG + DB bridge scripts implementados |
 
 ## Arquivos canônicos de referência
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
-| `frontend/lib/agent-registry.ts` | AGENT_REGISTRY, JARVIS_MODEL, GoalName, budgets |
-| `frontend/lib/jarvis/goals.ts` | Goals canônicos + comandos `/` (fonte única) |
-| `frontend/lib/jarvis/tool-registry.ts` | 11 tools do Jarvis (definições + executores) |
-| `frontend/lib/jarvis/claude-agent.ts` | Loop Jarvis via Claude (opção disponível; Gemini é default via chat/route.ts) |
-| `frontend/lib/jarvis/jarvis-system-prompt.ts` | System prompt do Jarvis |
-| `frontend/lib/jarvis/loadConversationHistory.ts` | Contexto multi-turn (últimas 50 msgs) |
-| `frontend/lib/schema/index.ts` | Schema Drizzle ORM (todas as tabelas) |
-| `frontend/components/MermaidBlock.tsx` | Renderizador Mermaid (lazy, SSR-safe) |
+| `frontend/lib/schema/index.ts` | Schema Drizzle ORM (todas as tabelas) — fonte de verdade |
+| `frontend/lib/agent-registry.ts` | AGENT_REGISTRY, GoalName, budgets (7 agentes originais) |
+| `.claude/pipelines/full-pipeline.yaml` | DAG dos 18 agentes, dependências, ordem de execução |
+| `.claude/skills/agents/_pipeline.md` | Guia de orquestração — ler antes de executar qualquer pipeline |
 | `frontend/app/globals.css` | CSS vars (design tokens Kinetic Console) |
 | `frontend/tailwind.config.ts` | Mapeamento CSS vars → classes Tailwind |
-| `workers/task-runner.ts` | Polling loop principal dos workers |
-| `workers/agents/learning-extractor.ts` | Extrator de learnings pós-pipeline (Fase E) |
-| `workers/cron/learning-aggregator-cron.ts` | Aggregator diário de patterns (Fase E) |
-| `workers/lib/embeddings/gemini-embeddings.ts` | Batch worker de embeddings (processa fila) |
-
-## Infraestrutura do worker
-
-- **Hot reload:** `tsx --watch` — worker recarrega automaticamente em dev
-- **Version logging:** loga version/commit hash no startup
-- **Reaper de tasks:** tasks em `running` por > 10min → marcadas `failed` automaticamente
-- **Poll interval:** 5 segundos, `FOR UPDATE SKIP LOCKED` (evita race condition entre workers)
-- **Retry:** max 3 tentativas; BudgetExceededError é não-retriable
-- **Jarvis multi-turn:** últimas 50 mensagens carregadas como histórico (formato Gemini)
-- **JARVIS_MODEL:** centralizado em `frontend/lib/agent-registry.ts` — nunca hardcodar (default: gemini-2.5-flash)
-- **Provider padrão:** Gemini (2.5-pro para agentes críticos, 2.5-flash para secundários); Claude disponível via `claude-provider.ts`
-- **Roteamento de modelo:** `gemini-client.ts::callAgent()` roteia para Claude automaticamente se model.startsWith('claude-')
-- **Learning extractor:** dispara async pós-pipeline (não bloqueia o task-runner)
-- **Aggregator cron:** agendar externamente → `node workers/dist/cron/learning-aggregator-cron.js`
-- **Embeddings batch:** `batchEmbeddingsWorker()` em `workers/lib/embeddings/gemini-embeddings.ts`
-  — suporta: `product_knowledge`, `niche_learnings`, `niches`, `execution_learnings`
+| `workers/agents/learning-extractor.ts` | Extrator de learnings pós-pipeline (Fase E) — ainda ativo |
+| `workers/cron/learning-aggregator-cron.ts` | Aggregator diário de patterns (Fase E) — ainda ativo |
+| `workers/lib/embeddings/gemini-embeddings.ts` | Batch worker de embeddings — ainda ativo |
+| `workers/lib/knowledge.ts` | saveArtifact, saveCopyComponents — reutilizado pelos scripts |
+| `workers/lib/tagging.ts` | Sistema canônico de tags (SKU_v1_H1) — reutilizado pelos scripts |
 
 ## Regras de frontend
 
@@ -85,18 +118,18 @@ Antes de criar ou editar qualquer componente de UI, leia:
 - Ícones: Lucide React, `strokeWidth=1.5`, tamanho 16/18/20px
 
 ### Separação de responsabilidades
-- Lógica de dados (fetch, Supabase, SSE) → sempre em hooks em `hooks/`
+- Lógica de dados (fetch, Supabase) → sempre em hooks em `hooks/`
 - Componentes de página → apenas composição de componentes e hooks
 - Nunca fazer fetch diretamente dentro de um componente de UI
-- Constantes de configuração → `lib/constants.ts`
-- Goals canônicos → `lib/jarvis/goals.ts` (fonte única, nunca duplicar)
+- Frontend é read-only: não disparar LLM calls do frontend
 
 ### Proibições absolutas
 - NUNCA hardcodar `user_id` — usar contexto de auth
 - NUNCA hardcodar listas (plataformas, goals, status) em componentes
 - NUNCA misturar subscription Supabase Realtime dentro de componente de layout
+- NUNCA chamar APIs de LLM (Gemini, Anthropic) a partir do frontend
 
-## Roadmap de refatoração de código (pendências V1 → V2)
+## Roadmap de refatoração de código (pendências)
 
 ### Fase 1 — Fundação
 1. ⬜ Criar `lib/constants.ts` com constantes hoje hardcoded
@@ -112,17 +145,16 @@ Antes de criar ou editar qualquer componente de UI, leia:
 
 ### Fase 3 — Migração de estilos
 9.  ✅ DONE — Sidebar.tsx (hex → tokens, overflow → ScrollArea Shadcn)
-10. ✅ DONE — app/page.tsx (chat) — style={{}} → Tailwind
+10. ✅ DONE — app/page.tsx (chat) — desativado, redirect para /demandas
 11. ✅ DONE — MessageList.tsx — react-markdown + MermaidBlock
 12. ✅ DONE — PlanPreviewCard.tsx — tokens semânticos + StatusBadge
 13. ⬜ products/page.tsx — style={{}} → Tailwind
 14. ⬜ products/[sku]/page.tsx — style={{}} → Tailwind
 
-### Fase 4 — Novas telas (Fase F do roadmap V2)
+### Fase 4 — Novas telas
 15. ⬜ FilterBar reutilizável — aplicar em /products, /demandas, /campanhas, /insights
-16. ⬜ Keyboard shortcuts (? para help, Cmd+K para command palette, Cmd+/ foca Jarvis)
-17. ⬜ Empty states com CTA em todas as listagens
-18. ⬜ Skeleton loaders padronizados
+16. ⬜ Empty states com CTA em todas as listagens
+17. ⬜ Skeleton loaders padronizados
 
 ## Como trabalhar
 - Uma tarefa por vez — marcar DONE antes de iniciar a próxima

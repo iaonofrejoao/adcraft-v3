@@ -1,8 +1,6 @@
 'use client'
 import { Anchor, AlignJustify, MousePointerClick } from 'lucide-react'
-import { ScrollArea as ScrollAreaPrimitive } from 'radix-ui'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ScrollBar } from '@/components/ui/scroll-area'
 import { useCopyBoard } from '@/hooks/useCopyBoard'
 import { AprovacaoProgressBar } from './AprovacaoProgressBar'
 import { ColunaComponentes }    from './ColunaComponentes'
@@ -36,30 +34,26 @@ const COLUMNS = [
 /* ── Loading skeleton ────────────────────────────────────────────── */
 function BoardSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="flex gap-4">
-        <Skeleton className="h-16 flex-1 rounded-xl bg-surface-highest" />
-        <Skeleton className="h-16 w-48 rounded-xl bg-surface-highest" />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="space-y-5">
+      <Skeleton className="h-14 w-full rounded-xl bg-surface-highest" />
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {Array.from({ length: 3 }).map((_, col) => (
-          <div key={col} className="space-y-4">
+          <div key={col} className="space-y-3">
             <div className="flex items-center gap-2">
               <Skeleton className="w-8 h-8 rounded-lg bg-surface-highest" />
               <Skeleton className="h-5 w-24 bg-surface-highest" />
             </div>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-surface-container border border-white/5 rounded-xl p-4 space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-surface-container border border-white/5 rounded-xl p-3 space-y-2">
                 <div className="flex justify-between">
-                  <Skeleton className="h-3 w-24 bg-surface-highest" />
-                  <div className="flex gap-1.5">
-                    <Skeleton className="h-4 w-12 rounded bg-surface-highest" />
-                    <Skeleton className="h-4 w-20 rounded bg-surface-highest" />
+                  <Skeleton className="h-2.5 w-20 bg-surface-highest" />
+                  <div className="flex gap-1">
+                    <Skeleton className="h-4 w-10 rounded bg-surface-highest" />
+                    <Skeleton className="h-4 w-14 rounded bg-surface-highest" />
                   </div>
                 </div>
                 <Skeleton className="h-3 w-full bg-surface-highest" />
-                <Skeleton className="h-3 w-5/6 bg-surface-highest" />
-                <Skeleton className="h-3 w-4/6 bg-surface-highest" />
+                <Skeleton className="h-3 w-4/5 bg-surface-highest" />
               </div>
             ))}
           </div>
@@ -107,30 +101,23 @@ export function AprovacaoBoard({ sku, pipelineId, productId }: AprovacaoBoardPro
         onMaterialize={materializeCombinations}
       />
 
-      {/* 3-column grid — horizontal scroll via Radix ScrollArea */}
-      <ScrollAreaPrimitive.Root className="w-full overflow-hidden" type="scroll">
-        <ScrollAreaPrimitive.Viewport className="w-full">
-          <div className="flex gap-6 min-w-max pb-4">
-            {COLUMNS.map(({ type, label, Icon, iconClass, iconBg }) => (
-              <div key={type} className="w-[320px] shrink-0">
-                <ColunaComponentes
-                  type={type}
-                  label={label}
-                  Icon={Icon}
-                  iconClass={iconClass}
-                  iconBg={iconBg}
-                  items={colItemsMap[type]}
-                  onApprove={approveComponent}
-                  onReject={rejectComponent}
-                  onReset={resetComponent}
-                />
-              </div>
-            ))}
-          </div>
-        </ScrollAreaPrimitive.Viewport>
-        <ScrollBar orientation="horizontal" />
-        <ScrollAreaPrimitive.Corner />
-      </ScrollAreaPrimitive.Root>
+      {/* 3-column responsive grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {COLUMNS.map(({ type, label, Icon, iconClass, iconBg }) => (
+          <ColunaComponentes
+            key={type}
+            type={type}
+            label={label}
+            Icon={Icon}
+            iconClass={iconClass}
+            iconBg={iconBg}
+            items={colItemsMap[type]}
+            onApprove={approveComponent}
+            onReject={rejectComponent}
+            onReset={resetComponent}
+          />
+        ))}
+      </div>
 
       {/* Combinations */}
       <CombinacoesList

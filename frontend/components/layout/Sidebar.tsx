@@ -1,12 +1,17 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ClipboardList, Package, Film, Brain } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-const NAV = [
-  { href: '/demandas',  label: 'Demandas',  icon: '📋' },
-  { href: '/products',  label: 'Produtos',  icon: '📦' },
-  { href: '/creatives', label: 'Criativos', icon: '🎬' },
-  { href: '/insights',  label: 'Memória',   icon: '🧠' },
+interface NavItem { href: string; label: string; Icon: LucideIcon }
+
+const NAV: NavItem[] = [
+  { href: '/demandas',  label: 'Demandas',  Icon: ClipboardList },
+  { href: '/products',  label: 'Produtos',  Icon: Package       },
+  { href: '/creatives', label: 'Criativos', Icon: Film          },
+  { href: '/insights',  label: 'Memória',   Icon: Brain         },
 ]
 
 export function Sidebar() {
@@ -25,19 +30,20 @@ export function Sidebar() {
 
       {/* Nav principal */}
       <nav className="px-2 pt-3 pb-1 space-y-0.5">
-        {NAV.map(({ href, label, icon }) => {
+        {NAV.map(({ href, label, Icon }) => {
           const active = pathname.startsWith(href)
           return (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors duration-150 ${
+              className={cn(
+                'flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors duration-150',
                 active
                   ? 'bg-brand/10 text-brand border-l-2 border-brand'
-                  : 'text-on-surface-variant hover:bg-surface-high'
-              }`}
+                  : 'text-on-surface-variant hover:bg-surface-high',
+              )}
             >
-              <span className="text-base">{icon}</span>
+              <Icon size={16} strokeWidth={1.5} />
               {label}
             </Link>
           )

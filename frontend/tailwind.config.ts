@@ -37,6 +37,8 @@ const config: Config = {
         accent: {
           DEFAULT:          'var(--accent)',
           foreground:       'var(--accent-foreground)',
+          violet:           'var(--accent-violet)',
+          teal:             'var(--accent-teal)',
         },
         destructive: {
           DEFAULT:          'var(--destructive)',
@@ -58,10 +60,6 @@ const config: Config = {
           research: '#F29F05',
           market:   '#A1A1AA',
           strategy: '#FFDBCA',
-        },
-        accent: {
-          violet: 'var(--accent-violet)',
-          teal:   'var(--accent-teal)',
         },
         'on-surface':         '#E8E3DD',
         'on-surface-variant': '#9E9489',

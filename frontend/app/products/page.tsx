@@ -1,14 +1,19 @@
 'use client'
 import { useMemo, useState } from 'react'
-import { Search, X } from 'lucide-react'
 import { useProducts } from '@/hooks/useProducts'
 import { CadastrarProdutoModal } from '@/components/cadastrar-produto'
 import { ProductsHeader, ProductGrid } from '@/components/lista-produtos'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
-import { cn } from '@/lib/utils'
+import { FilterBar, type FilterOption } from '@/components/ui/FilterBar'
 
-const PLATFORMS = ['hotmart', 'clickbank', 'monetizze', 'eduzz'] as const
+const PLATFORM_PILLS: FilterOption[] = [
+  { value: 'all',        label: 'Todos'      },
+  { value: 'hotmart',    label: 'Hotmart'    },
+  { value: 'clickbank',  label: 'ClickBank'  },
+  { value: 'monetizze',  label: 'Monetizze'  },
+  { value: 'eduzz',      label: 'Eduzz'      },
+]
 
 export default function ProductsPage() {
   const {
@@ -50,63 +55,27 @@ export default function ProductsPage() {
       />
 
       {/* Filter bar */}
-      <div className="flex items-center gap-3 px-6 pt-3 pb-2 flex-wrap">
-        {/* Busca */}
-        <div className="relative">
-          <Search size={13} strokeWidth={1.5} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-muted pointer-events-none" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar produto…"
-            className={cn(
-              'pl-8 pr-7 py-1.5 text-[0.8125rem] rounded-lg bg-surface-container border border-white/8',
-              'text-on-surface placeholder:text-on-surface-muted outline-none',
-              'focus:border-brand/40 transition-colors w-52'
-            )}
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-muted hover:text-on-surface transition-colors"
-            >
-              <X size={12} strokeWidth={1.5} />
-            </button>
-          )}
-        </div>
-
-        {/* Platform pills */}
-        <div className="flex items-center gap-1.5">
-          {(['all', ...PLATFORMS] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPlatform(p)}
-              className={cn(
-                'px-3 py-1 rounded-full text-[0.75rem] font-medium capitalize transition-colors',
-                platform === p
-                  ? 'bg-brand/20 text-brand ring-1 ring-brand/30'
-                  : 'bg-surface-container text-on-surface-muted hover:text-on-surface hover:bg-surface-high'
-              )}
-            >
-              {p === 'all' ? 'Todos' : p}
-            </button>
-          ))}
-        </div>
-
-        {/* Mostrar inativos */}
-        <div className="flex items-center gap-2 ml-auto">
-          <Switch
-            checked={showInactive}
-            onCheckedChange={setShowInactive}
-            id="show-inactive"
-          />
-          <label
-            htmlFor="show-inactive"
-            className="text-[0.75rem] text-on-surface-muted cursor-pointer select-none"
-          >
-            Mostrar inativos
-          </label>
-        </div>
-      </div>
+      <FilterBar
+        className="px-6 pt-3 pb-2"
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar produto…"
+        pills={PLATFORM_PILLS}
+        activePill={platform}
+        onPillChange={setPlatform}
+      >
+        <Switch
+          checked={showInactive}
+          onCheckedChange={setShowInactive}
+          id="show-inactive"
+        />
+        <label
+          htmlFor="show-inactive"
+          className="text-[0.75rem] text-on-surface-muted cursor-pointer select-none"
+        >
+          Mostrar inativos
+        </label>
+      </FilterBar>
 
       <ScrollArea className="flex-1">
         <div className="px-6 py-4">

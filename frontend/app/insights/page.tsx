@@ -1,26 +1,27 @@
 'use client'
 import { useState }         from 'react'
 import {
-  Brain, Lightbulb, TrendingUp, Search,
+  Brain, Lightbulb, TrendingUp,
   CheckCircle2, XCircle, RefreshCw, ChevronDown, ChevronUp,
-  Filter,
 } from 'lucide-react'
 import { cn }               from '@/lib/utils'
 import { Skeleton }         from '@/components/ui/skeleton'
+import { FilterBar, type FilterOption } from '@/components/ui/FilterBar'
 import { useInsights }      from '@/hooks/useInsights'
 import type { Learning, Pattern, Insight } from '@/hooks/useInsights'
 
-// ── Constantes ────────────────────────────────────────────────────────────────
-
-const CATEGORIES = [
-  { value: 'angle',      label: 'Ângulo' },
-  { value: 'copy',       label: 'Copy' },
-  { value: 'persona',    label: 'Persona' },
-  { value: 'creative',   label: 'Criativo' },
-  { value: 'targeting',  label: 'Targeting' },
-  { value: 'compliance', label: 'Compliance' },
-  { value: 'other',      label: 'Outros' },
+const CATEGORY_PILLS: FilterOption[] = [
+  { value: 'all',        label: 'Todos'       },
+  { value: 'angle',      label: 'Ângulo'      },
+  { value: 'copy',       label: 'Copy'        },
+  { value: 'persona',    label: 'Persona'     },
+  { value: 'creative',   label: 'Criativo'    },
+  { value: 'targeting',  label: 'Targeting'   },
+  { value: 'compliance', label: 'Compliance'  },
+  { value: 'other',      label: 'Outros'      },
 ]
+
+// ── Constantes ────────────────────────────────────────────────────────────────
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -106,7 +107,7 @@ function InsightCard({ insight, onValidate }: {
 }
 
 function PatternCard({ pattern }: { pattern: Pattern }) {
-  const categoryLabel = CATEGORIES.find((c) => c.value === pattern.category)?.label ?? pattern.category
+  const categoryLabel = CATEGORY_PILLS.find((c) => c.value ===pattern.category)?.label ?? pattern.category
 
   return (
     <div className="rounded-xl border border-outline-variant/10 bg-surface-container p-4">
@@ -137,7 +138,7 @@ function LearningCard({ learning, onValidate }: {
   const [expanded, setExpanded] = useState(false)
   const [loading,  setLoading]  = useState(false)
 
-  const categoryLabel = CATEGORIES.find((c) => c.value === learning.category)?.label ?? learning.category
+  const categoryLabel = CATEGORY_PILLS.find((c) => c.value ===learning.category)?.label ?? learning.category
   const hasEvidence   = learning.evidence && Object.keys(learning.evidence).length > 0
 
   const handleValidate = async (valid: boolean) => {
@@ -290,49 +291,15 @@ export default function InsightsPage() {
 
       {/* Filtros */}
       {(activeTab === 'patterns' || activeTab === 'learnings') && (
-        <div className="shrink-0 border-b border-outline-variant/10 px-6 py-3 flex items-center gap-3 flex-wrap">
-          {/* Busca textual (só em learnings) */}
-          {activeTab === 'learnings' && (
-            <div className="flex items-center gap-2 bg-surface-container rounded-md px-3 h-8 flex-1 min-w-[200px] max-w-xs">
-              <Search size={12} strokeWidth={1.5} className="text-on-surface-muted shrink-0" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar nos learnings…"
-                className="bg-transparent text-[12px] text-on-surface placeholder:text-on-surface-muted outline-none flex-1"
-              />
-            </div>
-          )}
-
-          {/* Filtro por categoria */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Filter size={12} strokeWidth={1.5} className="text-on-surface-muted" />
-            <button
-              onClick={() => setCategoryFilter(null)}
-              className={cn(
-                'text-[11px] px-2.5 py-1 rounded-full transition-colors',
-                !categoryFilter
-                  ? 'bg-primary text-on-primary font-medium'
-                  : 'bg-surface-container text-on-surface-muted hover:text-on-surface',
-              )}
-            >
-              Todos
-            </button>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.value}
-                onClick={() => setCategoryFilter(cat.value === categoryFilter ? null : cat.value)}
-                className={cn(
-                  'text-[11px] px-2.5 py-1 rounded-full transition-colors',
-                  categoryFilter === cat.value
-                    ? 'bg-primary text-on-primary font-medium'
-                    : 'bg-surface-container text-on-surface-muted hover:text-on-surface',
-                )}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
+        <div className="shrink-0 border-b border-outline-variant/10 px-6 py-3">
+          <FilterBar
+            search={activeTab === 'learnings' ? searchQuery : undefined}
+            onSearchChange={activeTab === 'learnings' ? setSearchQuery : undefined}
+            searchPlaceholder="Buscar nos learnings…"
+            pills={CATEGORY_PILLS}
+            activePill={categoryFilter ?? 'all'}
+            onPillChange={(v) => setCategoryFilter(v === 'all' ? null : v)}
+          />
         </div>
       )}
 

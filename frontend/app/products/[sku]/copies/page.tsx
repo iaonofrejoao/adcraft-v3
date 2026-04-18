@@ -10,6 +10,13 @@ import {
 import type { Product } from '@/components/detalhes-produto'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { AprovacaoBoard } from '@/components/aprovacao-componentes'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface Pipeline {
   id:              string
@@ -33,7 +40,7 @@ export default function CopiesPage() {
     if (!sku) return
     Promise.all([
       fetch(`/api/products/${sku}`).then((r) => r.json()),
-      fetch(`/api/pipelines?sku=${sku}&goal=copy_only,creative_full&status=running,completed,plan_preview,pending&limit=20`)
+      fetch(`/api/pipelines?sku=${sku}&goal=copy_only,creative_full,criativo,full&status=running,completed,plan_preview,pending,failed&limit=20`)
         .then((r) => r.json()).catch(() => ({ pipelines: [] })),
     ]).then(([prod, pipes]) => {
       const p = prod.product ?? prod
@@ -67,40 +74,26 @@ export default function CopiesPage() {
       <ProductDetailHeader product={product} sku={sku!} />
 
       {/* Copies toolbar */}
-      <div className="shrink-0 px-8 py-3 bg-surface flex items-center justify-between gap-3 border-b border-outline-variant/10">
-        <div className="flex items-center gap-3">
-          {pipelines.length > 1 && (
-            <select
-              value={activePipeline ?? ''}
-              onChange={(e) => setActivePipeline(e.target.value)}
-              className="h-9 px-3 text-xs rounded-lg bg-surface-container border border-white/5
-                text-on-surface outline-none
-                focus:border-brand focus:ring-2 focus:ring-brand/20
-                transition-all duration-150"
-            >
+      <div className="shrink-0 px-8 py-3 bg-surface flex items-center gap-3 border-b border-outline-variant/10">
+        {pipelines.length > 1 && (
+          <Select value={activePipeline ?? ''} onValueChange={setActivePipeline}>
+            <SelectTrigger className="h-9 w-64 text-xs bg-surface-container border-white/5 text-on-surface">
+              <SelectValue placeholder="Selecionar pipeline" />
+            </SelectTrigger>
+            <SelectContent className="bg-surface-highest border-white/10 text-on-surface">
               {pipelines.map((p) => (
-                <option key={p.id} value={p.id}>
+                <SelectItem key={p.id} value={p.id} className="text-xs">
                   {p.goal} · {new Date(p.created_at).toLocaleDateString('pt-BR')}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          )}
-          {currentPipeline && (
-            <StatusBadge
-              status={currentPipeline.status as 'running' | 'done' | 'failed' | 'pending' | 'paused'}
-            />
-          )}
-        </div>
-
-        <Link
-          href={`/?msg=@${sku}+/copy`}
-          className="text-sm px-3 py-1.5 rounded font-medium text-primary-foreground
-            bg-gradient-to-br from-brand to-brand-end
-            hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
-            transition-shadow duration-150"
-        >
-          Nova copy via Jarvis
-        </Link>
+            </SelectContent>
+          </Select>
+        )}
+        {currentPipeline && (
+          <StatusBadge
+            status={currentPipeline.status as 'running' | 'done' | 'failed' | 'pending' | 'paused'}
+          />
+        )}
       </div>
 
       {/* Content */}
@@ -112,18 +105,9 @@ export default function CopiesPage() {
           <div className="text-center space-y-1">
             <p className="text-sm font-semibold text-on-surface">Nenhum pipeline de copy encontrado</p>
             <p className="text-[0.6875rem] text-on-surface-variant">
-              Inicie uma geração de copy via Jarvis para este produto
+              Rode um pipeline criativo via Claude Code para este produto
             </p>
           </div>
-          <Link
-            href={`/?msg=@${sku}+/copy`}
-            className="text-sm px-4 py-2 rounded font-medium text-primary-foreground
-              bg-gradient-to-br from-brand to-brand-end
-              hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
-              transition-shadow duration-150"
-          >
-            Gerar copy com Jarvis
-          </Link>
         </div>
       ) : (
         <div className="flex-1 px-8 py-6 pb-10">

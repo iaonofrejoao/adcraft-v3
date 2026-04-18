@@ -33,7 +33,7 @@ function confidenceColor(c: number): string {
 function confidenceBg(c: number): string {
   if (c >= 0.7) return 'bg-status-done-bg'
   if (c >= 0.5) return 'bg-status-paused-bg'
-  return 'bg-surface-container-high'
+  return 'bg-surface-high'
 }
 
 function importanceStars(n: number): string {
@@ -181,7 +181,7 @@ function LearningCard({ learning, onValidate }: {
           )}
 
           {expanded && hasEvidence && (
-            <pre className="mt-2 text-[10px] font-mono text-on-surface-muted bg-surface-container-highest rounded-md p-2 overflow-x-auto whitespace-pre-wrap">
+            <pre className="mt-2 text-[10px] font-mono text-on-surface-muted bg-surface-highest rounded-md p-2 overflow-x-auto whitespace-pre-wrap">
               {JSON.stringify(learning.evidence, null, 2)}
             </pre>
           )}
@@ -251,7 +251,7 @@ export default function InsightsPage() {
           <button
             onClick={reload}
             disabled={isLoading}
-            className="p-2 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
+            className="p-2 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-high transition-colors"
             title="Recarregar"
           >
             <RefreshCw size={14} strokeWidth={1.5} className={isLoading ? 'animate-spin' : ''} />
@@ -272,14 +272,14 @@ export default function InsightsPage() {
                 'flex items-center gap-2 rounded-lg px-3 py-2 transition-colors text-left',
                 activeTab === tab
                   ? 'bg-primary-container text-primary'
-                  : 'text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high',
+                  : 'text-on-surface-muted hover:text-on-surface hover:bg-surface-high',
               )}
             >
               <Icon size={14} strokeWidth={1.5} />
               <span className="text-[12px] font-medium">{label}</span>
               <span className={cn(
                 'text-[11px] font-mono rounded-full px-1.5 py-0.5 min-w-[20px] text-center',
-                activeTab === tab ? 'bg-primary/20' : 'bg-surface-container-high',
+                activeTab === tab ? 'bg-primary/20' : 'bg-surface-high',
               )}>
                 {count}
               </span>

@@ -143,7 +143,7 @@ export function VSLUpload({ sku, currentUrl, onSaved }: VSLUploadProps) {
           className={cn(
             'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors',
             mode === 'url'
-              ? 'bg-surface-container-high text-on-surface'
+              ? 'bg-surface-high text-on-surface'
               : 'text-on-surface-muted hover:text-on-surface-variant'
           )}
         >
@@ -155,7 +155,7 @@ export function VSLUpload({ sku, currentUrl, onSaved }: VSLUploadProps) {
           className={cn(
             'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors',
             mode === 'upload'
-              ? 'bg-surface-container-high text-on-surface'
+              ? 'bg-surface-high text-on-surface'
               : 'text-on-surface-muted hover:text-on-surface-variant'
           )}
         >
@@ -180,7 +180,7 @@ export function VSLUpload({ sku, currentUrl, onSaved }: VSLUploadProps) {
             onClick={saveUrl}
             disabled={uploading || !urlValue.trim()}
             size="sm"
-            className="bg-brand text-[#131314] hover:bg-brand/90 shrink-0"
+            className="bg-brand text-on-primary hover:bg-brand/90 shrink-0"
           >
             {uploading ? (
               <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />
@@ -248,7 +248,7 @@ export function VSLUpload({ sku, currentUrl, onSaved }: VSLUploadProps) {
               {/* Progress bar */}
               {uploading && (
                 <div className="space-y-1">
-                  <Progress value={uploadPct} className="h-1.5 bg-surface-container-high" />
+                  <Progress value={uploadPct} className="h-1.5 bg-surface-high" />
                   <p className="text-[0.6875rem] text-on-surface-muted">{uploadPct}% enviado…</p>
                 </div>
               )}
@@ -257,7 +257,7 @@ export function VSLUpload({ sku, currentUrl, onSaved }: VSLUploadProps) {
                 <Button
                   onClick={uploadFile}
                   size="sm"
-                  className="w-full bg-brand text-[#131314] hover:bg-brand/90"
+                  className="w-full bg-brand text-on-primary hover:bg-brand/90"
                 >
                   <Upload size={14} strokeWidth={1.5} className="mr-1.5" />
                   Enviar vídeo
@@ -271,7 +271,7 @@ export function VSLUpload({ sku, currentUrl, onSaved }: VSLUploadProps) {
       {/* Preview do vídeo salvo */}
       {savedUrl && (
         <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-[0.75rem] text-green-400">
+          <div className="flex items-center gap-1.5 text-[0.75rem] text-status-done-text">
             <CheckCircle2 size={14} strokeWidth={1.5} />
             VSL vinculado com sucesso
           </div>

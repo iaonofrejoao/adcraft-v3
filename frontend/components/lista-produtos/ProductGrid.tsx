@@ -19,18 +19,18 @@ export function ProductGrid({ products, isLoading, onAddProduct }: ProductGridPr
           <div key={i} className="bg-surface-container border border-white/5 rounded-xl p-4 flex flex-col gap-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-40 bg-surface-highest" />
-                <Skeleton className="h-3 w-24 bg-surface-highest" />
+                <Skeleton className="h-4 w-40 bg-surface-high" />
+                <Skeleton className="h-3 w-24 bg-surface-high" />
               </div>
-              <Skeleton className="h-3 w-3 rounded bg-surface-highest" />
+              <Skeleton className="h-3 w-3 rounded bg-surface-high" />
             </div>
-            <Skeleton className="h-3 w-20 bg-surface-highest" />
+            <Skeleton className="h-3 w-20 bg-surface-high" />
             <div className="flex gap-2.5">
               {Array.from({ length: 5 }).map((_, j) => (
-                <Skeleton key={j} className="h-4 w-4 rounded bg-surface-highest" />
+                <Skeleton key={j} className="h-4 w-4 rounded bg-surface-high" />
               ))}
             </div>
-            <Skeleton className="h-2.5 w-28 bg-surface-highest" />
+            <Skeleton className="h-2.5 w-28 bg-surface-high" />
           </div>
         ))}
       </div>
@@ -51,7 +51,7 @@ export function ProductGrid({ products, isLoading, onAddProduct }: ProductGridPr
         </div>
         <Button
           onClick={onAddProduct}
-          className="bg-gradient-to-br from-[#F28705] to-[#FFB690] text-[#131314] font-medium hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-shadow duration-150"
+          className="bg-brand-gradient text-on-primary font-medium hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-shadow duration-150"
         >
           Cadastrar primeiro produto
         </Button>

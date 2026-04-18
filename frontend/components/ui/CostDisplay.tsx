@@ -36,11 +36,11 @@ export function CostDisplay({ costUsd, tokens, animated = true }: CostDisplayPro
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs font-mono text-[var(--text-secondary)]">
+      <span className="text-xs font-mono text-on-surface-variant">
         ${displayCost.toFixed(4)}
       </span>
       {tokens !== undefined && (
-        <span className="text-xs text-[var(--text-muted)]">
+        <span className="text-xs text-on-surface-muted">
           {tokens.toLocaleString()} tokens
         </span>
       )}

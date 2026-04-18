@@ -80,7 +80,7 @@ export function RerunModal({
           <AlertDialogCancel
             onClick={onCancel}
             disabled={loading}
-            className="bg-surface-container-high border-outline-variant text-on-surface hover:bg-surface-container-highest"
+            className="bg-surface-high border-outline-variant text-on-surface hover:bg-surface-highest"
           >
             Cancelar
           </AlertDialogCancel>

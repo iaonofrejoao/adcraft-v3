@@ -75,7 +75,7 @@ function JsonViewer({ data, label }: JsonViewerProps) {
 const BORDER_BY_STATUS: Record<string, string> = {
   pending:   'border-l-outline-variant',
   waiting:   'border-l-outline-variant',
-  running:   'border-l-[#60A5FA]',
+  running:   'border-l-status-running-text',
   paused:    'border-l-status-paused-text',
   completed: 'border-l-status-done-text',
   skipped:   'border-l-status-done-text',
@@ -85,7 +85,7 @@ const BORDER_BY_STATUS: Record<string, string> = {
 const STATUS_ICON: Record<string, { icon: LucideIcon; className: string }> = {
   pending:   { icon: Clock,        className: 'text-on-surface-muted' },
   waiting:   { icon: Clock,        className: 'text-on-surface-muted' },
-  running:   { icon: RefreshCw,    className: 'text-[#60A5FA] animate-spin' },
+  running:   { icon: RefreshCw,    className: 'text-status-running-text animate-spin' },
   paused:    { icon: AlertTriangle,className: 'text-status-paused-text' },
   completed: { icon: CheckCircle2, className: 'text-status-done-text' },
   skipped:   { icon: CheckCircle2, className: 'text-status-done-text opacity-60' },
@@ -144,12 +144,12 @@ export function TaskStepCard({ task, index, isLast, onRerun }: TaskStepCardProps
           <div className={cn(
             'w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[11px] font-mono font-bold border',
             task.status === 'running'
-              ? 'bg-[#60A5FA]/10 border-[#60A5FA]/40 text-[#60A5FA]'
+              ? 'bg-status-running border-status-running-text/40 text-status-running-text'
               : task.status === 'completed' || task.status === 'skipped'
               ? 'bg-status-done-bg border-status-done-text/30 text-status-done-text'
               : task.status === 'failed'
               ? 'bg-status-failed-bg border-status-failed-text/30 text-status-failed-text'
-              : 'bg-surface-container-high border-outline-variant text-on-surface-muted',
+              : 'bg-surface-high border-outline-variant text-on-surface-muted',
           )}>
             {index + 1}
           </div>
@@ -171,7 +171,7 @@ export function TaskStepCard({ task, index, isLast, onRerun }: TaskStepCardProps
             onClick={() => setExpanded((v) => !v)}
           >
             {/* Ícone do agente */}
-            <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-surface-high flex items-center justify-center shrink-0">
               <AgentIcon size={16} strokeWidth={1.5} className="text-on-surface-variant" />
             </div>
 
@@ -182,7 +182,7 @@ export function TaskStepCard({ task, index, isLast, onRerun }: TaskStepCardProps
                   {label}
                 </span>
                 {task.mode && (
-                  <span className="font-mono text-[9px] bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0">
+                  <span className="font-mono text-[9px] bg-surface-high text-on-surface-variant px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0">
                     {task.mode}
                   </span>
                 )}
@@ -203,7 +203,7 @@ export function TaskStepCard({ task, index, isLast, onRerun }: TaskStepCardProps
                 )}
 
                 {isRunning && task.started_at && (
-                  <span className="font-mono text-[11px] text-[#60A5FA]">
+                  <span className="font-mono text-[11px] text-status-running-text">
                     desde {formatTime(task.started_at)}
                   </span>
                 )}
@@ -263,7 +263,7 @@ export function TaskStepCard({ task, index, isLast, onRerun }: TaskStepCardProps
                     size="sm"
                     disabled={rerunLoading}
                     onClick={() => setRerunOpen(true)}
-                    className="gap-2 text-[12px] text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
+                    className="gap-2 text-[12px] text-on-surface-variant hover:text-on-surface hover:bg-surface-high"
                   >
                     <RefreshCw size={13} strokeWidth={1.5} className={rerunLoading ? 'animate-spin' : ''} />
                     Re-executar este agente

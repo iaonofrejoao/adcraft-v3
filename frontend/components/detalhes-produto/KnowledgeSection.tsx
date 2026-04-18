@@ -133,11 +133,11 @@ function KnowledgeCard({ def, pipeline, sku }: KnowledgeCardProps) {
       <div className="relative overflow-hidden min-h-[64px]">
         {isRunning ? (
           <div className="flex items-center gap-2 text-[0.8125rem] text-on-surface-variant">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#60A5FA] animate-pulse shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-status-running-text animate-pulse shrink-0" />
             Em execução…
             {pipeline?.progress_pct != null && (
               <>
-                <span className="ml-auto font-mono text-[#60A5FA]">
+                <span className="ml-auto font-mono text-status-running-text">
                   {pipeline.progress_pct}%
                 </span>
               </>

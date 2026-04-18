@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={cn("font-sans", inter.variable)}>
-      <body className="flex h-screen overflow-hidden" style={{ background: 'var(--surface-page)' }}>
+      <body className="flex h-screen overflow-hidden bg-background">
         <Sidebar />
         <TooltipProvider>
           <main className="flex-1 flex flex-col overflow-hidden min-w-0">

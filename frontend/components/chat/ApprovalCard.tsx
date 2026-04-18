@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 interface ApprovalCardProps {
   approvalId:   string
@@ -43,21 +45,25 @@ export function ApprovalCard({ approvalId, approvalType, payload, onResolve }: A
   }
 
   return (
-    <div className="rounded-xl border overflow-hidden"
-      style={{ background: 'var(--surface-card)', borderColor: resolved ? 'var(--border-default)' : 'var(--status-warning)', opacity: resolved ? 0.7 : 1 }}>
-
-      <div className="px-4 py-3 border-b"
-        style={{ borderColor: 'var(--border-default)', background: resolved ? 'var(--surface-page)' : '#FFF9ED' }}>
-        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+    <div className={cn(
+      'rounded-xl border overflow-hidden',
+      'bg-surface-container',
+      resolved ? 'border-white/10 opacity-70' : 'border-status-paused-text/40',
+    )}>
+      <div className={cn(
+        'px-4 py-3 border-b border-white/5',
+        !resolved && 'bg-status-paused',
+      )}>
+        <p className="text-sm font-semibold text-on-surface">
           {titleMap[approvalType] ?? `Aprovação: ${approvalType}`}
         </p>
       </div>
 
-      <div className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+      <div className="px-4 py-3 text-sm text-on-surface-variant">
         {approvalType === 'budget_exceeded' && (
           <p>
             O custo atual superou o budget configurado.{' '}
-            <strong style={{ color: 'var(--text-primary)' }}>
+            <strong className="text-on-surface">
               Atual: ${String(payload.cost_so_far_usd ?? '?')} / Budget: ${String(payload.budget_usd ?? '?')}
             </strong>.
             Deseja continuar?
@@ -66,8 +72,7 @@ export function ApprovalCard({ approvalId, approvalType, payload, onResolve }: A
         {approvalType === 'copy_components' && (
           <p>
             Componentes de copy gerados e pendentes de aprovação em{' '}
-            <a href={`/products/${payload.sku}/copies`}
-              className="underline" style={{ color: 'var(--brand-primary)' }}>
+            <a href={`/products/${payload.sku}/copies`} className="underline text-brand">
               /products/{String(payload.sku ?? '?')}/copies
             </a>.
           </p>
@@ -75,8 +80,7 @@ export function ApprovalCard({ approvalId, approvalType, payload, onResolve }: A
         {approvalType === 'combination_selection' && (
           <p>
             Combinações materializadas. Selecione quais viram vídeo em{' '}
-            <a href={`/products/${payload.sku}/copies`}
-              className="underline" style={{ color: 'var(--brand-primary)' }}>
+            <a href={`/products/${payload.sku}/copies`} className="underline text-brand">
               /products/{String(payload.sku ?? '?')}/copies
             </a>.
           </p>
@@ -85,28 +89,30 @@ export function ApprovalCard({ approvalId, approvalType, payload, onResolve }: A
 
       {!resolved && (
         <div className="px-4 pb-4 flex gap-2">
-          <button
+          <Button
             onClick={() => handleDecision('approved')}
             disabled={loading}
-            className="flex-1 py-2 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-40"
-            style={{ background: 'var(--status-success)' }}
+            className="flex-1 bg-status-done text-status-done-text hover:bg-status-done/80 disabled:opacity-40"
           >
             {loading ? '…' : 'Continuar'}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => handleDecision('rejected')}
             disabled={loading}
-            className="flex-1 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-40 border"
-            style={{ color: 'var(--status-error)', borderColor: 'var(--status-error)' }}
+            className="flex-1 border-status-failed-text/40 text-status-failed-text hover:bg-status-failed disabled:opacity-40"
           >
             Pausar
-          </button>
+          </Button>
         </div>
       )}
 
       {resolved && (
         <div className="px-4 pb-4">
-          <p className="text-sm font-medium" style={{ color: resolved === 'approved' ? 'var(--status-success)' : 'var(--status-error)' }}>
+          <p className={cn(
+            'text-sm font-medium',
+            resolved === 'approved' ? 'text-status-done-text' : 'text-status-failed-text',
+          )}>
             {resolved === 'approved' ? 'Aprovado ✓' : 'Pausado ✗'}
           </p>
         </div>

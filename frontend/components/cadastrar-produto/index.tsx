@@ -224,7 +224,7 @@ export function CadastrarProdutoModal({
                 Cancelar
               </Button>
               <Button
-                className="bg-brand-gradient text-primary-foreground font-semibold hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-shadow duration-150"
+                className="bg-brand-gradient text-on-primary font-semibold hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-shadow duration-150"
                 onClick={handleSubmit}
                 disabled={isSubmitting || !url.trim() || !name.trim()}
               >

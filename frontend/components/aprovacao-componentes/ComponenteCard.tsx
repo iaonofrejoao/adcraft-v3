@@ -24,16 +24,16 @@ import type { CopyComponent } from '@/hooks/useCopyBoard'
 
 const STRUCTURE_COLORS: Record<string, string> = {
   PAS:       'bg-brand-muted text-brand border-transparent',
-  AIDA:      'bg-[#60A5FA]/10 text-[#60A5FA] border-transparent',
-  soft:      'bg-[#60A5FA]/10 text-[#60A5FA] border-transparent',
-  fear:      'bg-[#F87171]/10 text-[#F87171] border-transparent',
-  Education: 'bg-[#60A5FA]/10 text-[#60A5FA] border-transparent',
-  Urgência:  'bg-[#FCD34D]/10 text-[#FCD34D] border-transparent',
+  AIDA:      'bg-status-running text-status-running-text border-transparent',
+  soft:      'bg-status-running text-status-running-text border-transparent',
+  fear:      'bg-status-failed text-status-failed-text border-transparent',
+  Education: 'bg-status-running text-status-running-text border-transparent',
+  Urgência:  'bg-status-paused text-status-paused-text border-transparent',
   Garantia:  'bg-on-surface-muted/10 text-on-surface-muted border-transparent',
 }
 
 function structureBadgeClass(value: string): string {
-  return STRUCTURE_COLORS[value] ?? 'bg-surface-highest text-on-surface-muted border-transparent'
+  return STRUCTURE_COLORS[value] ?? 'bg-surface-high text-on-surface-muted border-transparent'
 }
 
 /* ── Compliance badge (Shadcn Badge) ─────────────────────────────── */
@@ -43,31 +43,31 @@ function ComplianceBadge({ status }: { status: string }) {
 
   if (status === 'approved') {
     return (
-      <Badge className={cn(base, 'bg-[#4ADE80]/10 text-[#4ADE80]')}>
-        <CheckCircle2 size={9} strokeWidth={2} />
+      <Badge className={cn(base, 'bg-status-done text-status-done-text')}>
+        <CheckCircle2 size={9} strokeWidth={1.5} />
         anvisa ✓
       </Badge>
     )
   }
   if (status === 'rejected') {
     return (
-      <Badge className={cn(base, 'bg-[#F87171]/10 text-[#F87171]')}>
-        <XCircle size={9} strokeWidth={2} />
+      <Badge className={cn(base, 'bg-status-failed text-status-failed-text')}>
+        <XCircle size={9} strokeWidth={1.5} />
         rejeitado
       </Badge>
     )
   }
   if (status === 'warning' || status === 'revisar') {
     return (
-      <Badge className={cn(base, 'bg-[#FCD34D]/10 text-[#FCD34D]')}>
-        <AlertTriangle size={9} strokeWidth={2} />
+      <Badge className={cn(base, 'bg-status-paused text-status-paused-text')}>
+        <AlertTriangle size={9} strokeWidth={1.5} />
         revisar
       </Badge>
     )
   }
   return (
     <Badge className={cn(base, 'bg-on-surface-muted/10 text-on-surface-muted')}>
-      <Clock size={9} strokeWidth={2} />
+      <Clock size={9} strokeWidth={1.5} />
       anvisa…
     </Badge>
   )
@@ -92,14 +92,14 @@ export function ComponenteCard({
 
   return (
     <div className={cn(
-      'bg-surface-container rounded-xl p-4 border transition-all duration-150',
-      isApproved && 'border-[#4ADE80]/30',
-      isRejected && 'border-[#F87171]/20 opacity-60',
+      'bg-surface-container rounded-xl p-4 border transition-all duration-150 w-full overflow-hidden',
+      isApproved && 'border-status-done-text/30',
+      isRejected && 'border-status-failed-text/20 opacity-60',
       !isApproved && !isRejected && 'border-white/5',
     )}>
       {/* Top row: slot code + badges */}
       <div className="flex items-start justify-between gap-2 mb-3">
-        <span className="font-mono text-[0.625rem] text-on-surface-muted tracking-wide">
+        <span className="font-mono text-[0.625rem] text-on-surface-muted tracking-wide truncate min-w-0">
           {c.tag}
         </span>
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -117,7 +117,7 @@ export function ComponenteCard({
 
       {/* Content */}
       <p className={cn(
-        'text-sm leading-relaxed mb-4',
+        'text-sm leading-relaxed mb-4 break-words',
         isRejected ? 'text-on-surface-variant italic' : 'text-on-surface',
         !expanded && 'line-clamp-3',
       )}>
@@ -128,7 +128,7 @@ export function ComponenteCard({
       {expanded && (
         <div className="space-y-2 mb-4">
           {c.rationale && (
-            <p className="text-[0.6875rem] text-on-surface-variant leading-relaxed">
+            <p className="text-[0.6875rem] text-on-surface-variant leading-relaxed break-words">
               <span className="font-medium text-on-surface-muted">Rationale: </span>
               {c.rationale}
             </p>
@@ -177,11 +177,11 @@ export function ComponenteCard({
             className={cn(
               'w-7 h-7 rounded transition-colors duration-150',
               isApproved
-                ? 'bg-[#4ADE80]/20 text-[#4ADE80] hover:bg-[#4ADE80]/25'
-                : 'text-on-surface-muted hover:bg-[#4ADE80]/10 hover:text-[#4ADE80]',
+                ? 'bg-status-done text-status-done-text hover:bg-status-done/80'
+                : 'text-on-surface-muted hover:bg-status-done/20 hover:text-status-done-text',
             )}
           >
-            <Check size={14} strokeWidth={2} />
+            <Check size={14} strokeWidth={1.5} />
           </Button>
 
           {/* Reject — AlertDialog confirmation */}
@@ -194,11 +194,11 @@ export function ComponenteCard({
                 className={cn(
                   'w-7 h-7 rounded transition-colors duration-150',
                   isRejected
-                    ? 'bg-[#F87171]/20 text-[#F87171] hover:bg-[#F87171]/25'
-                    : 'text-on-surface-muted hover:bg-[#F87171]/10 hover:text-[#F87171]',
+                    ? 'bg-status-failed text-status-failed-text hover:bg-status-failed/80'
+                    : 'text-on-surface-muted hover:bg-status-failed/20 hover:text-status-failed-text',
                 )}
               >
-                <X size={14} strokeWidth={2} />
+                <X size={14} strokeWidth={1.5} />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent
@@ -220,7 +220,7 @@ export function ComponenteCard({
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => onReject(c.id)}
-                  className="bg-[#F87171]/20 text-[#F87171] hover:bg-[#F87171]/30 border-transparent"
+                  className="bg-status-failed text-status-failed-text hover:bg-status-failed/80 border-transparent"
                 >
                   Rejeitar
                 </AlertDialogAction>

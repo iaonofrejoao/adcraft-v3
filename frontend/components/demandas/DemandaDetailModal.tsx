@@ -98,11 +98,11 @@ function goalLabel(goal: string): string {
 
 function StatusDot({ status }: { status: string }) {
   const color = {
-    completed: 'bg-green-400',
-    done:      'bg-green-400',
-    running:   'bg-blue-400 animate-pulse',
-    failed:    'bg-red-400',
-    skipped:   'bg-green-400/60',
+    completed: 'bg-status-done-text',
+    done:      'bg-status-done-text',
+    running:   'bg-status-running-text animate-pulse',
+    failed:    'bg-status-failed-text',
+    skipped:   'bg-status-done-text/60',
     pending:   'bg-on-surface-muted/30',
     waiting:   'bg-on-surface-muted/30',
   }[status] ?? 'bg-on-surface-muted/30'
@@ -167,7 +167,7 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
         <div className="relative px-5 pt-5 pb-4 bg-gradient-to-b from-surface-container-high/40 to-transparent">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-high transition-colors"
           >
             <XCircle size={16} strokeWidth={1.5} />
           </button>
@@ -178,7 +178,7 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
             <span className="text-[0.75rem] font-semibold text-brand uppercase tracking-wide">
               {pipeline ? goalLabel(pipeline.goal) : '…'}
             </span>
-            <span className="font-mono text-[0.625rem] text-on-surface-muted bg-surface-container-high px-1.5 py-0.5 rounded">
+            <span className="font-mono text-[0.625rem] text-on-surface-muted bg-surface-high px-1.5 py-0.5 rounded">
               #{shortId}
             </span>
           </div>
@@ -209,11 +209,11 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
 
           {loading ? (
             <div className="space-y-3">
-              <Skeleton className="h-2 w-full bg-surface-container-high rounded-full" />
+              <Skeleton className="h-2 w-full bg-surface-high rounded-full" />
               <div className="grid grid-cols-3 gap-2">
-                {[1,2,3].map((i) => <Skeleton key={i} className="h-14 rounded-xl bg-surface-container-high" />)}
+                {[1,2,3].map((i) => <Skeleton key={i} className="h-14 rounded-xl bg-surface-high" />)}
               </div>
-              <Skeleton className="h-24 rounded-xl bg-surface-container-high" />
+              <Skeleton className="h-24 rounded-xl bg-surface-high" />
             </div>
           ) : pipeline ? (
             <>
@@ -223,12 +223,12 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
                   <span>{pipeline.tasks_done} de {pipeline.tasks_total} agentes concluídos</span>
                   <span className="font-mono font-semibold text-on-surface">{pipeline.progress_pct}%</span>
                 </div>
-                <Progress value={pipeline.progress_pct} className="h-1.5 bg-surface-container-high" />
+                <Progress value={pipeline.progress_pct} className="h-1.5 bg-surface-high" />
               </div>
 
               {/* Stats grid */}
               <div className="grid grid-cols-3 gap-2">
-                <div className="bg-surface-container-high rounded-xl p-3 space-y-1">
+                <div className="bg-surface-high rounded-xl p-3 space-y-1">
                   <div className="flex items-center gap-1 text-on-surface-muted">
                     <DollarSign size={11} strokeWidth={1.5} />
                     <span className="text-[0.625rem] uppercase tracking-wide">Custo</span>
@@ -237,7 +237,7 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
                     {formatCost(pipeline.cost_so_far_usd)}
                   </p>
                 </div>
-                <div className="bg-surface-container-high rounded-xl p-3 space-y-1">
+                <div className="bg-surface-high rounded-xl p-3 space-y-1">
                   <div className="flex items-center gap-1 text-on-surface-muted">
                     <Clock size={11} strokeWidth={1.5} />
                     <span className="text-[0.625rem] uppercase tracking-wide">Início</span>
@@ -246,7 +246,7 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
                     {formatRelative(pipeline.created_at)}
                   </p>
                 </div>
-                <div className="bg-surface-container-high rounded-xl p-3 space-y-1">
+                <div className="bg-surface-high rounded-xl p-3 space-y-1">
                   <div className="flex items-center gap-1 text-on-surface-muted">
                     <RefreshCw size={11} strokeWidth={1.5} />
                     <span className="text-[0.625rem] uppercase tracking-wide">Duração</span>
@@ -259,14 +259,14 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
 
               {/* Agente ativo */}
               {runningTask && (
-                <div className="flex items-center gap-2.5 bg-blue-400/8 border border-blue-400/20 rounded-xl px-3.5 py-2.5">
-                  <Loader2 size={13} strokeWidth={1.5} className="animate-spin text-blue-400 shrink-0" />
+                <div className="flex items-center gap-2.5 bg-status-running border border-status-running-text/20 rounded-xl px-3.5 py-2.5">
+                  <Loader2 size={13} strokeWidth={1.5} className="animate-spin text-status-running-text shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[0.75rem] text-blue-300 font-medium truncate">
+                    <p className="text-[0.75rem] text-status-running-text font-medium truncate">
                       {agentLabel(runningTask.agent_name)}
                     </p>
                     {runningTask.started_at && (
-                      <p className="text-[0.625rem] text-blue-400/60 font-mono mt-0.5">
+                      <p className="text-[0.625rem] text-status-running-text/60 font-mono mt-0.5">
                         rodando há {formatDuration(runningTask.started_at, null)}
                       </p>
                     )}
@@ -276,13 +276,13 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
 
               {/* Falhas */}
               {failedTasks.length > 0 && (
-                <div className="flex items-start gap-2.5 bg-red-400/8 border border-red-400/20 rounded-xl px-3.5 py-2.5">
-                  <AlertTriangle size={13} strokeWidth={1.5} className="text-red-400 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5 bg-status-failed border border-status-failed-text/20 rounded-xl px-3.5 py-2.5">
+                  <AlertTriangle size={13} strokeWidth={1.5} className="text-status-failed-text shrink-0 mt-0.5" />
                   <div className="min-w-0">
-                    <p className="text-[0.75rem] text-red-300 font-medium">
+                    <p className="text-[0.75rem] text-status-failed-text font-medium">
                       {failedTasks.length} agente{failedTasks.length > 1 ? 's' : ''} falharam
                     </p>
-                    <p className="text-[0.625rem] text-red-400/60 truncate mt-0.5">
+                    <p className="text-[0.625rem] text-status-failed-text/60 truncate mt-0.5">
                       {failedTasks.map((t) => agentLabel(t.agent_name)).join(', ')}
                     </p>
                   </div>
@@ -304,9 +304,9 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
                           task.status === 'completed' || task.status === 'skipped'
                             ? 'text-on-surface-variant'
                             : task.status === 'running'
-                            ? 'text-blue-300'
+                            ? 'text-status-running-text'
                             : task.status === 'failed'
-                            ? 'text-red-300'
+                            ? 'text-status-failed-text'
                             : 'text-on-surface-muted'
                         )}>
                           {agentLabel(task.agent_name)}
@@ -317,7 +317,7 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
                           </span>
                         )}
                         {task.status === 'skipped' && (
-                          <span className="text-[0.5625rem] text-green-400/60 shrink-0">↻</span>
+                          <span className="text-[0.5625rem] text-status-done-text/60 shrink-0">↻</span>
                         )}
                       </div>
                     ))}
@@ -343,7 +343,7 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
               size="sm"
               disabled={cancelling}
               onClick={handleCancel}
-              className="text-red-400 hover:text-red-300 hover:bg-red-400/10 text-[0.8125rem]"
+              className="text-status-failed-text hover:text-status-failed-text/80 hover:bg-status-failed text-[0.8125rem]"
             >
               {cancelling ? (
                 <Loader2 size={14} strokeWidth={1.5} className="animate-spin mr-1.5" />
@@ -360,7 +360,7 @@ export function DemandaDetailModal({ pipelineId, onClose }: DemandaDetailModalPr
               onClose()
               router.push(`/demandas/${pipelineId}`)
             }}
-            className="ml-auto text-[0.8125rem] bg-brand text-[#131314] hover:bg-brand/90"
+            className="ml-auto text-[0.8125rem] bg-brand text-on-primary hover:bg-brand/90"
           >
             <ExternalLink size={14} strokeWidth={1.5} className="mr-1.5" />
             Ver detalhes completos

@@ -62,13 +62,13 @@ interface KnowledgeRow<T = unknown> {
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
 const SECTION_COLOR: Record<string, string> = {
-  hook:         'text-[#F28705] bg-[#F28705]/10',
-  problem:      'text-[#F87171] bg-[#F87171]/10',
-  agitation:    'text-[#F97316] bg-[#F97316]/10',
-  mechanism:    'text-[#60A5FA] bg-[#60A5FA]/10',
-  proof:        'text-[#4ADE80] bg-[#4ADE80]/10',
-  offer:        'text-[#A78BFA] bg-[#A78BFA]/10',
-  cta:          'text-[#FCD34D] bg-[#FCD34D]/10',
+  hook:         'text-brand               bg-brand-muted',
+  problem:      'text-status-failed-text  bg-status-failed',
+  agitation:    'text-brand               bg-brand-muted',
+  mechanism:    'text-status-running-text bg-status-running',
+  proof:        'text-status-done-text    bg-status-done',
+  offer:        'text-accent-violet       bg-accent-violet/10',
+  cta:          'text-status-paused-text  bg-status-paused',
 }
 
 /* ── Copy-to-clipboard button ───────────────────────────────────────── */
@@ -87,7 +87,7 @@ function CopyButton({ text }: { text: string }) {
       className="flex items-center gap-1 text-[0.625rem] text-on-surface-muted hover:text-on-surface transition-colors duration-150"
     >
       {copied ? (
-        <><Check size={10} strokeWidth={1.5} className="text-[#4ADE80]" /> copiado</>
+        <><Check size={10} strokeWidth={1.5} className="text-status-done-text" /> copiado</>
       ) : (
         <><Copy size={10} strokeWidth={1.5} /> copiar</>
       )}
@@ -104,7 +104,7 @@ function ScriptCard({ row }: { row: KnowledgeRow<ScriptData> }) {
     <div className="bg-surface-container border border-white/5 rounded-xl overflow-hidden">
       <div className="flex items-center justify-between gap-3 p-4 border-b border-white/5">
         <div className="flex items-center gap-2">
-          <FileText size={15} strokeWidth={1.5} className="text-[#F28705]" />
+          <FileText size={15} strokeWidth={1.5} className="text-brand" />
           <span className="text-sm font-semibold text-on-surface font-mono">{d.script_tag}</span>
           <span className="text-[0.625rem] bg-surface-high text-on-surface-muted px-1.5 py-0.5 rounded font-mono">
             {d.format}
@@ -132,7 +132,7 @@ function ScriptCard({ row }: { row: KnowledgeRow<ScriptData> }) {
           "{d.narration_full}"
         </p>
         {d.cta_text && (
-          <p className="mt-2 text-[0.6875rem] font-semibold text-[#FCD34D]">
+          <p className="mt-2 text-[0.6875rem] font-semibold text-status-paused-text">
             CTA: {d.cta_text}
           </p>
         )}
@@ -177,7 +177,7 @@ function KeyframesCard({ row }: { row: KnowledgeRow<KeyframesData> }) {
     <div className="bg-surface-container border border-white/5 rounded-xl overflow-hidden">
       <div className="flex items-center justify-between gap-3 p-4 border-b border-white/5">
         <div className="flex items-center gap-2">
-          <Grid3x3 size={15} strokeWidth={1.5} className="text-[#60A5FA]" />
+          <Grid3x3 size={15} strokeWidth={1.5} className="text-status-running-text" />
           <span className="text-sm font-semibold text-on-surface">Keyframes</span>
           <span className="text-[0.625rem] bg-surface-high text-on-surface-muted px-1.5 py-0.5 rounded font-mono">
             {d.aspect_ratio}
@@ -241,7 +241,7 @@ function KeyframesCard({ row }: { row: KnowledgeRow<KeyframesData> }) {
               </div>
 
               {kf.overlay_suggestion && (
-                <p className="mt-2 text-[0.6875rem] text-[#FCD34D]">
+                <p className="mt-2 text-[0.6875rem] text-status-paused-text">
                   Overlay: {kf.overlay_suggestion}
                 </p>
               )}
@@ -262,8 +262,8 @@ function VideoPipelineRow({ pipeline }: { pipeline: Pipeline }) {
     <div className="bg-surface-container border border-white/5 rounded-xl p-5 hover:bg-surface-high transition-colors duration-150">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#60A5FA]/10 flex items-center justify-center shrink-0">
-            <Film size={18} strokeWidth={1.5} className="text-[#60A5FA]" />
+          <div className="w-10 h-10 rounded-lg bg-status-running flex items-center justify-center shrink-0">
+            <Film size={18} strokeWidth={1.5} className="text-status-running-text" />
           </div>
           <div>
             <p className="text-sm font-medium text-on-surface font-mono">{pipeline.goal}</p>
@@ -277,18 +277,18 @@ function VideoPipelineRow({ pipeline }: { pipeline: Pipeline }) {
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge status={pipeline.status as 'running' | 'done' | 'failed' | 'pending' | 'paused'} />
           {isRunning && pipeline.progress_pct != null && (
-            <span className="text-xs font-mono text-[#60A5FA]">{pipeline.progress_pct}%</span>
+            <span className="text-xs font-mono text-status-running-text">{pipeline.progress_pct}%</span>
           )}
         </div>
       </div>
       <div className="mt-4 flex items-center justify-between gap-3 pt-3 border-t border-white/5">
         <span className="text-xs text-on-surface-muted font-mono">Custo: ${cost.toFixed(4)}</span>
         {isRunning ? (
-          <span className="flex items-center gap-1.5 text-xs text-[#60A5FA]">
+          <span className="flex items-center gap-1.5 text-xs text-status-running-text">
             <Loader2 size={10} strokeWidth={1.5} className="animate-spin" /> Em produção…
           </span>
         ) : pipeline.status === 'done' ? (
-          <span className="text-xs text-[#4ADE80] font-medium">Concluído</span>
+          <span className="text-xs text-status-done-text font-medium">Concluído</span>
         ) : null}
       </div>
     </div>
@@ -358,7 +358,7 @@ export function CriativosTab({ pipelines, sku }: CriativosTabProps) {
       {scripts.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <FileText size={16} strokeWidth={1.5} className="text-[#F28705]" />
+            <FileText size={16} strokeWidth={1.5} className="text-brand" />
             <h3 className="text-sm font-semibold text-on-surface">
               Roteiros ({scripts.length})
             </h3>
@@ -375,7 +375,7 @@ export function CriativosTab({ pipelines, sku }: CriativosTabProps) {
       {keyframes.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <Grid3x3 size={16} strokeWidth={1.5} className="text-[#60A5FA]" />
+            <Grid3x3 size={16} strokeWidth={1.5} className="text-status-running-text" />
             <h3 className="text-sm font-semibold text-on-surface">
               Keyframes / Prompts visuais ({keyframes.length})
             </h3>
@@ -392,7 +392,7 @@ export function CriativosTab({ pipelines, sku }: CriativosTabProps) {
       {videoPipelines.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <Film size={16} strokeWidth={1.5} className="text-[#60A5FA]" />
+            <Film size={16} strokeWidth={1.5} className="text-status-running-text" />
             <h3 className="text-sm font-semibold text-on-surface">
               Pipelines de produção de vídeo ({videoPipelines.length})
             </h3>

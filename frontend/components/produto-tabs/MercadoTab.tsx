@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import {
   Tooltip,
   TooltipContent,
@@ -16,44 +17,46 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
-/* ── Types ─────────────────────────────────────────────────────────── */
 export interface MarketArtifactData {
-  viability_score:        number
-  viability_verdict:      'viable' | 'not_viable'
+  viability_score:         number
+  viability_verdict:       'viable' | 'not_viable'
   viability_justification: string
-  competition_level:      'low' | 'medium' | 'high' | 'saturated'
-  ads_running_count:      number | 'data_unavailable'
-  trend_direction:        'growing' | 'stable' | 'declining'
-  trend_source?:          string
-  estimated_margin_brl:   number | 'data_unavailable'
-  market_warnings?:       string[]
-  data_sources?:          string[]
+  competition_level:       'low' | 'medium' | 'high' | 'saturated'
+  ads_running_count:       number | 'data_unavailable'
+  trend_direction:         'growing' | 'stable' | 'declining'
+  trend_source?:           string
+  estimated_margin_brl:    number | 'data_unavailable'
+  market_warnings?:        string[]
+  data_sources?:           string[]
 }
 
-/* ── Viability score card ───────────────────────────────────────────── */
+function scoreTokens(score: number) {
+  if (score >= 70) return { color: 'text-status-done-text',   bg: 'bg-status-done',   border: 'border-status-done-text/30'   }
+  if (score >= 40) return { color: 'text-status-paused-text', bg: 'bg-status-paused', border: 'border-status-paused-text/30' }
+  return              { color: 'text-status-failed-text',  bg: 'bg-status-failed',  border: 'border-status-failed-text/30' }
+}
+
 function ViabilityScoreCard({ score, verdict, justification }: {
   score:         number
   verdict:       'viable' | 'not_viable'
   justification: string
 }) {
-  const color  = score >= 70 ? 'text-[#4ADE80]' : score >= 40 ? 'text-[#FCD34D]' : 'text-[#F87171]'
-  const bg     = score >= 70 ? 'bg-[#4ADE80]/10' : score >= 40 ? 'bg-[#FCD34D]/10' : 'bg-[#F87171]/10'
-  const border = score >= 70 ? 'border-[#4ADE80]/30' : score >= 40 ? 'border-[#FCD34D]/30' : 'border-[#F87171]/30'
+  const t = scoreTokens(score)
 
   return (
-    <div className={cn('bg-surface-container border rounded-xl p-6 flex items-start gap-6', border)}>
+    <div className={cn('bg-surface-container border rounded-xl p-6 flex items-start gap-6', t.border)}>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <div className={cn(
               'w-24 h-24 rounded-xl flex flex-col items-center justify-center shrink-0 border cursor-help',
-              bg, border
+              t.bg, t.border
             )}>
-              <span className={cn('text-4xl font-mono font-bold leading-none', color)}>{score}</span>
-              <span className={cn('text-[0.5625rem] font-medium mt-1 uppercase tracking-widest', color)}>score</span>
+              <span className={cn('text-4xl font-mono font-bold leading-none', t.color)}>{score}</span>
+              <span className={cn('text-[0.5625rem] font-medium mt-1 uppercase tracking-widest', t.color)}>score</span>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-xs text-xs bg-surface-highest text-on-surface border-white/10">
+          <TooltipContent side="right" className="max-w-xs text-xs bg-surface-highest text-on-surface border-outline-variant/20">
             Score de viabilidade calculado pelo agente com base em margem, competição e tendência.
             É uma sugestão, não uma garantia de resultado.
           </TooltipContent>
@@ -63,11 +66,11 @@ function ViabilityScoreCard({ score, verdict, justification }: {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-2">
           {verdict === 'viable' ? (
-            <BadgeCheck size={16} strokeWidth={1.5} className="text-[#4ADE80] shrink-0" />
+            <BadgeCheck size={16} strokeWidth={1.5} className="text-status-done-text shrink-0" />
           ) : (
-            <XCircle size={16} strokeWidth={1.5} className="text-[#F87171] shrink-0" />
+            <XCircle size={16} strokeWidth={1.5} className="text-status-failed-text shrink-0" />
           )}
-          <span className={cn('text-sm font-semibold', verdict === 'viable' ? 'text-[#4ADE80]' : 'text-[#F87171]')}>
+          <span className={cn('text-sm font-semibold', verdict === 'viable' ? 'text-status-done-text' : 'text-status-failed-text')}>
             {verdict === 'viable' ? 'Produto viável para anunciar' : 'Produto com baixa viabilidade'}
           </span>
         </div>
@@ -77,13 +80,12 @@ function ViabilityScoreCard({ score, verdict, justification }: {
   )
 }
 
-/* ── Competition badge ──────────────────────────────────────────────── */
 function CompetitionBadge({ level }: { level: string }) {
   const map: Record<string, { label: string; color: string; bg: string }> = {
-    low:       { label: 'Baixa',    color: 'text-[#4ADE80]', bg: 'bg-[#4ADE80]/10' },
-    medium:    { label: 'Média',    color: 'text-[#FCD34D]', bg: 'bg-[#FCD34D]/10' },
-    high:      { label: 'Alta',     color: 'text-[#F97316]', bg: 'bg-[#F97316]/10' },
-    saturated: { label: 'Saturada', color: 'text-[#F87171]', bg: 'bg-[#F87171]/10' },
+    low:       { label: 'Baixa',    color: 'text-status-done-text',   bg: 'bg-status-done'   },
+    medium:    { label: 'Média',    color: 'text-status-paused-text', bg: 'bg-status-paused' },
+    high:      { label: 'Alta',     color: 'text-brand',              bg: 'bg-brand-muted'   },
+    saturated: { label: 'Saturada', color: 'text-status-failed-text', bg: 'bg-status-failed' },
   }
   const cfg = map[level] ?? { label: level, color: 'text-on-surface-variant', bg: 'bg-surface-high' }
   return (
@@ -93,12 +95,11 @@ function CompetitionBadge({ level }: { level: string }) {
   )
 }
 
-/* ── Trend badge ────────────────────────────────────────────────────── */
 function TrendBadge({ direction }: { direction: string }) {
   const map: Record<string, { Icon: typeof TrendingUp; label: string; color: string }> = {
-    growing:  { Icon: TrendingUp,   label: 'Crescendo', color: 'text-[#4ADE80]' },
-    stable:   { Icon: Minus,        label: 'Estável',   color: 'text-[#FCD34D]' },
-    declining:{ Icon: TrendingDown, label: 'Declinando',color: 'text-[#F87171]' },
+    growing:   { Icon: TrendingUp,   label: 'Crescendo',  color: 'text-status-done-text'   },
+    stable:    { Icon: Minus,        label: 'Estável',    color: 'text-status-paused-text' },
+    declining: { Icon: TrendingDown, label: 'Declinando', color: 'text-status-failed-text' },
   }
   const cfg = map[direction]
   if (!cfg) return <span className="text-xs text-on-surface-variant font-mono">{direction}</span>
@@ -110,21 +111,19 @@ function TrendBadge({ direction }: { direction: string }) {
   )
 }
 
-/* ── Metric row ─────────────────────────────────────────────────────── */
 function MetricRow({ label, value, monospace }: {
   label:      string
   value:      ReactNode
   monospace?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-3 border-b border-white/5 last:border-0">
+    <div className="flex items-center justify-between gap-3 py-3 border-b border-outline-variant/10 last:border-0">
       <span className="text-[0.8125rem] text-on-surface-variant">{label}</span>
       <div className={cn('text-[0.8125rem] text-on-surface', monospace && 'font-mono')}>{value}</div>
     </div>
   )
 }
 
-/* ── Source link ────────────────────────────────────────────────────── */
 function SourceLink({ url }: { url: string }) {
   let display: string
   try {
@@ -145,21 +144,19 @@ function SourceLink({ url }: { url: string }) {
   )
 }
 
-/* ── Skeleton ───────────────────────────────────────────────────────── */
 export function MercadoTabSkeleton() {
   return (
     <div className="space-y-5">
-      <Skeleton className="h-28 w-full rounded-xl bg-surface-highest" />
+      <Skeleton className="h-28 w-full rounded-xl bg-surface-high" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Skeleton className="h-44 rounded-xl bg-surface-highest" />
-        <Skeleton className="h-44 rounded-xl bg-surface-highest" />
+        <Skeleton className="h-44 rounded-xl bg-surface-high" />
+        <Skeleton className="h-44 rounded-xl bg-surface-high" />
       </div>
-      <Skeleton className="h-24 rounded-xl bg-surface-highest" />
+      <Skeleton className="h-24 rounded-xl bg-surface-high" />
     </div>
   )
 }
 
-/* ── Empty state ────────────────────────────────────────────────────── */
 export function MercadoTabEmpty({ sku }: { sku: string }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -175,8 +172,7 @@ export function MercadoTabEmpty({ sku }: { sku: string }) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erro ao iniciar pipeline')
       router.push(`/demandas/${data.pipeline_id}`)
-    } catch (err) {
-      // Fallback: abre Jarvis com comando pré-preenchido
+    } catch {
       router.push(`/?msg=@${sku}+/market-research`)
     } finally {
       setLoading(false)
@@ -185,7 +181,7 @@ export function MercadoTabEmpty({ sku }: { sku: string }) {
 
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
-      <div className="w-14 h-14 rounded-xl bg-surface-container border border-white/5 flex items-center justify-center">
+      <div className="w-14 h-14 rounded-xl bg-surface-container border border-outline-variant/10 flex items-center justify-center">
         <BarChart2 size={22} strokeWidth={1.5} className="text-on-surface-muted" />
       </div>
       <div className="text-center space-y-1">
@@ -194,27 +190,23 @@ export function MercadoTabEmpty({ sku }: { sku: string }) {
           Clique abaixo para iniciar a análise de viabilidade deste produto
         </p>
       </div>
-      <button
+      <Button
         onClick={handleGenerate}
         disabled={loading}
-        className="flex items-center gap-2 text-sm px-4 py-2 rounded font-medium text-[#131314]
-          bg-gradient-to-br from-[#F28705] to-[#FFB690]
-          hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
-          transition-shadow duration-150 disabled:opacity-60"
+        size="sm"
+        className="bg-brand-gradient text-on-primary hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-shadow duration-150"
       >
-        {loading && <Loader2 size={14} strokeWidth={1.5} className="animate-spin" />}
+        {loading && <Loader2 size={14} strokeWidth={1.5} className="animate-spin mr-1.5" />}
         {loading ? 'Iniciando…' : 'Gerar estudo de mercado'}
-      </button>
+      </Button>
     </div>
   )
 }
 
-/* ── Main component ─────────────────────────────────────────────────── */
-/* ── Refazer helper ─────────────────────────────────────────────────── */
 function useRegenerate(sku: string, goal: string) {
   const router = useRouter()
-  const [loading,  setLoading]  = useState(false)
-  const [confirm,  setConfirm]  = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [confirm, setConfirm] = useState(false)
 
   async function run() {
     setConfirm(false)
@@ -257,26 +249,24 @@ export function MercadoTab({ data, createdAt, sku }: MercadoTabProps) {
 
   return (
     <div className="space-y-5">
-      {/* Score card */}
       <ViabilityScoreCard
         score={data.viability_score}
         verdict={data.viability_verdict}
         justification={data.viability_justification}
       />
 
-      {/* Metrics grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-outline-variant/10 rounded-xl p-5">
           <h3 className="text-sm font-semibold text-on-surface mb-4">Mercado e Concorrência</h3>
-          <MetricRow label="Nível de competição"       value={<CompetitionBadge level={data.competition_level} />} />
-          <MetricRow label="Anúncios ativos (estimativa)" value={adsCount}                                        monospace />
-          <MetricRow label="Tendência"                  value={<TrendBadge direction={data.trend_direction} />} />
+          <MetricRow label="Nível de competição"           value={<CompetitionBadge level={data.competition_level} />} />
+          <MetricRow label="Anúncios ativos (estimativa)"  value={adsCount} monospace />
+          <MetricRow label="Tendência"                     value={<TrendBadge direction={data.trend_direction} />} />
           {data.trend_source && (
             <MetricRow label="Fonte da tendência" value={<SourceLink url={data.trend_source} />} />
           )}
         </div>
 
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-outline-variant/10 rounded-xl p-5">
           <h3 className="text-sm font-semibold text-on-surface mb-4">Financeiro</h3>
           <MetricRow label="Margem estimada" value={margin} monospace />
           <MetricRow
@@ -311,17 +301,16 @@ export function MercadoTab({ data, createdAt, sku }: MercadoTabProps) {
         </div>
       </div>
 
-      {/* Warnings */}
       {(data.market_warnings?.length ?? 0) > 0 && (
-        <div className="bg-[#F97316]/5 border border-[#F97316]/20 rounded-xl p-5">
+        <div className="bg-brand-muted border border-brand/20 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle size={16} strokeWidth={1.5} className="text-[#F97316] shrink-0" />
-            <h3 className="text-sm font-semibold text-[#F97316]">Alertas de mercado</h3>
+            <AlertTriangle size={16} strokeWidth={1.5} className="text-brand shrink-0" />
+            <h3 className="text-sm font-semibold text-brand">Alertas de mercado</h3>
           </div>
           <ul className="space-y-1.5">
             {data.market_warnings!.map((w, i) => (
               <li key={i} className="text-[0.8125rem] text-on-surface-variant flex items-start gap-2">
-                <span className="text-[#F97316]/60 shrink-0 mt-0.5">•</span>
+                <span className="text-brand/60 shrink-0 mt-0.5">•</span>
                 {w}
               </li>
             ))}
@@ -329,9 +318,8 @@ export function MercadoTab({ data, createdAt, sku }: MercadoTabProps) {
         </div>
       )}
 
-      {/* Sources */}
       {(data.data_sources?.length ?? 0) > 0 && (
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-outline-variant/10 rounded-xl p-5">
           <h3 className="text-sm font-semibold text-on-surface mb-3">Fontes pesquisadas</h3>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             {data.data_sources!.map((url, i) => (

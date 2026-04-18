@@ -4,6 +4,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { LayoutGrid, Table2, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePipelines, type PipelineFilters as Filters } from '@/hooks/usePipelines'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { PipelineTable } from '@/components/demandas/PipelineTable'
 import { PipelineFilters } from '@/components/demandas/PipelineFilters'
 import { KanbanBoard } from '@/components/demandas-kanban'
@@ -91,7 +92,7 @@ function TableView({ onRowClick }: { onRowClick: (id: string) => void }) {
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Barra de filtros */}
-      <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-outline-variant/10">
+      <div className="shrink-0 flex items-center justify-between px-6 py-3 bg-surface-low">
         <p className="text-[12px] text-on-surface-muted">
           {isLoading ? (
             <span className="flex items-center gap-1.5">
@@ -106,7 +107,7 @@ function TableView({ onRowClick }: { onRowClick: (id: string) => void }) {
           <button
             onClick={reload}
             title="Recarregar"
-            className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
+            className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-high transition-colors"
           >
             <RefreshCw size={13} strokeWidth={1.5} />
           </button>
@@ -115,18 +116,20 @@ function TableView({ onRowClick }: { onRowClick: (id: string) => void }) {
       </div>
 
       {/* Tabela */}
-      <div className="flex-1 min-h-0 overflow-y-auto py-3">
-        <PipelineTable
-          pipelines={pipelines}
-          total={total}
-          isLoading={isLoading}
-          page={page}
-          pageSize={pageSize}
-          onSetPage={setPage}
-          onRowClick={onRowClick}
-          onDelete={deletePipeline}
-        />
-      </div>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="py-3">
+          <PipelineTable
+            pipelines={pipelines}
+            total={total}
+            isLoading={isLoading}
+            page={page}
+            pageSize={pageSize}
+            onSetPage={setPage}
+            onRowClick={onRowClick}
+            onDelete={deletePipeline}
+          />
+        </div>
+      </ScrollArea>
     </div>
   )
 }
@@ -200,7 +203,7 @@ function ViewToggle({ current }: { current: ViewMode }) {
         className={cn(
           'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors',
           current === 'table'
-            ? 'bg-surface-container-high text-on-surface'
+            ? 'bg-surface-high text-on-surface'
             : 'text-on-surface-muted hover:text-on-surface-variant',
         )}
       >
@@ -212,7 +215,7 @@ function ViewToggle({ current }: { current: ViewMode }) {
         className={cn(
           'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors',
           current === 'kanban'
-            ? 'bg-surface-container-high text-on-surface'
+            ? 'bg-surface-high text-on-surface'
             : 'text-on-surface-muted hover:text-on-surface-variant',
         )}
       >

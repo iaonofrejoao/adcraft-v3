@@ -44,33 +44,33 @@ const HOOK_TYPE_LABELS: Record<AngleHook['hook_type'], string> = {
 }
 
 const ANGLE_TYPE_COLOR: Record<AngulosArtifactData['angle_type'], string> = {
-  betrayed_authority: 'text-[#F87171] bg-[#F87171]/10 border-[#F87171]/20',
-  transformation:     'text-[#4ADE80] bg-[#4ADE80]/10 border-[#4ADE80]/20',
-  social_proof:       'text-[#60A5FA] bg-[#60A5FA]/10 border-[#60A5FA]/20',
-  novelty:            'text-[#A78BFA] bg-[#A78BFA]/10 border-[#A78BFA]/20',
-  fear:               'text-[#FB923C] bg-[#FB923C]/10 border-[#FB923C]/20',
-  curiosity:          'text-[#FCD34D] bg-[#FCD34D]/10 border-[#FCD34D]/20',
-  identification:     'text-[#34D399] bg-[#34D399]/10 border-[#34D399]/20',
+  betrayed_authority: 'text-status-failed-text  bg-status-failed  border-status-failed-text/20',
+  transformation:     'text-status-done-text    bg-status-done    border-status-done-text/20',
+  social_proof:       'text-status-running-text bg-status-running border-status-running-text/20',
+  novelty:            'text-accent-violet       bg-accent-violet/10 border-accent-violet/20',
+  fear:               'text-brand               bg-brand-muted    border-brand/20',
+  curiosity:          'text-status-paused-text  bg-status-paused  border-status-paused-text/20',
+  identification:     'text-accent-teal         bg-accent-teal/10 border-accent-teal/20',
 }
 
 const HOOK_TYPE_COLOR: Record<AngleHook['hook_type'], string> = {
-  question:           'text-[#60A5FA] bg-[#60A5FA]/10 border-[#60A5FA]/20',
-  shocking_statement: 'text-[#F87171] bg-[#F87171]/10 border-[#F87171]/20',
-  story:              'text-[#A78BFA] bg-[#A78BFA]/10 border-[#A78BFA]/20',
-  fact:               'text-[#4ADE80] bg-[#4ADE80]/10 border-[#4ADE80]/20',
+  question:           'text-status-running-text bg-status-running border-status-running-text/20',
+  shocking_statement: 'text-status-failed-text  bg-status-failed  border-status-failed-text/20',
+  story:              'text-accent-violet       bg-accent-violet/10 border-accent-violet/20',
+  fact:               'text-status-done-text    bg-status-done    border-status-done-text/20',
 }
 
 /* ── Skeleton ───────────────────────────────────────────────────────── */
 export function AngulosTabSkeleton() {
   return (
     <div className="space-y-5">
-      <Skeleton className="h-28 w-full rounded-xl bg-surface-highest" />
+      <Skeleton className="h-28 w-full rounded-xl bg-surface-high" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Skeleton className="h-20 rounded-xl bg-surface-highest" />
-        <Skeleton className="h-20 rounded-xl bg-surface-highest" />
+        <Skeleton className="h-20 rounded-xl bg-surface-high" />
+        <Skeleton className="h-20 rounded-xl bg-surface-high" />
       </div>
-      <Skeleton className="h-64 rounded-xl bg-surface-highest" />
-      <Skeleton className="h-28 rounded-xl bg-surface-highest" />
+      <Skeleton className="h-64 rounded-xl bg-surface-high" />
+      <Skeleton className="h-28 rounded-xl bg-surface-high" />
     </div>
   )
 }
@@ -90,8 +90,8 @@ export function AngulosTabEmpty({ sku }: { sku: string }) {
       </div>
       <Link
         href={`/?msg=@${sku}+/angulos`}
-        className="text-sm px-4 py-2 rounded font-medium text-[#131314]
-          bg-gradient-to-br from-[#F28705] to-[#FFB690]
+        className="text-sm px-4 py-2 rounded font-medium text-on-primary
+          bg-brand-gradient
           hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
           transition-shadow duration-150"
       >
@@ -216,8 +216,8 @@ export function AngulosTab({ data, createdAt, sku }: AngulosTabProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-surface-container border border-white/5 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-2">
-            <Lightbulb size={14} strokeWidth={1.5} className="text-[#FCD34D]" />
-            <h3 className="text-[0.6875rem] font-semibold uppercase tracking-wider text-[#FCD34D]/80">
+            <Lightbulb size={14} strokeWidth={1.5} className="text-status-paused-text" />
+            <h3 className="text-[0.6875rem] font-semibold uppercase tracking-wider text-status-paused-text/80">
               USP — Diferencial único
             </h3>
           </div>
@@ -226,8 +226,8 @@ export function AngulosTab({ data, createdAt, sku }: AngulosTabProps) {
 
         <div className="bg-surface-container border border-white/5 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-2">
-            <Heart size={14} strokeWidth={1.5} className="text-[#F87171]" />
-            <h3 className="text-[0.6875rem] font-semibold uppercase tracking-wider text-[#F87171]/80">
+            <Heart size={14} strokeWidth={1.5} className="text-status-failed-text" />
+            <h3 className="text-[0.6875rem] font-semibold uppercase tracking-wider text-status-failed-text/80">
               Gatilho emocional
             </h3>
           </div>

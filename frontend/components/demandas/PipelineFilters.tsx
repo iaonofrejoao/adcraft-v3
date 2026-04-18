@@ -9,7 +9,7 @@ import type { PipelineFilters as Filters } from '@/hooks/usePipelines'
 
 const STATUS_OPTIONS = [
   { value: 'pending',            label: 'Pendente',   color: 'text-on-surface-variant' },
-  { value: 'running',            label: 'Rodando',    color: 'text-[#60A5FA]' },
+  { value: 'running',            label: 'Rodando',    color: 'text-status-running-text' },
   { value: 'paused_for_approval',label: 'Aprovação',  color: 'text-status-paused-text' },
   { value: 'completed',          label: 'Concluído',  color: 'text-status-done-text' },
   { value: 'failed',             label: 'Falhou',     color: 'text-status-failed-text' },
@@ -50,7 +50,7 @@ export function PipelineFilters({ filters, onChange, className }: PipelineFilter
           'gap-2 text-[12px] border',
           hasActiveFilters
             ? 'border-primary/40 text-primary bg-brand-muted'
-            : 'border-outline-variant/20 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high',
+            : 'border-outline-variant/20 text-on-surface-variant hover:text-on-surface hover:bg-surface-high',
         )}
       >
         <Filter size={13} strokeWidth={1.5} />
@@ -71,7 +71,7 @@ export function PipelineFilters({ filters, onChange, className }: PipelineFilter
           />
 
           {/* Dropdown */}
-          <div className="absolute right-0 top-full mt-2 z-50 bg-surface-container-highest border border-outline-variant/20 rounded-xl shadow-[0_12px_40px_-10px_rgba(0,0,0,0.5)] w-72 p-4 space-y-4">
+          <div className="absolute right-0 top-full mt-2 z-50 bg-surface-highest border border-outline-variant/20 rounded-xl shadow-[0_12px_40px_-10px_rgba(0,0,0,0.5)] w-72 p-4 space-y-4">
 
             {/* Status */}
             <div>

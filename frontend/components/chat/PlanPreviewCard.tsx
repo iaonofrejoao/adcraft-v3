@@ -32,11 +32,11 @@ const TASK_STATUS_LABELS: Record<string, string> = {
 }
 
 const PIPELINE_STATUS_CONFIG: Record<string, { label: string; textClass: string; bgClass: string }> = {
-  pending:   { label: 'Aguardando execução', textClass: 'text-[var(--status-pending-text)]', bgClass: 'bg-[var(--status-pending-bg)]' },
-  running:   { label: 'Em execução',         textClass: 'text-[var(--status-running-text)]', bgClass: 'bg-[var(--status-running-bg)]' },
-  completed: { label: 'Concluído',           textClass: 'text-[var(--status-done-text)]',    bgClass: 'bg-[var(--status-done-bg)]' },
-  failed:    { label: 'Falhou',              textClass: 'text-[var(--status-failed-text)]',  bgClass: 'bg-[var(--status-failed-bg)]' },
-  cancelled: { label: 'Cancelado',           textClass: 'text-[var(--status-pending-text)]', bgClass: 'bg-[var(--status-pending-bg)]' },
+  pending:   { label: 'Aguardando execução', textClass: 'text-on-surface-muted',      bgClass: 'bg-surface-high' },
+  running:   { label: 'Em execução',         textClass: 'text-status-running-text',   bgClass: 'bg-status-running' },
+  completed: { label: 'Concluído',           textClass: 'text-status-done-text',      bgClass: 'bg-status-done' },
+  failed:    { label: 'Falhou',              textClass: 'text-status-failed-text',    bgClass: 'bg-status-failed' },
+  cancelled: { label: 'Cancelado',           textClass: 'text-on-surface-muted',      bgClass: 'bg-surface-high' },
 }
 
 function PipelineStatusBadge({ status }: { status: string }) {
@@ -136,15 +136,15 @@ export function PlanPreviewCard({ plan, pipelineId, pipelineStatus, onApprove }:
           <div key={i} className="flex items-center gap-2 text-xs">
             <span className={cn(
               'w-2 h-2 rounded-full shrink-0',
-              task.status === 'reused' ? 'bg-[#4ADE80]' : 'bg-[#60A5FA]',
+              task.status === 'reused' ? 'bg-status-done-text' : 'bg-status-running-text',
             )} />
             <span className="text-on-surface">{task.agent}</span>
             <span className={cn(
               'ml-auto inline-flex items-center gap-1.5 px-2 py-0.5 rounded',
               'text-[0.6875rem] font-mono font-medium',
               task.status === 'reused'
-                ? 'bg-[rgba(34,197,94,0.15)] text-[#4ADE80]'
-                : 'bg-[rgba(59,130,246,0.15)] text-[#60A5FA]',
+                ? 'bg-status-done text-status-done-text'
+                : 'bg-status-running text-status-running-text',
             )}>
               {TASK_STATUS_LABELS[task.status] ?? task.status}
             </span>
@@ -181,7 +181,7 @@ export function PlanPreviewCard({ plan, pipelineId, pipelineStatus, onApprove }:
             <Button
               onClick={handleApprove}
               disabled={approved}
-              className="flex-1 bg-gradient-to-br from-[#F28705] to-[#FFB690] text-[#131314]
+              className="flex-1 bg-brand-gradient text-on-primary
                 font-medium hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
                 transition-shadow duration-150 disabled:opacity-50"
             >

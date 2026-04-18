@@ -23,7 +23,7 @@ export function KanbanColumn({ label, icon: Icon, colorClass, tasks, onCardClick
         <span className={cn('font-bold text-[13px] uppercase tracking-wide', colorClass)}>
           {label}
         </span>
-        <span className="font-mono text-[12px] text-[#6B6460] ml-0.5">
+        <span className="font-mono text-[12px] text-on-surface-muted ml-0.5">
           ({tasks.length})
         </span>
       </div>
@@ -33,8 +33,8 @@ export function KanbanColumn({ label, icon: Icon, colorClass, tasks, onCardClick
         <ScrollArea className="h-full pr-1">
           <div className="space-y-4 pr-1 pb-4">
             {tasks.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[#584237]/20 p-6 text-center">
-                <p className="text-[12px] text-[#6B6460]">Nenhuma tarefa</p>
+              <div className="rounded-xl border border-dashed border-white/10 p-6 text-center">
+                <p className="text-[12px] text-on-surface-muted">Nenhuma tarefa</p>
               </div>
             ) : (
               tasks.map((task) => (

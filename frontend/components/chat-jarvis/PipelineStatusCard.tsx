@@ -65,7 +65,7 @@ function TaskRow({ task }: { task: PipelineTask }) {
     )}>
       <div className="flex items-center gap-3">
         {isDone ? (
-          <CheckCircle2 size={14} strokeWidth={1.5} className="text-[#4ADE80]" />
+          <CheckCircle2 size={14} strokeWidth={1.5} className="text-status-done-text" />
         ) : isRunning ? (
           <Loader2 size={14} strokeWidth={1.5} className="text-brand animate-spin" />
         ) : (
@@ -75,7 +75,7 @@ function TaskRow({ task }: { task: PipelineTask }) {
       </div>
       <span className={cn(
         'text-[0.5625rem] font-mono uppercase',
-        isDone    && 'text-[#4ADE80]/70',
+        isDone    && 'text-status-done-text/70',
         isRunning && 'text-brand',
         !isDone && !isRunning && 'text-on-surface-muted/40',
       )}>

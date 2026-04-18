@@ -4,6 +4,7 @@ import { Search, X } from 'lucide-react'
 import { useProducts } from '@/hooks/useProducts'
 import { CadastrarProdutoModal } from '@/components/cadastrar-produto'
 import { ProductsHeader, ProductGrid } from '@/components/lista-produtos'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 
@@ -83,7 +84,7 @@ export default function ProductsPage() {
                 'px-3 py-1 rounded-full text-[0.75rem] font-medium capitalize transition-colors',
                 platform === p
                   ? 'bg-brand/20 text-brand ring-1 ring-brand/30'
-                  : 'bg-surface-container text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high'
+                  : 'bg-surface-container text-on-surface-muted hover:text-on-surface hover:bg-surface-high'
               )}
             >
               {p === 'all' ? 'Todos' : p}
@@ -107,13 +108,15 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        <ProductGrid
-          products={filtered}
-          isLoading={isLoading}
-          onAddProduct={openModal}
-        />
-      </div>
+      <ScrollArea className="flex-1">
+        <div className="px-6 py-4">
+          <ProductGrid
+            products={filtered}
+            isLoading={isLoading}
+            onAddProduct={openModal}
+          />
+        </div>
+      </ScrollArea>
 
     </div>
   )

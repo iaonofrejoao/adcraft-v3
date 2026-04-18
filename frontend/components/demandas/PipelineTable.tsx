@@ -214,7 +214,7 @@ export function PipelineTable({
                   <div className="space-y-1">
                     <Progress
                       value={p.progress_pct}
-                      className="h-1.5 bg-surface-container-high"
+                      className="h-1.5 bg-surface-high"
                     />
                     <p className="font-mono text-[10px] text-on-surface-muted">
                       {p.tasks_done}/{p.tasks_total} steps
@@ -250,7 +250,7 @@ export function PipelineTable({
                       <button
                         title="Confirmar exclusão"
                         onClick={(e) => handleDeleteClick(e, p.id)}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-[#F87171] bg-[rgba(248,113,113,0.12)] hover:bg-[rgba(248,113,113,0.2)] border border-[#F87171]/30 transition-colors animate-pulse"
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-status-failed-text bg-status-failed hover:bg-status-failed/80 border border-status-failed-text/30 transition-colors animate-pulse"
                       >
                         <AlertTriangle size={11} strokeWidth={1.5} />
                         Excluir?
@@ -260,13 +260,13 @@ export function PipelineTable({
                         <button
                           title="Exportar JSON"
                           onClick={() => exportPipeline(p)}
-                          className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                          className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-high transition-colors"
                         >
                           <Download size={13} strokeWidth={1.5} />
                         </button>
                         <Link
                           href={`/demandas/${p.id}`}
-                          className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                          className="p-1.5 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-high transition-colors"
                           title="Ver detalhes"
                         >
                           <ChevronRight size={13} strokeWidth={1.5} />
@@ -274,7 +274,7 @@ export function PipelineTable({
                         <button
                           title="Excluir demanda"
                           onClick={(e) => handleDeleteClick(e, p.id)}
-                          className="p-1.5 rounded-md text-on-surface-muted hover:text-[#F87171] hover:bg-[rgba(248,113,113,0.08)] transition-colors"
+                          className="p-1.5 rounded-md text-on-surface-muted hover:text-status-failed-text hover:bg-status-failed/50 transition-colors"
                         >
                           <Trash2 size={13} strokeWidth={1.5} />
                         </button>
@@ -319,7 +319,7 @@ export function PipelineTable({
                     'h-7 w-7 rounded-md text-[11px] font-mono transition-colors',
                     pg === page
                       ? 'bg-primary text-on-primary'
-                      : 'text-on-surface-muted hover:text-on-surface hover:bg-surface-container-high',
+                      : 'text-on-surface-muted hover:text-on-surface hover:bg-surface-high',
                   )}
                 >
                   {pg + 1}

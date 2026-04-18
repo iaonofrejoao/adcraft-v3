@@ -192,13 +192,13 @@ export function MessageInput({ onSend, disabled = false }: MessageInputProps) {
             className={cn(
               'w-8 h-8 transition-all duration-150',
               canSend
-                ? 'bg-gradient-to-br from-[#F28705] to-[#FFB690] text-[#131314]' +
+                ? 'bg-brand-gradient text-on-primary' +
                   ' hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)] active:scale-95'
                 : 'bg-surface-high text-on-surface-muted',
             )}
             aria-label="Enviar"
           >
-            <ArrowUp size={16} strokeWidth={2} />
+            <ArrowUp size={16} strokeWidth={1.5} />
           </Button>
         </div>
       </div>

@@ -18,7 +18,7 @@ const GOAL_MAP: Record<string, GoalConfig> = {
   avatar_research:  { Icon: Search,      color: 'text-agent-research',bg: 'bg-agent-research/10' },
   angle_generation: { Icon: Layers,      color: 'text-agent-strategy',bg: 'bg-agent-strategy/10' },
   full_pipeline:    { Icon: Layers,      color: 'text-brand',         bg: 'bg-brand-muted' },
-  video_prod:       { Icon: Film,        color: 'text-[#60A5FA]',     bg: 'bg-[#60A5FA]/10' },
+  video_prod:       { Icon: Film,        color: 'text-status-running-text', bg: 'bg-status-running' },
 }
 
 function goalConfig(goal: string): GoalConfig {
@@ -64,7 +64,7 @@ function TimelineItem({ pipeline: p, isLast }: TimelineItemProps) {
           <h4 className="text-sm font-medium text-on-surface">{p.goal}</h4>
           <span className={cn(
             'text-[0.625rem] font-mono shrink-0 ml-2',
-            isRunning ? 'text-[#60A5FA]' : 'text-on-surface-muted/40'
+            isRunning ? 'text-status-running-text' : 'text-on-surface-muted/40'
           )}>
             {isRunning ? 'Em curso' : new Date(p.created_at).toLocaleDateString('pt-BR')}
           </span>
@@ -72,7 +72,7 @@ function TimelineItem({ pipeline: p, isLast }: TimelineItemProps) {
         {isRunning && p.progress_pct != null ? (
           <Progress
             value={p.progress_pct}
-            className="h-1 mt-2 bg-surface-highest [&>div]:bg-[#60A5FA] [&>div]:transition-all [&>div]:duration-500"
+            className="h-1 mt-2 bg-surface-highest [&>div]:bg-status-running-text [&>div]:transition-all [&>div]:duration-500"
           />
         ) : (
           <p className="text-[0.6875rem] text-on-surface-muted/60 mt-0.5 font-mono">

@@ -224,7 +224,7 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
                 htmlFor="product-status"
                 className={cn(
                   'text-[0.75rem] font-medium cursor-pointer select-none transition-colors',
-                  status === 'active' ? 'text-green-400' : 'text-on-surface-muted'
+                  status === 'active' ? 'text-status-done-text' : 'text-on-surface-muted'
                 )}
               >
                 {status === 'active' ? 'Ativo' : 'Inativo'}
@@ -288,8 +288,8 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
         <div className="flex items-center gap-3 shrink-0 pt-1">
           <Link
             href={`/?msg=@${sku}`}
-            className="px-4 py-2 rounded-lg text-sm font-bold text-[#131314]
-              bg-gradient-to-br from-[#F28705] to-[#FFB690]
+            className="px-4 py-2 rounded-lg text-sm font-bold text-on-primary
+              bg-brand-gradient
               shadow-[0_12px_40px_-10px_rgba(249,115,22,0.3)]
               hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_12px_40px_-10px_rgba(249,115,22,0.3)]
               hover:scale-[1.02] active:scale-[0.98] transition-all duration-150"

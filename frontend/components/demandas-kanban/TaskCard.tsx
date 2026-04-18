@@ -19,60 +19,54 @@ import { Button } from '@/components/ui/button'
 import { AGENT_ICONS } from '@/lib/constants'
 import type { Task } from '@/hooks/useTasks'
 
-// ── Mapeamento de ícones de agentes ───────────────────────────────────────────
-
 const LUCIDE_MAP: Record<string, LucideIcon> = {
   Users, BarChart2, Lightbulb, Zap, FileText,
   MousePointerClick, ShieldCheck, Film, BookOpen,
 }
 
-// ── Indicadores de etapa por status ──────────────────────────────────────────
-
 type StepConfig = { icon: LucideIcon; className: string }
 
 const STEP_ICONS: Record<string, StepConfig[]> = {
   pending: [
-    { icon: CheckCircle2, className: 'text-[#6B6460]' },
-    { icon: Clock,        className: 'text-[#6B6460]' },
-    { icon: Clock,        className: 'text-[#6B6460]' },
+    { icon: CheckCircle2, className: 'text-on-surface-muted' },
+    { icon: Clock,        className: 'text-on-surface-muted' },
+    { icon: Clock,        className: 'text-on-surface-muted' },
   ],
   running: [
-    { icon: CheckCircle2, className: 'text-[#4ADE80]' },
-    { icon: RefreshCw,    className: 'text-[#60A5FA] animate-spin' },
-    { icon: Clock,        className: 'text-[#6B6460]' },
+    { icon: CheckCircle2, className: 'text-status-done-text' },
+    { icon: RefreshCw,    className: 'text-status-running-text animate-spin' },
+    { icon: Clock,        className: 'text-on-surface-muted' },
   ],
   paused: [
-    { icon: CheckCircle2,  className: 'text-[#4ADE80]' },
-    { icon: CheckCircle2,  className: 'text-[#4ADE80]' },
-    { icon: AlertTriangle, className: 'text-[#FCD34D]' },
+    { icon: CheckCircle2,  className: 'text-status-done-text' },
+    { icon: CheckCircle2,  className: 'text-status-done-text' },
+    { icon: AlertTriangle, className: 'text-status-paused-text' },
   ],
   done: [
-    { icon: CheckCircle2, className: 'text-[#4ADE80]' },
-    { icon: CheckCircle2, className: 'text-[#4ADE80]' },
-    { icon: CheckCircle2, className: 'text-[#4ADE80]' },
+    { icon: CheckCircle2, className: 'text-status-done-text' },
+    { icon: CheckCircle2, className: 'text-status-done-text' },
+    { icon: CheckCircle2, className: 'text-status-done-text' },
   ],
   skipped: [
-    { icon: CheckCircle2, className: 'text-[#4ADE80]' },
-    { icon: CheckCircle2, className: 'text-[#4ADE80]' },
-    { icon: CheckCircle2, className: 'text-[#4ADE80]' },
+    { icon: CheckCircle2, className: 'text-status-done-text' },
+    { icon: CheckCircle2, className: 'text-status-done-text' },
+    { icon: CheckCircle2, className: 'text-status-done-text' },
   ],
   failed: [
-    { icon: CheckCircle2,  className: 'text-[#4ADE80]' },
-    { icon: XCircle,       className: 'text-[#F87171]' },
-    { icon: Clock,         className: 'text-[#6B6460]' },
+    { icon: CheckCircle2,  className: 'text-status-done-text' },
+    { icon: XCircle,       className: 'text-status-failed-text' },
+    { icon: Clock,         className: 'text-on-surface-muted' },
   ],
 }
 
 const BORDER_BY_STATUS: Record<string, string> = {
-  pending: 'border-l-[#584237]/50',
-  running: 'border-l-[#60A5FA]',
-  paused:  'border-l-[#FCD34D]',
-  done:    'border-l-[#4ADE80]',
-  skipped: 'border-l-[#4ADE80]',
-  failed:  'border-l-[#F87171]',
+  pending: 'border-l-outline-variant/50',
+  running: 'border-l-status-running-text',
+  paused:  'border-l-status-paused-text',
+  done:    'border-l-status-done-text',
+  skipped: 'border-l-status-done-text',
+  failed:  'border-l-status-failed-text',
 }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -82,8 +76,6 @@ function formatRelative(iso: string): string {
   if (h > 0) return `${h}h atrás`
   return 'agora'
 }
-
-// ── Componente ────────────────────────────────────────────────────────────────
 
 export interface TaskCardProps {
   task:      Task
@@ -113,6 +105,7 @@ export function TaskCard({ task, onClick, onDelete }: TaskCardProps) {
     setConfirmDelete(false)
     onDelete?.(task.pipeline_id)
   }
+
   const iconName = AGENT_ICONS[task.agent_name.replace(/_/g, '-')]
   const IconComp = iconName ? (LUCIDE_MAP[iconName] ?? Bot) : Bot
 
@@ -120,11 +113,11 @@ export function TaskCard({ task, onClick, onDelete }: TaskCardProps) {
   const sku      = task.pipeline?.product?.sku  ?? task.pipeline_id.slice(0, 8).toUpperCase()
   const badge    = (task.mode ?? task.agent_name).replace(/_/g, '_')
 
-  const isRunning  = task.status === 'running'
-  const isFailed   = task.status === 'failed'
-  const isPaused   = task.status === 'paused'
-  const isDone     = task.status === 'done' || task.status === 'skipped'
-  const isSkipped  = task.status === 'skipped'
+  const isRunning = task.status === 'running'
+  const isFailed  = task.status === 'failed'
+  const isPaused  = task.status === 'paused'
+  const isDone    = task.status === 'done' || task.status === 'skipped'
+  const isSkipped = task.status === 'skipped'
 
   const steps = STEP_ICONS[task.status] ?? STEP_ICONS.pending
 
@@ -135,62 +128,62 @@ export function TaskCard({ task, onClick, onDelete }: TaskCardProps) {
       onClick={onClick}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       className={cn(
-        'bg-[#1C1B1C] p-4 rounded-xl border-l-2 shadow-sm',
-        'hover:bg-[#201F20] transition-colors duration-150 cursor-pointer group relative',
-        BORDER_BY_STATUS[task.status] ?? 'border-l-[#584237]/50',
+        'bg-surface-low p-4 rounded-xl border-l-2 shadow-sm',
+        'hover:bg-surface-container transition-colors duration-150 cursor-pointer group relative',
+        BORDER_BY_STATUS[task.status] ?? 'border-l-outline-variant/50',
       )}
     >
       {/* SKU + type badge */}
       <div className="flex items-start justify-between mb-2">
-        <span className="font-mono text-[10px] text-[#F28705] font-bold tracking-widest">
+        <span className="font-mono text-[10px] text-brand font-bold tracking-widest">
           {sku}
         </span>
         <div className="flex items-center gap-1.5">
           {isSkipped && (
             <span
               title="Resultado reutilizado de pesquisa anterior"
-              className="bg-[rgba(74,222,128,0.12)] text-[#4ADE80] text-[9px] px-1.5 py-0.5 rounded font-bold ring-1 ring-[#4ADE80]/30 uppercase tracking-wide"
+              className="bg-status-done text-status-done-text text-[9px] px-1.5 py-0.5 rounded font-bold ring-1 ring-status-done-text/30 uppercase tracking-wide"
             >
               ↻ reutilizado
             </span>
           )}
           {isPaused && (
-            <span className="animate-pulse bg-[rgba(245,158,11,0.2)] text-[#FCD34D] text-[9px] px-1.5 py-0.5 rounded font-bold ring-1 ring-[#FCD34D]/40 uppercase tracking-wide">
+            <span className="animate-pulse bg-status-paused text-status-paused-text text-[9px] px-1.5 py-0.5 rounded font-bold ring-1 ring-status-paused-text/40 uppercase tracking-wide">
               Urgente
             </span>
           )}
-          <span className="bg-[#2A2829] text-[#9E9489] text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-tight">
+          <span className="bg-surface-high text-on-surface-variant text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-tight">
             {badge}
           </span>
         </div>
       </div>
 
       {/* Title */}
-      <h3 className="text-[14px] font-semibold text-[#E8E3DD] mb-3 flex items-center gap-2">
+      <h3 className="text-sm font-semibold text-on-surface mb-3 flex items-center gap-2">
         {title}
         {isRunning && (
-          <span className="w-1.5 h-1.5 rounded-full bg-[#60A5FA] animate-pulse shrink-0" />
+          <span className="w-1.5 h-1.5 rounded-full bg-status-running-text animate-pulse shrink-0" />
         )}
       </h3>
 
       {/* Error block */}
       {isFailed && task.error && (
-        <div className="bg-[rgba(239,68,68,0.08)] border border-[#F87171]/15 p-2 rounded-md mb-3 flex items-start gap-1.5">
-          <AlertTriangle size={14} strokeWidth={1.5} className="text-[#F87171] shrink-0 mt-0.5" />
-          <p className="text-[10px] text-[#F87171]/70 leading-tight line-clamp-2">{task.error}</p>
+        <div className="bg-status-failed border border-status-failed-text/15 p-2 rounded-md mb-3 flex items-start gap-1.5">
+          <AlertTriangle size={14} strokeWidth={1.5} className="text-status-failed-text shrink-0 mt-0.5" />
+          <p className="text-[10px] text-status-failed-text/70 leading-tight line-clamp-2">{task.error}</p>
         </div>
       )}
 
       {/* Paused note */}
       {isPaused && (
-        <p className="text-[11px] text-[#6B6460] mb-3 italic">
+        <p className="text-[11px] text-on-surface-muted mb-3 italic">
           Aguardando revisão de compliance.
         </p>
       )}
 
       {/* Retry info */}
       {task.retry_count > 0 && (
-        <p className="text-[11px] text-[#FCD34D] mb-2">retry #{task.retry_count}</p>
+        <p className="text-[11px] text-status-paused-text mb-2">retry #{task.retry_count}</p>
       )}
 
       {/* Footer: step indicators + meta */}
@@ -202,41 +195,41 @@ export function TaskCard({ task, onClick, onDelete }: TaskCardProps) {
         </div>
         <div className="text-right">
           {isRunning && (
-            <p className="font-mono text-[11px] text-[#60A5FA] uppercase tracking-wide">Active</p>
+            <p className="font-mono text-[11px] text-status-running-text uppercase tracking-wide">Active</p>
           )}
           {isFailed && (
-            <p className="font-mono text-[11px] text-[#F87171] uppercase tracking-wide">Error</p>
+            <p className="font-mono text-[11px] text-status-failed-text uppercase tracking-wide">Error</p>
           )}
           {task.status === 'pending' && (
-            <p className="font-mono text-[11px] text-[#9E9489]">
+            <p className="font-mono text-[11px] text-on-surface-variant">
               {formatRelative(task.created_at)}
             </p>
           )}
           {isDone && task.completed_at && (
-            <p className="font-mono text-[11px] text-[#6B6460]">
+            <p className="font-mono text-[11px] text-on-surface-muted">
               {formatRelative(task.completed_at)}
             </p>
           )}
         </div>
       </div>
 
-      {/* Confirm bar — aparece após clicar Excluir no dropdown */}
+      {/* Confirm delete bar */}
       {confirmDelete && (
         <div
-          className="absolute inset-x-0 bottom-0 rounded-b-xl bg-[rgba(248,113,113,0.12)] border-t border-[#F87171]/20 px-3 py-2 flex items-center justify-between"
+          className="absolute inset-x-0 bottom-0 rounded-b-xl bg-status-failed border-t border-status-failed-text/20 px-3 py-2 flex items-center justify-between"
           onClick={(e) => e.stopPropagation()}
         >
-          <span className="text-[11px] text-[#F87171]/80">Excluir demanda?</span>
+          <span className="text-[11px] text-status-failed-text/80">Excluir demanda?</span>
           <div className="flex items-center gap-1.5">
             <button
               onClick={cancelDelete}
-              className="text-[11px] text-[#9E9489] hover:text-[#E8E3DD] px-2 py-0.5 rounded transition-colors"
+              className="text-[11px] text-on-surface-variant hover:text-on-surface px-2 py-0.5 rounded transition-colors duration-150"
             >
               Não
             </button>
             <button
               onClick={confirmDeleteAction}
-              className="text-[11px] font-medium text-[#F87171] bg-[rgba(248,113,113,0.15)] hover:bg-[rgba(248,113,113,0.25)] px-2 py-0.5 rounded border border-[#F87171]/30 transition-colors"
+              className="text-[11px] font-medium text-status-failed-text bg-status-failed hover:bg-status-failed-text/25 px-2 py-0.5 rounded border border-status-failed-text/30 transition-colors duration-150"
             >
               Sim, excluir
             </button>
@@ -254,22 +247,22 @@ export function TaskCard({ task, onClick, onDelete }: TaskCardProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-[#9E9489] hover:text-[#E8E3DD] hover:bg-[#2A2829]"
+              className="h-6 w-6 text-on-surface-variant hover:text-on-surface hover:bg-surface-high"
             >
               <MoreHorizontal size={14} strokeWidth={1.5} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="bg-[#353436]/80 backdrop-blur-[12px] border-[#584237]/20 text-[#E8E3DD] text-[13px] shadow-[0_12px_40px_-10px_rgba(0,0,0,0.5),0_0_20px_rgba(249,115,22,0.05)] min-w-[160px]"
+            className="bg-surface-highest/80 backdrop-blur-[12px] border-outline-variant/20 text-on-surface text-[13px] shadow-ambient min-w-[160px]"
           >
-            <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-[#2A2829] focus:text-[#E8E3DD]">
+            <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-surface-high focus:text-on-surface">
               <Eye size={14} strokeWidth={1.5} />
               Ver detalhes
             </DropdownMenuItem>
 
             {isPaused && (
-              <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-[#2A2829] text-[#FCD34D] focus:text-[#FCD34D]">
+              <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-surface-high text-status-paused-text focus:text-status-paused-text">
                 <Zap size={14} strokeWidth={1.5} />
                 Abrir Editor de IA
               </DropdownMenuItem>
@@ -277,8 +270,8 @@ export function TaskCard({ task, onClick, onDelete }: TaskCardProps) {
 
             {isFailed && (
               <>
-                <DropdownMenuSeparator className="bg-[#584237]/20" />
-                <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-[#2A2829] text-[#F87171] focus:text-[#F87171]">
+                <DropdownMenuSeparator className="bg-outline-variant/20" />
+                <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-surface-high text-status-failed-text focus:text-status-failed-text">
                   <RefreshCw size={14} strokeWidth={1.5} />
                   Retentar pipeline
                 </DropdownMenuItem>
@@ -287,17 +280,17 @@ export function TaskCard({ task, onClick, onDelete }: TaskCardProps) {
 
             {isRunning && (
               <>
-                <DropdownMenuSeparator className="bg-[#584237]/20" />
-                <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-[#2A2829] text-[#F87171] focus:text-[#F87171]">
+                <DropdownMenuSeparator className="bg-outline-variant/20" />
+                <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-surface-high text-status-failed-text focus:text-status-failed-text">
                   <XCircle size={14} strokeWidth={1.5} />
                   Cancelar
                 </DropdownMenuItem>
               </>
             )}
 
-            <DropdownMenuSeparator className="bg-[#584237]/20" />
+            <DropdownMenuSeparator className="bg-outline-variant/20" />
             <DropdownMenuItem
-              className="gap-2 cursor-pointer focus:bg-[rgba(248,113,113,0.1)] text-[#9E9489] focus:text-[#F87171]"
+              className="gap-2 cursor-pointer focus:bg-status-failed text-on-surface-variant focus:text-status-failed-text"
               onSelect={requestDelete}
             >
               <Trash2 size={14} strokeWidth={1.5} />

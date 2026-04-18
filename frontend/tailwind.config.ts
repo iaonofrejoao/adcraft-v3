@@ -59,6 +59,10 @@ const config: Config = {
           market:   '#A1A1AA',
           strategy: '#FFDBCA',
         },
+        accent: {
+          violet: 'var(--accent-violet)',
+          teal:   'var(--accent-teal)',
+        },
         'on-surface':         '#E8E3DD',
         'on-surface-variant': '#9E9489',
         'on-surface-muted':   '#6B6460',

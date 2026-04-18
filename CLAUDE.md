@@ -13,6 +13,7 @@ Stack: Next.js 14 App Router, Tailwind, TypeScript, Shadcn/ui, Supabase, Drizzle
 Antes de criar ou editar qualquer componente de UI, leia:
 - `.claude/skills/dev/frontend-adcraft.md`   → design system Kinetic Console
 - `.claude/skills/dev/stitch-to-adcraft.md`  → conversão de layouts Stitch
+- `.claude/skills/dev/ux-ui-adcraft.md`      → auditoria UX, polish, checklist de estados
 
 Antes de executar ou modificar qualquer agente de pipeline, leia:
 - `.claude/skills/agents/_pipeline.md`       → orquestração, scripts, checkpoint

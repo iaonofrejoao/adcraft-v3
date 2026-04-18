@@ -97,7 +97,7 @@ export function GaleriaCreativos({
           </p>
         </div>
         <Button className="bg-gradient-to-br from-brand to-brand-end text-surface font-bold text-[13px] gap-2 hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-shadow duration-150 border-0">
-          <Plus size={16} strokeWidth={2} />
+          <Plus size={16} strokeWidth={1.5} />
           Gerar Novo Vídeo
         </Button>
       </div>

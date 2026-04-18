@@ -235,7 +235,7 @@ export default function PipelineDetailPage({
               Progresso
             </p>
             <div className="flex items-center gap-2">
-              <Progress value={pipeline.progress_pct} className="h-1.5 flex-1 bg-surface-container-high" />
+              <Progress value={pipeline.progress_pct} className="h-1.5 flex-1 bg-surface-high" />
               <span className="font-mono text-[11px] text-on-surface-variant shrink-0">
                 {pipeline.tasks_done}/{pipeline.tasks_total}
               </span>
@@ -247,9 +247,9 @@ export default function PipelineDetailPage({
         {(runningCount > 0 || failedCount > 0) && (
           <div className="flex gap-3 mt-4 flex-wrap">
             {runningCount > 0 && (
-              <div className="flex items-center gap-2 bg-[#60A5FA]/10 border border-[#60A5FA]/20 rounded-md px-3 py-1.5">
-                <RefreshCw size={12} strokeWidth={1.5} className="text-[#60A5FA] animate-spin" />
-                <span className="text-[11px] text-[#60A5FA]">
+              <div className="flex items-center gap-2 bg-status-running border border-status-running-text/20 rounded-md px-3 py-1.5">
+                <RefreshCw size={12} strokeWidth={1.5} className="text-status-running-text animate-spin" />
+                <span className="text-[11px] text-status-running-text">
                   {runningCount} {runningCount === 1 ? 'agente rodando' : 'agentes rodando'}
                 </span>
               </div>
@@ -306,7 +306,7 @@ export default function PipelineDetailPage({
                 <CheckCircle2 size={12} strokeWidth={1.5} className="text-status-done-text" />
                 <span className="text-[11px] text-on-surface-muted">Concluído</span>
                 <span className="text-on-surface-muted mx-2">·</span>
-                <RefreshCw size={12} strokeWidth={1.5} className="text-[#60A5FA]" />
+                <RefreshCw size={12} strokeWidth={1.5} className="text-status-running-text" />
                 <span className="text-[11px] text-on-surface-muted">Rodando</span>
                 <span className="text-on-surface-muted mx-2">·</span>
                 <Clock size={12} strokeWidth={1.5} className="text-on-surface-muted" />

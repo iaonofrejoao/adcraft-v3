@@ -57,7 +57,7 @@ export function AprovacaoProgressBar({
             return (
               <span key={label}>
                 {label}{' '}
-                <span className={cn('font-mono', ok ? 'text-brand' : 'text-[#F87171]')}>
+                <span className={cn('font-mono', ok ? 'text-brand' : 'text-status-failed-text')}>
                   {approved}/{total}{ok ? ' ✓' : ''}
                 </span>
               </span>
@@ -66,7 +66,7 @@ export function AprovacaoProgressBar({
         </div>
 
         {/* Segmented bar — dynamic widths require inline style */}
-        <div className="w-full h-1.5 rounded-full overflow-hidden flex bg-surface-highest">
+        <div className="w-full h-1.5 rounded-full overflow-hidden flex bg-surface-high">
           <div className="h-full relative overflow-hidden" style={{ width: `${hooksWidth}%` }}>
             <div
               className="h-full bg-brand transition-all duration-500"
@@ -100,7 +100,7 @@ export function AprovacaoProgressBar({
                 className={cn(
                   'flex items-center gap-2 px-5 py-2.5 text-sm font-bold transition-all duration-150',
                   canMaterialize && !hasCombinations
-                    ? 'text-[#131314] bg-gradient-to-br from-[#F28705] to-[#FFB690]' +
+                    ? 'text-on-primary bg-brand-gradient' +
                       ' hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] active:scale-[0.98]'
                     : 'bg-surface-container text-on-surface-muted opacity-50 cursor-not-allowed',
                 )}

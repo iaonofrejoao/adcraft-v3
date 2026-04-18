@@ -26,9 +26,9 @@ interface ProductSummary {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function scoreColor(score: number): string {
-  if (score >= 7) return 'text-green-400'
-  if (score >= 4) return 'text-yellow-400'
-  return 'text-red-400'
+  if (score >= 7) return 'text-status-done-text'
+  if (score >= 4) return 'text-status-paused-text'
+  return 'text-status-failed-text'
 }
 
 function formatRelative(iso: string): string {
@@ -53,9 +53,9 @@ function StatusIcon({ icon: Icon, label, active, count }: StatusIconProps) {
   const color = active
     ? count !== undefined
       ? count >= 2
-        ? 'text-green-400'
-        : 'text-yellow-400'
-      : 'text-green-400'
+        ? 'text-status-done-text'
+        : 'text-status-paused-text'
+      : 'text-status-done-text'
     : 'text-on-surface-muted/40'
 
   return (

@@ -1,6 +1,8 @@
 'use client'
 import { Anchor, AlignJustify, MousePointerClick } from 'lucide-react'
+import { ScrollArea as ScrollAreaPrimitive } from 'radix-ui'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ScrollBar } from '@/components/ui/scroll-area'
 import { useCopyBoard } from '@/hooks/useCopyBoard'
 import { AprovacaoProgressBar } from './AprovacaoProgressBar'
 import { ColunaComponentes }    from './ColunaComponentes'
@@ -19,15 +21,15 @@ const COLUMNS = [
     type:      'body' as const,
     label:     'Bodies',
     Icon:      AlignJustify,
-    iconClass: 'text-[#60A5FA]',
-    iconBg:    'bg-[#60A5FA]/10',
+    iconClass: 'text-status-running-text',
+    iconBg:    'bg-status-running',
   },
   {
     type:      'cta' as const,
     label:     'CTAs',
     Icon:      MousePointerClick,
-    iconClass: 'text-[#4ADE80]',
-    iconBg:    'bg-[#4ADE80]/10',
+    iconClass: 'text-status-done-text',
+    iconBg:    'bg-status-done',
   },
 ]
 
@@ -104,22 +106,29 @@ export function AprovacaoBoard({ sku, pipelineId, productId }: AprovacaoBoardPro
         onMaterialize={materializeCombinations}
       />
 
-      {/* 3-column grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {COLUMNS.map(({ type, label, Icon, iconClass, iconBg }) => (
-          <ColunaComponentes
-            key={type}
-            type={type}
-            label={label}
-            Icon={Icon}
-            iconClass={iconClass}
-            iconBg={iconBg}
-            items={colItemsMap[type]}
-            onApprove={approveComponent}
-            onReject={rejectComponent}
-          />
-        ))}
-      </div>
+      {/* 3-column grid — horizontal scroll via Radix ScrollArea */}
+      <ScrollAreaPrimitive.Root className="w-full" type="scroll">
+        <ScrollAreaPrimitive.Viewport className="w-full">
+          <div className="flex gap-6 min-w-max pb-3">
+            {COLUMNS.map(({ type, label, Icon, iconClass, iconBg }) => (
+              <div key={type} className="w-[320px] shrink-0">
+                <ColunaComponentes
+                  type={type}
+                  label={label}
+                  Icon={Icon}
+                  iconClass={iconClass}
+                  iconBg={iconBg}
+                  items={colItemsMap[type]}
+                  onApprove={approveComponent}
+                  onReject={rejectComponent}
+                />
+              </div>
+            ))}
+          </div>
+        </ScrollAreaPrimitive.Viewport>
+        <ScrollBar orientation="horizontal" />
+        <ScrollAreaPrimitive.Corner />
+      </ScrollAreaPrimitive.Root>
 
       {/* Combinations */}
       <CombinacoesList

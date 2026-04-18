@@ -18,10 +18,10 @@ interface GoalCfg { Icon: LucideIcon; color: string; bg: string; label: string }
 const GOAL_MAP: Record<string, GoalCfg> = {
   copy_only:        { Icon: FileText, color: 'text-brand',          bg: 'bg-brand-muted',          label: 'Copy' },
   creative_full:    { Icon: FileText, color: 'text-brand',          bg: 'bg-brand-muted',          label: 'Creative Full' },
-  market_research:  { Icon: Search,   color: 'text-[#A1A1AA]',      bg: 'bg-[#A1A1AA]/10',         label: 'Mercado' },
-  avatar_research:  { Icon: Search,   color: 'text-[#F29F05]',      bg: 'bg-[#F29F05]/10',         label: 'Avatar' },
-  angle_generation: { Icon: Layers,   color: 'text-[#FFDBCA]',      bg: 'bg-[#FFDBCA]/10',         label: 'Ângulos' },
-  video_prod:       { Icon: Film,     color: 'text-[#60A5FA]',      bg: 'bg-[#60A5FA]/10',         label: 'Vídeo' },
+  market_research:  { Icon: Search,   color: 'text-agent-market',    bg: 'bg-agent-market/10',      label: 'Mercado' },
+  avatar_research:  { Icon: Search,   color: 'text-agent-research',  bg: 'bg-brand-muted',          label: 'Avatar' },
+  angle_generation: { Icon: Layers,   color: 'text-agent-strategy',  bg: 'bg-agent-strategy/10',    label: 'Ângulos' },
+  video_prod:       { Icon: Film,     color: 'text-status-running-text', bg: 'bg-status-running',   label: 'Vídeo' },
 }
 
 function goalCfg(goal: string): GoalCfg {
@@ -113,7 +113,7 @@ function TimelineItem({ pipeline, isLast }: { pipeline: Pipeline; isLast: boolea
         {isRunning && pipeline.progress_pct != null && (
           <Progress
             value={pipeline.progress_pct}
-            className="h-1 mt-2 bg-surface-highest [&>div]:bg-[#60A5FA] [&>div]:transition-all [&>div]:duration-500"
+            className="h-1 mt-2 bg-surface-high [&>div]:bg-status-running-text [&>div]:transition-all [&>div]:duration-500"
           />
         )}
       </div>
@@ -131,9 +131,9 @@ function StatsRow({ pipelines }: { pipelines: Pipeline[] }) {
 
   const items = [
     { label: 'Total',      value: total,                        color: 'text-on-surface' },
-    { label: 'Concluídos', value: done,                         color: 'text-[#4ADE80]'  },
-    { label: 'Em curso',   value: running,                      color: 'text-[#60A5FA]'  },
-    { label: 'Falhos',     value: failed,                       color: 'text-[#F87171]'  },
+    { label: 'Concluídos', value: done,                         color: 'text-status-done-text'    },
+    { label: 'Em curso',   value: running,                      color: 'text-status-running-text' },
+    { label: 'Falhos',     value: failed,                       color: 'text-status-failed-text'  },
     { label: 'Custo total',value: `$${totalCost.toFixed(2)}`,   color: 'text-brand'      },
   ]
 
@@ -155,15 +155,15 @@ export function HistoricoTabSkeleton() {
     <div className="space-y-4">
       <div className="grid grid-cols-5 gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 rounded-lg bg-surface-highest" />
+          <Skeleton key={i} className="h-16 rounded-lg bg-surface-high" />
         ))}
       </div>
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="flex gap-4 pb-5">
-          <Skeleton className="w-9 h-9 rounded-full bg-surface-highest shrink-0" />
+          <Skeleton className="w-9 h-9 rounded-full bg-surface-high shrink-0" />
           <div className="flex-1 space-y-2 pt-1">
-            <Skeleton className="h-4 w-48 bg-surface-highest" />
-            <Skeleton className="h-3 w-32 bg-surface-highest" />
+            <Skeleton className="h-4 w-48 bg-surface-high" />
+            <Skeleton className="h-3 w-32 bg-surface-high" />
           </div>
         </div>
       ))}
@@ -186,8 +186,8 @@ export function HistoricoTabEmpty({ sku }: { sku: string }) {
       </div>
       <Link
         href={`/?msg=@${sku}+/copy`}
-        className="text-sm px-4 py-2 rounded font-medium text-[#131314]
-          bg-gradient-to-br from-[#F28705] to-[#FFB690]
+        className="text-sm px-4 py-2 rounded font-medium text-on-primary
+          bg-brand-gradient
           hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
           transition-shadow duration-150"
       >

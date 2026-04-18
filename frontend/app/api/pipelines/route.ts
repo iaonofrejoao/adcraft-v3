@@ -158,11 +158,17 @@ import { z } from 'zod';
 import { createNewPipeline, getNextProductVersion } from '@/lib/jarvis/actions';
 import type { GoalName } from '@/lib/agent-registry';
 
-const VALID_GOALS: GoalName[] = ['market_only', 'avatar_only', 'angles_only', 'copy_only', 'creative_full'];
+const VALID_GOALS: GoalName[] = [
+  'market_only', 'avatar_only', 'angles_only', 'copy_only', 'creative_full',
+  'pesquisa', 'criativo', 'lancamento', 'full',
+];
 
 const LaunchSchema = z.object({
   product_sku: z.string().min(1),
-  goal:        z.enum(['market_only', 'avatar_only', 'angles_only', 'copy_only', 'creative_full']),
+  goal: z.enum([
+    'market_only', 'avatar_only', 'angles_only', 'copy_only', 'creative_full',
+    'pesquisa', 'criativo', 'lancamento', 'full',
+  ]),
 });
 
 export async function POST(req: Request) {

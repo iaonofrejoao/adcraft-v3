@@ -14,7 +14,7 @@
 import { callEmbedding } from '../llm/gemini-client';
 import { db } from '../db';
 import { embeddings, nicheLearnings, productKnowledge, executionLearnings } from '../../../frontend/lib/schema/index';
-import { eq, isNull, sql } from 'drizzle-orm';
+import { eq, inArray, isNull, sql } from 'drizzle-orm';
 
 const OUTPUT_DIM = 768;
 const MAX_BATCH = 100;
@@ -104,7 +104,7 @@ async function resolveTexts(
     const records = await db
       .select({ id: productKnowledge.id, artifact_data: productKnowledge.artifact_data })
       .from(productKnowledge)
-      .where(sql`${productKnowledge.id} = ANY(${ids})`);
+      .where(inArray(productKnowledge.id, ids));
 
     const byId = new Map(records.map((r) => [r.id, r]));
     for (const row of pkRows) {
@@ -122,7 +122,7 @@ async function resolveTexts(
     const records = await db
       .select({ id: nicheLearnings.id, content: nicheLearnings.content, confidence: nicheLearnings.confidence })
       .from(nicheLearnings)
-      .where(sql`${nicheLearnings.id} = ANY(${ids})`);
+      .where(inArray(nicheLearnings.id, ids));
 
     const byId = new Map(records.map((r) => [r.id, r]));
     for (const row of nlRows) {
@@ -145,7 +145,7 @@ async function resolveTexts(
         confidence:  executionLearnings.confidence,
       })
       .from(executionLearnings)
-      .where(sql`${executionLearnings.id} = ANY(${ids})`);
+      .where(inArray(executionLearnings.id, ids));
 
     const byId = new Map(records.map((r) => [r.id, r]));
     for (const row of elRows) {

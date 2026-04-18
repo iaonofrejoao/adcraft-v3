@@ -183,7 +183,6 @@ Usuário envia mensagem
 | Anthropic Claude Sonnet 4.6 | anvisa_compliance, niche_curator, learning_extractor, aggregator | Custo-benefício |
 | Google Gemini (Veo 3) | video_maker | Único use case que mantém Gemini |
 | Google Gemini embedding-001 | batchEmbeddingsWorker | 768 dimensões |
-| Serper API | search_web (tool Jarvis) | Configurar SERPER_API_KEY |
 
 ---
 
@@ -193,7 +192,6 @@ Ver `.env.example` na raiz do projeto. Chaves obrigatórias:
 - `DATABASE_URL` + `SUPABASE_*` — banco de dados
 - `ANTHROPIC_API_KEY` — todos os agentes Claude + Jarvis
 - `GEMINI_API_KEY` + `GOOGLE_CLOUD_*` — video_maker + embeddings
-- `SERPER_API_KEY` — busca web do Jarvis (sem esta, retorna mock)
 - `NEXT_PUBLIC_SUPABASE_*` — frontend
 
 ---

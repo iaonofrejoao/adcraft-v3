@@ -2,25 +2,25 @@
 //
 // Responsabilidade:
 //   Disparado automaticamente após cada pipeline concluído com sucesso.
-//   Analisa os outputs do pipeline via Claude Sonnet e persiste aprendizados
+//   Analisa os outputs do pipeline via Gemini Flash e persiste aprendizados
 //   atômicos na tabela `execution_learnings`, enfileirando embeddings.
 //
 // Trigger: task-runner.ts → pipeline completed → extractLearningsAsync()
-// Modelo: claude-sonnet-4-6 (custo-benefício para análise estruturada)
+// Modelo: gemini-2.5-flash (custo-benefício para análise estruturada em JSON)
 // Nunca bloqueia o task-runner: roda em background via setTimeout(0)
 
 import * as fs from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import Anthropic from '@anthropic-ai/sdk';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '../lib/db';
 import {
   pipelines, tasks, products,
   executionLearnings, embeddings,
 } from '../../frontend/lib/schema/index';
+import { callTextGemini } from '../lib/llm/gemini-client';
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'gemini-2.5-flash';
 const MAX_LEARNINGS = 8;
 
 // ── Tipos internos ─────────────────────────────────────────────────────────────
@@ -126,41 +126,36 @@ function serializeSummary(summary: PipelineSummary): string {
   return lines.join('\n');
 }
 
-// ── Extração via Claude ────────────────────────────────────────────────────────
+// ── Extração via Gemini ────────────────────────────────────────────────────────
 
-async function extractWithClaude(summary: PipelineSummary): Promise<RawLearning[]> {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
+async function extractWithGemini(summary: PipelineSummary): Promise<RawLearning[]> {
   const systemPrompt = loadSystemPrompt();
   const userMessage  = `Analise este pipeline concluído e extraia aprendizados:\n\n${serializeSummary(summary)}`;
 
-  const response = await client.messages.create({
-    model:      MODEL,
-    max_tokens: 1024,
-    system:     systemPrompt,
-    messages:   [{ role: 'user', content: userMessage }],
-  });
+  const text = await callTextGemini(
+    'learning_extractor',
+    MODEL,
+    systemPrompt,
+    userMessage,
+    summary.product_id ?? undefined,
+    summary.niche_id   ?? undefined,
+  );
 
-  const textBlock = response.content.find((b) => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('Claude returned no text block');
-  }
-
-  // Parse JSON — Claude deve retornar JSON puro conforme o prompt
+  // Parse JSON — Gemini deve retornar JSON puro conforme o prompt
   let parsed: { learnings: RawLearning[] };
   try {
-    // Remove possível markdown fence caso Claude adicione
-    const jsonStr = textBlock.text
+    // Remove possível markdown fence caso o modelo adicione
+    const jsonStr = text
       .replace(/^```json\s*/i, '')
       .replace(/```\s*$/, '')
       .trim();
     parsed = JSON.parse(jsonStr);
   } catch {
-    throw new Error(`Failed to parse Claude JSON: ${textBlock.text.slice(0, 200)}`);
+    throw new Error(`Failed to parse Gemini JSON: ${text.slice(0, 200)}`);
   }
 
   if (!Array.isArray(parsed.learnings)) {
-    throw new Error('Claude response missing learnings array');
+    throw new Error('Gemini response missing learnings array');
   }
 
   return parsed.learnings.slice(0, MAX_LEARNINGS);
@@ -235,8 +230,8 @@ export async function extractLearningsAsync(pipelineId: string): Promise<void> {
       return;
     }
 
-    log(`calling Claude (${completedTasks.length} agent outputs)…`);
-    const rawLearnings = await extractWithClaude(summary);
+    log(`calling Gemini (${completedTasks.length} agent outputs)…`);
+    const rawLearnings = await extractWithGemini(summary);
 
     log(`extracted ${rawLearnings.length} learnings, persisting…`);
     const saved = await persistLearnings(summary, rawLearnings);

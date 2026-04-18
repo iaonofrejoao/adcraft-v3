@@ -1,0 +1,58 @@
+-- Migration 015 — Revert provider padrão: Anthropic Claude → Google Gemini
+-- Contexto: reversão parcial da Fase A do PLANO_EXECUCAO_V2.md
+--
+-- IMPORTANTE: Na stack V2 (Next.js + workers TypeScript), o model assignment
+-- de cada agente é definido em código, em `frontend/lib/agent-registry.ts`.
+-- Não há tabela `agents` com coluna `model_provider` nesta stack — a configuração
+-- é code-first, não database-first.
+--
+-- Esta migration serve como REGISTRO DE AUDITORIA da decisão arquitetural.
+-- As mudanças efetivas estão nos arquivos TypeScript listados abaixo.
+--
+-- ── Arquivos alterados (code changes) ─────────────────────────────────────────
+--
+-- 1. frontend/lib/agent-registry.ts
+--    Modelos alterados:
+--      avatar_research:    claude-opus-4-6    → gemini-2.5-pro
+--      market_research:    claude-opus-4-6    → gemini-2.5-pro
+--      angle_generator:    claude-opus-4-6    → gemini-2.5-pro
+--      copy_hook_generator: claude-opus-4-6   → gemini-2.5-pro
+--      anvisa_compliance:  claude-sonnet-4-6  → gemini-2.5-flash
+--      niche_curator:      claude-sonnet-4-6  → gemini-2.5-flash
+--      video_maker:        (mantido)          gemini-2.5-flash
+--      JARVIS_MODEL:       (já era)           gemini-2.5-flash
+--
+-- 2. workers/lib/llm/gemini-client.ts
+--    Adicionado: callTextGemini() — helper para chamadas texto sem tool use
+--    Regra 18: ponto de entrada centralizado para todos os LLM calls
+--
+-- 3. workers/agents/learning-extractor.ts
+--    extractWithClaude() → extractWithGemini()
+--    Modelo: claude-sonnet-4-6 → gemini-2.5-flash
+--    Dependência Anthropic SDK removida
+--
+-- 4. workers/cron/learning-aggregator-cron.ts
+--    generatePattern() e maybeGenerateInsight() → via callTextGemini()
+--    Modelo: claude-sonnet-4-6 → gemini-2.5-flash
+--    Dependência Anthropic SDK removida
+--
+-- ── O que NÃO mudou ───────────────────────────────────────────────────────────
+--
+-- • workers/lib/llm/claude-provider.ts — mantido como opção disponível
+-- • Roteamento em gemini-client.ts::callAgent() — model.startsWith('claude-')
+--   ainda roteia para Claude se configurado; abstração preservada
+-- • frontend/lib/jarvis/claude-agent.ts — mantido (Jarvis pode retornar ao Claude)
+-- • Embeddings — já usavam gemini-embedding-001 (768 dims) antes desta migration
+-- • ANTHROPIC_API_KEY — mantida no .env.local como opção
+-- • Dependência npm anthropic — mantida no package.json
+--
+-- ── Reverter esta migration (volta ao Claude) ─────────────────────────────────
+-- Basta atualizar os modelos em agent-registry.ts de volta para claude-*:
+--   avatar_research, market_research, angle_generator, copy_hook_generator → claude-opus-4-6
+--   anvisa_compliance, niche_curator → claude-sonnet-4-6
+-- O roteamento em gemini-client.ts::callAgent() já suporta isso automaticamente.
+
+-- Nenhum DDL necessário — mudança é code-only nesta stack.
+-- Arquivo criado em: 2026-04-16
+
+SELECT 1 AS migration_015_applied;

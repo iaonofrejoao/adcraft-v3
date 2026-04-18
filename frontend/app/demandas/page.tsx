@@ -36,18 +36,31 @@ function filtersToParams(f: Filters, base: URLSearchParams): URLSearchParams {
 
 // ── Vista Kanban (tasks-level) ────────────────────────────────────────────────
 
-function KanbanView({ onCardClick }: { onCardClick: (pipelineId: string) => void }) {
+function KanbanView({
+  onCardClick,
+  onDelete,
+}: {
+  onCardClick: (pipelineId: string) => void
+  onDelete:    (pipelineId: string) => void
+}) {
   const params           = useSearchParams()
   const filterPipelineId = params.get('pipeline') ?? undefined
-  const { tasks, isLoading, tasksByStatus } = useTasks()
+  const { tasks, isLoading, tasksByStatus, deletePipeline } = useTasks()
+
+  async function handleDelete(id: string) {
+    await deletePipeline(id)
+    onDelete(id)
+  }
 
   return (
     <KanbanBoard
       tasks={tasks}
       isLoading={isLoading}
       tasksByStatus={tasksByStatus}
+      deletePipeline={deletePipeline}
       filterPipelineId={filterPipelineId}
       onCardClick={onCardClick}
+      onDelete={handleDelete}
     />
   )
 }
@@ -64,7 +77,7 @@ function TableView({ onRowClick }: { onRowClick: (id: string) => void }) {
 
   const {
     pipelines, total, isLoading, page, pageSize, filters,
-    setPage, setFilters, reload,
+    setPage, setFilters, reload, deletePipeline,
   } = usePipelines(50, urlFilters)
 
   // Sincroniza alterações de filtro com a URL
@@ -111,6 +124,7 @@ function TableView({ onRowClick }: { onRowClick: (id: string) => void }) {
           pageSize={pageSize}
           onSetPage={setPage}
           onRowClick={onRowClick}
+          onDelete={deletePipeline}
         />
       </div>
     </div>
@@ -148,7 +162,10 @@ function DemandasContent() {
       <div className="flex-1 min-h-0">
         {view === 'table'
           ? <TableView onRowClick={setSelectedPipelineId} />
-          : <KanbanView onCardClick={setSelectedPipelineId} />
+          : <KanbanView
+              onCardClick={setSelectedPipelineId}
+              onDelete={(id) => { if (selectedPipelineId === id) setSelectedPipelineId(null) }}
+            />
         }
       </div>
 

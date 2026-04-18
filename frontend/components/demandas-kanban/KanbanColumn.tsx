@@ -11,9 +11,10 @@ export interface KanbanColumnProps {
   colorClass: string
   tasks: Task[]
   onCardClick?: (pipelineId: string) => void
+  onDelete?:    (pipelineId: string) => void
 }
 
-export function KanbanColumn({ label, icon: Icon, colorClass, tasks, onCardClick }: KanbanColumnProps) {
+export function KanbanColumn({ label, icon: Icon, colorClass, tasks, onCardClick, onDelete }: KanbanColumnProps) {
   return (
     <div className="w-[280px] shrink-0 flex flex-col min-h-0 h-full">
       {/* Cabeçalho da coluna */}
@@ -41,6 +42,7 @@ export function KanbanColumn({ label, icon: Icon, colorClass, tasks, onCardClick
                 key={task.id}
                 task={task}
                 onClick={() => onCardClick?.(task.pipeline_id)}
+                onDelete={onDelete}
               />
             ))
             )}

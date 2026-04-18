@@ -29,83 +29,9 @@ export const WEB_SEARCH_TOOL = {
   },
 };
 
-const _PLACEHOLDER_VALUES = new Set([
-  "",
-  "sua-chave-aqui",
-  "your-key-here",
-  "placeholder",
-  "change-me",
-  "changeme",
-  "xxxx",
-  "todo",
-  "none",
-  "null",
-]);
-
-function _isPlaceholder(value: string | undefined): boolean {
-  if (!value) return true;
-  return _PLACEHOLDER_VALUES.has(value.trim().toLowerCase());
-}
-
-const _SERPER_URL = "https://google.serper.dev/search";
-
 export async function executeSearchWeb(query: string, numResults: number = 5): Promise<any[]> {
   const num = Math.max(1, Math.min(numResults, 10));
-  const apiKey = process.env.WEB_SEARCH_API_KEY || "";
-
-  if (_isPlaceholder(apiKey)) {
-    console.debug(`search_web: credencial placeholder — retornando mock para ${query}`);
-    return _mockResults(query, num);
-  }
-
-  return await _callSerper(query, num, apiKey);
-}
-
-async function _callSerper(query: string, numResults: number, apiKey: string): Promise<any[]> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-
-  try {
-    const response = await fetch(_SERPER_URL, {
-      method: "POST",
-      headers: {
-        "X-API-KEY": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ q: query, num: numResults }),
-      signal: controller.signal,
-    });
-    
-    clearTimeout(timeout);
-
-    if (response.status === 401) {
-      throw new Error("search_web: credencial WEB_SEARCH_API_KEY inválida ou expirada (HTTP 401).");
-    }
-    if (response.status === 429) {
-      throw new Error(
-        "search_web: quota da Serper API esgotada (HTTP 429). Aguarde o reset da janela ou aumente o plano."
-      );
-    }
-    if (!response.ok) {
-      throw new Error(`search_web: Serper API retornou HTTP ${response.status}.`);
-    }
-
-    const data = await response.json();
-    const organic = data.organic || [];
-
-    return organic.slice(0, numResults).map((item: any) => ({
-      title: item.title || "",
-      url: item.link || "",
-      snippet: item.snippet || "",
-    }));
-  } catch (error: any) {
-    if (error.name === "AbortError") {
-      throw new Error(`search_web: timeout ao chamar Serper API para query '${query}'.`);
-    }
-    // Only throw if we haven't thrown internally
-    if (error.message.startsWith("search_web:")) throw error;
-    throw new Error(`search_web: falha de rede ao chamar Serper API — ${error.message}`);
-  }
+  return _mockResults(query, num);
 }
 
 function _mockResults(query: string, numResults: number): any[] {
@@ -123,7 +49,6 @@ function _mockResults(query: string, numResults: number): any[] {
       url: "https://mercadoanalytics.com.br/relatorio",
       snippet: `O mercado de ${q} apresentou crescimento de 23% em 2023. Saiba quais produtos lideram as vendas e como se posicionar.`,
     },
-    // Truncating the mock list here as per original, but maintaining structure
     {
       title: `Os Melhores Produtos de ${qTitle} — Ranking Atualizado`,
       url: "https://rankingprodutos.com.br/lista",

@@ -28,15 +28,16 @@ export interface PipelineRow {
 }
 
 export interface UsePipelinesReturn {
-  pipelines:  PipelineRow[]
-  total:      number
-  isLoading:  boolean
-  page:       number
-  pageSize:   number
-  setPage:    (p: number) => void
-  setFilters: (f: PipelineFilters) => void
-  filters:    PipelineFilters
-  reload:     () => void
+  pipelines:      PipelineRow[]
+  total:          number
+  isLoading:      boolean
+  page:           number
+  pageSize:       number
+  setPage:        (p: number) => void
+  setFilters:     (f: PipelineFilters) => void
+  filters:        PipelineFilters
+  reload:         () => void
+  deletePipeline: (id: string) => Promise<void>
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -138,15 +139,27 @@ export function usePipelines(
     setFilters(f)
   }, [])
 
+  const deletePipeline = useCallback(async (id: string) => {
+    await fetch(`/api/pipelines/${id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ status: 'deleted' }),
+    })
+    // Remove otimisticamente da lista local
+    setPipelines((prev) => prev.filter((p) => p.id !== id))
+    setTotal((prev) => Math.max(0, prev - 1))
+  }, [])
+
   return {
     pipelines,
     total,
     isLoading,
     page,
     pageSize,
-    setPage:    handleSetPage,
-    setFilters: handleSetFilters,
+    setPage:        handleSetPage,
+    setFilters:     handleSetFilters,
     filters,
     reload,
+    deletePipeline,
   }
 }

@@ -56,13 +56,24 @@ export function usePipelineDetail(pipelineId: string): UsePipelineDetailReturn {
   const [error,     setError]     = useState<string | null>(null)
 
   const enrich = (data: Record<string, unknown>): PipelineDetail => {
-    const tasks = (data.tasks as TaskDetail[] ?? []).map((t) => ({
+    let tasks = (data.tasks as TaskDetail[] ?? []).map((t) => ({
       ...t,
       duration_ms:
         t.started_at && t.completed_at
           ? new Date(t.completed_at).getTime() - new Date(t.started_at).getTime()
           : null,
     }))
+
+    // Sort by topological plan order (tasks are batch-inserted with same created_at,
+    // so DB order is non-deterministic — plan.tasks preserves topological sequence)
+    const planTasks = (data.plan as { tasks?: Array<{ agent: string }> } | null)?.tasks
+    if (planTasks?.length) {
+      const orderMap = new Map(planTasks.map((pt, i) => [pt.agent, i]))
+      tasks = [...tasks].sort(
+        (a, b) => (orderMap.get(a.agent_name) ?? 999) - (orderMap.get(b.agent_name) ?? 999)
+      )
+    }
+
     const tasks_done  = tasks.filter((t) => t.status === 'completed' || t.status === 'skipped').length
     const tasks_total = tasks.length
     return { ...(data as unknown as PipelineDetail), tasks, tasks_done, tasks_total }

@@ -6,24 +6,24 @@
 // Lógica:
 //   1. Busca execution_learnings dos últimos 30 dias (status='active', validated_by_user != false)
 //   2. Agrupa por (category, niche_id) usando query SQL
-//   3. Para grupos com ≥ 3 learnings: gera um pattern via Claude Sonnet
+//   3. Para grupos com ≥ 3 learnings: gera um pattern via Gemini Flash
 //   4. Upsert em learning_patterns
 //   5. Para patterns de alta confidence (≥ 0.7) com ≥ 5 learnings: considera virar insight
 //
-// Modelo: claude-sonnet-4-6
+// Modelo: gemini-2.5-flash
 // Fase E
 
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import Anthropic from '@anthropic-ai/sdk';
 import { sql, eq, and, gte, ne, isNull, or } from 'drizzle-orm';
 import { db } from '../lib/db';
 import { executionLearnings, learningPatterns, insights } from '../../frontend/lib/schema/index';
+import { callTextGemini } from '../lib/llm/gemini-client';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const MODEL             = 'claude-sonnet-4-6';
+const MODEL             = 'gemini-2.5-flash';
 const LOOKBACK_DAYS     = 30;
 const MIN_LEARNINGS_FOR_PATTERN = 3;
 const MIN_LEARNINGS_FOR_INSIGHT = 5;
@@ -97,17 +97,17 @@ async function collectLearningGroups(): Promise<LearningGroup[]> {
   return [...groupMap.values()].filter((g) => g.learnings.length >= MIN_LEARNINGS_FOR_PATTERN);
 }
 
-// ── Geração de pattern via Claude ─────────────────────────────────────────────
+// ── Geração de pattern via Gemini ─────────────────────────────────────────────
 
 async function generatePattern(
-  client:  Anthropic,
-  group:   LearningGroup,
+  group: LearningGroup,
 ): Promise<{ pattern_text: string; confidence: number } | null> {
   const learningsText = group.learnings
     .map((l, i) => `${i + 1}. [confidence: ${l.confidence}] ${l.observation}`)
     .join('\n');
 
-  const prompt = `Você é um analista de marketing de performance. Abaixo estão ${group.learnings.length} aprendizados individuais da categoria "${group.category}"${group.niche_id ? ` para o nicho ${group.niche_id}` : ' (global)'}.
+  const systemPrompt = 'Você é um analista de marketing de performance. Responda APENAS com JSON válido, sem markdown fences.';
+  const userMessage  = `Abaixo estão ${group.learnings.length} aprendizados individuais da categoria "${group.category}"${group.niche_id ? ` para o nicho ${group.niche_id}` : ' (global)'}.
 
 ${learningsText}
 
@@ -121,17 +121,10 @@ Responda APENAS com JSON:
 
 confidence deve ser entre 0.40 e 0.90, refletindo a consistência dos learnings.`;
 
-  const response = await client.messages.create({
-    model:      MODEL,
-    max_tokens: 256,
-    messages:   [{ role: 'user', content: prompt }],
-  });
-
-  const textBlock = response.content.find((b) => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') return null;
+  const text = await callTextGemini('learning_aggregator', MODEL, systemPrompt, userMessage);
 
   try {
-    const jsonStr = textBlock.text
+    const jsonStr = text
       .replace(/^```json\s*/i, '')
       .replace(/```\s*$/, '')
       .trim();
@@ -142,7 +135,7 @@ confidence deve ser entre 0.40 e 0.90, refletindo a consistência dos learnings.
       confidence:   Math.min(0.9, Math.max(0.4, Number(parsed.confidence) || 0.5)),
     };
   } catch {
-    console.warn('[aggregator] failed to parse Claude pattern response');
+    console.warn('[aggregator] failed to parse Gemini pattern response');
     return null;
   }
 }
@@ -150,20 +143,18 @@ confidence deve ser entre 0.40 e 0.90, refletindo a consistência dos learnings.
 // ── Geração de insight de alto nível ──────────────────────────────────────────
 
 async function maybeGenerateInsight(
-  client:     Anthropic,
-  group:      LearningGroup,
-  patternId:  string,
+  group:       LearningGroup,
+  patternId:   string,
   patternText: string,
-  confidence: number,
+  confidence:  number,
 ): Promise<void> {
   if (
     group.learnings.length < MIN_LEARNINGS_FOR_INSIGHT ||
     confidence < MIN_CONFIDENCE_FOR_INSIGHT
   ) return;
 
-  const prompt = `Você é um consultor sênior de marketing de performance.
-
-Padrão identificado (baseado em ${group.learnings.length} campanhas):
+  const systemPrompt = 'Você é um consultor sênior de marketing de performance. Responda APENAS com JSON válido, sem markdown fences.';
+  const userMessage  = `Padrão identificado (baseado em ${group.learnings.length} campanhas):
 "${patternText}"
 
 Categoria: ${group.category}
@@ -174,17 +165,10 @@ Escreva um insight estratégico curto (máximo 3 frases) que explique a implica�
 Responda APENAS com JSON:
 {"title": "Título do insight em até 8 palavras", "body": "Texto do insight aqui."}`;
 
-  const response = await client.messages.create({
-    model:      MODEL,
-    max_tokens: 256,
-    messages:   [{ role: 'user', content: prompt }],
-  });
-
-  const textBlock = response.content.find((b) => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') return;
+  const text = await callTextGemini('learning_aggregator_insight', MODEL, systemPrompt, userMessage);
 
   try {
-    const jsonStr = textBlock.text
+    const jsonStr = text
       .replace(/^```json\s*/i, '')
       .replace(/```\s*$/, '')
       .trim();
@@ -265,23 +249,19 @@ async function upsertPattern(
 async function run(): Promise<void> {
   console.info('[aggregator] iniciando aggregation de learnings…');
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
   const groups = await collectLearningGroups();
   console.info(`[aggregator] ${groups.length} grupo(s) elegíveis para aggregation`);
 
   let patternsCreated   = 0;
-  let patternsUpdated   = 0;
   let insightsGenerated = 0;
 
   for (const group of groups) {
     try {
-      const result = await generatePattern(client, group);
+      const result = await generatePattern(group);
       if (!result) continue;
 
       const patternId = await upsertPattern(group, result.pattern_text, result.confidence);
 
-      // Determina se é create ou update baseado em se existia antes
       patternsCreated++;
 
       console.info(
@@ -292,7 +272,7 @@ async function run(): Promise<void> {
 
       // Tenta gerar insight de alto nível para patterns fortes
       const insightsBefore = insightsGenerated;
-      await maybeGenerateInsight(client, group, patternId, result.pattern_text, result.confidence);
+      await maybeGenerateInsight(group, patternId, result.pattern_text, result.confidence);
       if (insightsGenerated > insightsBefore) insightsGenerated++;
 
     } catch (err) {

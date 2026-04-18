@@ -203,6 +203,11 @@ export async function persistPlanPreview(
     agentToTaskId.set(t.agent, randomUUID());
   }
 
+  // Pré-calcula quais agentes serão skipped para resolver deps corretamente
+  const skippedAgents = new Set(
+    plan.tasks.filter((t) => t.status === 'reused').map((t) => t.agent),
+  );
+
   const taskRows = plan.tasks.map((t: PlannedTask) => {
     const taskId    = agentToTaskId.get(t.agent)!;
     const depsUuids = t.depends_on
@@ -210,9 +215,18 @@ export async function persistPlanPreview(
       .filter((uid): uid is string => uid !== undefined);
 
     let status: string;
-    if (t.status === 'reused')       status = 'skipped';
-    else if (depsUuids.length === 0) status = 'pending';
-    else                             status = 'waiting';
+    if (t.status === 'reused') {
+      status = 'skipped';
+    } else if (
+      depsUuids.length === 0 ||
+      t.depends_on.every((dep) => skippedAgents.has(dep))
+    ) {
+      // Sem deps reais, ou todos os deps são artifacts cacheados (skipped) →
+      // a task pode começar imediatamente sem esperar seedNextTasks.
+      status = 'pending';
+    } else {
+      status = 'waiting';
+    }
 
     return {
       id:            taskId,
@@ -273,6 +287,10 @@ export async function createNewPipeline(
     plan.tasks.map((t: PlannedTask) => [t.agent, randomUUID()]),
   );
 
+  const skippedAgents2 = new Set(
+    plan.tasks.filter((t) => t.status === 'reused').map((t) => t.agent),
+  );
+
   const taskRows = plan.tasks.map((t: PlannedTask) => {
     const taskId    = agentToTaskId.get(t.agent)!;
     const depsUuids = t.depends_on
@@ -280,9 +298,16 @@ export async function createNewPipeline(
       .filter((id): id is string => id !== undefined);
 
     let status: string;
-    if (t.status === 'reused')       status = 'skipped';
-    else if (depsUuids.length === 0) status = 'pending';
-    else                             status = 'waiting';
+    if (t.status === 'reused') {
+      status = 'skipped';
+    } else if (
+      depsUuids.length === 0 ||
+      t.depends_on.every((dep) => skippedAgents2.has(dep))
+    ) {
+      status = 'pending';
+    } else {
+      status = 'waiting';
+    }
 
     return {
       id:            taskId,

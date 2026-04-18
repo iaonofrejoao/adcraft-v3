@@ -17,9 +17,10 @@ export interface Task {
 }
 
 export interface UseTasksReturn {
-  tasks: Task[]
-  isLoading: boolean
-  tasksByStatus: Record<string, Task[]>
+  tasks:          Task[]
+  isLoading:      boolean
+  tasksByStatus:  Record<string, Task[]>
+  deletePipeline: (pipelineId: string) => Promise<void>
 }
 
 export function useTasks(): UseTasksReturn {
@@ -72,5 +73,15 @@ export function useTasks(): UseTasksReturn {
     return acc
   }, {})
 
-  return { tasks, isLoading, tasksByStatus }
+  const deletePipeline = async (pipelineId: string) => {
+    await fetch(`/api/pipelines/${pipelineId}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ status: 'deleted' }),
+    })
+    // Remove todas as tasks do pipeline otimisticamente
+    setTasks((prev) => prev.filter((t) => t.pipeline_id !== pipelineId))
+  }
+
+  return { tasks, isLoading, tasksByStatus, deletePipeline }
 }

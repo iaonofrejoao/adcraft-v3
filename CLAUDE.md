@@ -17,7 +17,7 @@ Antes de criar ou editar qualquer componente de UI, leia:
 ## Estrutura do projeto
 - `frontend/`          → Next.js 14 App Router
 - `workers/`           → agentes Node.js (tsx --watch, hot reload ativo)
-- `workers/agents/`    → 7 agentes de IA (Claude + Gemini/Veo3)
+- `workers/agents/`    → 7 agentes de IA (Gemini default; Claude disponível como opção)
 - `workers/cron/`      → jobs periódicos (learning-aggregator-cron.ts)
 - `db/`                → migrations SQL Supabase (V2 em migrations/v2/)
 - `stitch/[tela]/`     → exports do Google Stitch (html, DESIGN.md, png)
@@ -27,7 +27,7 @@ Antes de criar ou editar qualquer componente de UI, leia:
 
 | Fase | Status | Resumo |
 |------|--------|--------|
-| A — Migração Claude | ✅ 100% | 6 agentes texto → Claude (Opus/Sonnet); Veo3 mantém Gemini |
+| A — Migração Claude | ↩️ revertido | Provider padrão revertido para Gemini (2.5-pro/flash); Claude mantido como opção |
 | B — Jarvis tool use | ✅ 95% | 11 tools, loop 25 rounds, SSE, prompt cache. Faltam: write tools + confirmação modal |
 | C — Tela Demandas | ✅ 80% | Lista + detalhe com timeline. Pendente: logs WebSocket em tempo real |
 | D — Tela Produto | ✅ 70% | 6 sub-abas funcionais. Pendente: diff de copy, score de viabilidade |
@@ -41,7 +41,7 @@ Antes de criar ou editar qualquer componente de UI, leia:
 | `frontend/lib/agent-registry.ts` | AGENT_REGISTRY, JARVIS_MODEL, GoalName, budgets |
 | `frontend/lib/jarvis/goals.ts` | Goals canônicos + comandos `/` (fonte única) |
 | `frontend/lib/jarvis/tool-registry.ts` | 11 tools do Jarvis (definições + executores) |
-| `frontend/lib/jarvis/claude-agent.ts` | Loop principal do Jarvis (tool use, SSE, cache) |
+| `frontend/lib/jarvis/claude-agent.ts` | Loop Jarvis via Claude (opção disponível; Gemini é default via chat/route.ts) |
 | `frontend/lib/jarvis/jarvis-system-prompt.ts` | System prompt do Jarvis |
 | `frontend/lib/jarvis/loadConversationHistory.ts` | Contexto multi-turn (últimas 50 msgs) |
 | `frontend/lib/schema/index.ts` | Schema Drizzle ORM (todas as tabelas) |
@@ -60,8 +60,10 @@ Antes de criar ou editar qualquer componente de UI, leia:
 - **Reaper de tasks:** tasks em `running` por > 10min → marcadas `failed` automaticamente
 - **Poll interval:** 5 segundos, `FOR UPDATE SKIP LOCKED` (evita race condition entre workers)
 - **Retry:** max 3 tentativas; BudgetExceededError é não-retriable
-- **Jarvis multi-turn:** últimas 50 mensagens carregadas como histórico Claude
-- **JARVIS_MODEL:** centralizado em `frontend/lib/agent-registry.ts` — nunca hardcodar
+- **Jarvis multi-turn:** últimas 50 mensagens carregadas como histórico (formato Gemini)
+- **JARVIS_MODEL:** centralizado em `frontend/lib/agent-registry.ts` — nunca hardcodar (default: gemini-2.5-flash)
+- **Provider padrão:** Gemini (2.5-pro para agentes críticos, 2.5-flash para secundários); Claude disponível via `claude-provider.ts`
+- **Roteamento de modelo:** `gemini-client.ts::callAgent()` roteia para Claude automaticamente se model.startsWith('claude-')
 - **Learning extractor:** dispara async pós-pipeline (não bloqueia o task-runner)
 - **Aggregator cron:** agendar externamente → `node workers/dist/cron/learning-aggregator-cron.js`
 - **Embeddings batch:** `batchEmbeddingsWorker()` em `workers/lib/embeddings/gemini-embeddings.ts`

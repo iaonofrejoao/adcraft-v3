@@ -1,8 +1,9 @@
 'use client'
+import { useState, useRef } from 'react'
 import {
   MoreHorizontal, RefreshCw, Eye, XCircle, Zap, CheckCircle2,
   Clock, AlertTriangle, Users, BarChart2, Lightbulb, FileText,
-  MousePointerClick, ShieldCheck, Film, BookOpen, Bot,
+  MousePointerClick, ShieldCheck, Film, BookOpen, Bot, Trash2,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -85,11 +86,33 @@ function formatRelative(iso: string): string {
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export interface TaskCardProps {
-  task: Task
-  onClick?: () => void
+  task:      Task
+  onClick?:  () => void
+  onDelete?: (pipelineId: string) => void
 }
 
-export function TaskCard({ task, onClick }: TaskCardProps) {
+export function TaskCard({ task, onClick, onDelete }: TaskCardProps) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function requestDelete() {
+    if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    setConfirmDelete(true)
+    confirmTimer.current = setTimeout(() => setConfirmDelete(false), 4000)
+  }
+
+  function cancelDelete(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    setConfirmDelete(false)
+  }
+
+  function confirmDeleteAction(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    setConfirmDelete(false)
+    onDelete?.(task.pipeline_id)
+  }
   const iconName = AGENT_ICONS[task.agent_name.replace(/_/g, '-')]
   const IconComp = iconName ? (LUCIDE_MAP[iconName] ?? Bot) : Bot
 
@@ -197,6 +220,30 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
         </div>
       </div>
 
+      {/* Confirm bar — aparece após clicar Excluir no dropdown */}
+      {confirmDelete && (
+        <div
+          className="absolute inset-x-0 bottom-0 rounded-b-xl bg-[rgba(248,113,113,0.12)] border-t border-[#F87171]/20 px-3 py-2 flex items-center justify-between"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="text-[11px] text-[#F87171]/80">Excluir demanda?</span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={cancelDelete}
+              className="text-[11px] text-[#9E9489] hover:text-[#E8E3DD] px-2 py-0.5 rounded transition-colors"
+            >
+              Não
+            </button>
+            <button
+              onClick={confirmDeleteAction}
+              className="text-[11px] font-medium text-[#F87171] bg-[rgba(248,113,113,0.15)] hover:bg-[rgba(248,113,113,0.25)] px-2 py-0.5 rounded border border-[#F87171]/30 transition-colors"
+            >
+              Sim, excluir
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Dropdown — aparece no hover */}
       <div
         className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
@@ -228,23 +275,34 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
               </DropdownMenuItem>
             )}
 
-            {(isFailed || isRunning) && (
-              <DropdownMenuSeparator className="bg-[#584237]/20" />
-            )}
-
             {isFailed && (
-              <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-[#2A2829] text-[#F87171] focus:text-[#F87171]">
-                <RefreshCw size={14} strokeWidth={1.5} />
-                Retentar pipeline
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuSeparator className="bg-[#584237]/20" />
+                <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-[#2A2829] text-[#F87171] focus:text-[#F87171]">
+                  <RefreshCw size={14} strokeWidth={1.5} />
+                  Retentar pipeline
+                </DropdownMenuItem>
+              </>
             )}
 
             {isRunning && (
-              <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-[#2A2829] text-[#F87171] focus:text-[#F87171]">
-                <XCircle size={14} strokeWidth={1.5} />
-                Cancelar
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuSeparator className="bg-[#584237]/20" />
+                <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-[#2A2829] text-[#F87171] focus:text-[#F87171]">
+                  <XCircle size={14} strokeWidth={1.5} />
+                  Cancelar
+                </DropdownMenuItem>
+              </>
             )}
+
+            <DropdownMenuSeparator className="bg-[#584237]/20" />
+            <DropdownMenuItem
+              className="gap-2 cursor-pointer focus:bg-[rgba(248,113,113,0.1)] text-[#9E9489] focus:text-[#F87171]"
+              onSelect={requestDelete}
+            >
+              <Trash2 size={14} strokeWidth={1.5} />
+              Excluir demanda
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

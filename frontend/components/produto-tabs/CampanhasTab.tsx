@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Megaphone, Target, Users, DollarSign, AlertTriangle, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -82,7 +82,7 @@ const PLATFORM_COLOR: Record<string, string> = {
 }
 
 /* ── Sub-components ─────────────────────────────────────────────────── */
-function MetricRow({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
+function MetricRow({ label, value, mono }: { label: string; value: ReactNode; mono?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-3 py-3 border-b border-white/5 last:border-0">
       <span className="text-[0.8125rem] text-on-surface-variant">{label}</span>

@@ -1,0 +1,115 @@
+{
+  "facebook_approved": false,
+  "google_approved": false,
+  "overall_approved": false,
+  "issues": [
+    {
+      "severity": "warning",
+      "element": "Hook",
+      "tag": "CITB_v1_H1",
+      "description": "Facebook proíbe linguagem que implique conhecimento de atributos pessoais do usuário. 'Seu corpo parou de responder' pressupõe estado físico pessoal.",
+      "suggestion": "Reformular para terceira pessoa: 'Depois dos 30, o corpo pode parar de responder — mesmo com treino e dieta.'"
+    },
+    {
+      "severity": "critical",
+      "element": "Hook",
+      "tag": "CITB_v1_H2",
+      "description": "Facebook Ads Policy (Personal Attributes): 'Suas células de gordura' é claim body-part específico dirigido diretamente ao usuário, violando a proibição de pressuposição de atributos pessoais em headlines. Risco alto de rejeição automática.",
+      "suggestion": "Remover pronome possessivo direto: 'Células de gordura resistentes. Por que termogênicos comuns não resolvem o problema.'"
+    },
+    {
+      "severity": "warning",
+      "element": "Hook",
+      "tag": "CITB_v1_H2",
+      "description": "Google Ads Healthcare Policy: claim comparativo implícito ('termogênicos comuns não resolvem') sem substantiação científica citada.",
+      "suggestion": "Suavizar: 'Por que muitos termogênicos podem não chegar ao problema real das células de gordura.'"
+    },
+    {
+      "severity": "warning",
+      "element": "Hook",
+      "tag": "CITB_v1_H2",
+      "description": "CONAR: 'Células de gordura ficaram surdas' é alegação pseudo-médica não reconhecida pela ANVISA como claim permitido para suplemento.",
+      "suggestion": "Usar terminologia funcional aprovada ou adicionar nota de uso metafórico."
+    },
+    {
+      "severity": "warning",
+      "element": "Hook",
+      "tag": "CITB_v1_H3",
+      "description": "Facebook: 'gordura da barriga que não sai por nada' é claim body-part específico; 'que ninguém te contou' adiciona linguagem sensacionalista, aumentando risco de rejeição.",
+      "suggestion": "Reformular: 'A gordura abdominal persistente pode ter uma causa pouco discutida — entenda o mecanismo.'"
+    },
+    {
+      "severity": "warning",
+      "element": "Hook",
+      "tag": "CITB_v1_H3",
+      "description": "CONAR: 'causa que ninguém te contou' pode ser interpretado como promessa de diagnóstico alternativo não reconhecido.",
+      "suggestion": "Substituir por: 'uma causa pouco conhecida' ou 'um fator metabólico frequentemente ignorado'."
+    },
+    {
+      "severity": "warning",
+      "element": "Body",
+      "tag": "CITB_v1_B1",
+      "description": "Facebook: 'Sem coração na boca, sem ansiedade, sem agitação' constitui claim de ausência de efeitos adversos comparativos, proibido pelas políticas de saúde do Facebook.",
+      "suggestion": "Reformular como diferencial de formulação: 'Formulado sem estimulantes do sistema nervoso central, como cafeína e sinefrina.'"
+    },
+    {
+      "severity": "warning",
+      "element": "Body",
+      "tag": "CITB_v1_B1",
+      "description": "Google Ads Healthcare Policy: 'pessoas relatam redução... mesmo sem mudar radicalmente a rotina' é claim implícito de resultado sem esforço, proibido.",
+      "suggestion": "Adicionar ressalva 'em combinação com alimentação equilibrada' ou remover 'mesmo sem mudar radicalmente a rotina'."
+    },
+    {
+      "severity": "critical",
+      "element": "Body",
+      "tag": "CITB_v1_B1",
+      "description": "ANVISA RDC 243/2018 e RDC 786/2023: 'pessoas relatam redução na circunferência abdominal mesmo sem mudar radicalmente a rotina' associa suplemento a resultado de emagrecimento sem exigência de dieta e exercício — violação direta das normas de alegações para suplementos alimentares.",
+      "suggestion": "Obrigatório adicionar disclaimer: 'Este produto não é um medicamento. Resultados associados a dieta equilibrada e atividade física regular. Consulte um profissional de saúde.'"
+    },
+    {
+      "severity": "critical",
+      "element": "Body",
+      "tag": "CITB_v1_B2",
+      "description": "Facebook Ads + Google Ads + CONAR: 'Patrícia, 38 anos' é personagem fictícia usada como depoimento em anúncio de produto de saúde. Viola FTC Endorsement Guidelines, Facebook Advertising Policies (Misleading Claims) e CONAR Art. 27/50. Risco crítico de banimento de conta.",
+      "suggestion": "Remover completamente o personagem fictício. Substituir por narrativa genérica. Se usar depoimento real, exigir documentação completa (nome, foto, consentimento, resultados verificáveis)."
+    },
+    {
+      "severity": "warning",
+      "element": "Body",
+      "tag": "CITB_v1_B3",
+      "description": "Google Ads Healthcare Policy: 'pessoas que tentaram tudo relatam ser a diferença que faltava' usa linguagem de last-resort/solução definitiva, proibida para suplementos.",
+      "suggestion": "Reformular: 'Pessoas que não tinham resultados com outros métodos relatam uma diferença ao incluir CitrusBurn na rotina.'"
+    },
+    {
+      "severity": "warning",
+      "element": "Body",
+      "tag": "CITB_v1_B3",
+      "description": "ANVISA: 'sensibilizar as células de gordura abdominal, tornando-as receptivas novamente aos sinais de queima naturais' é claim de mecanismo de ação fisiológico específico não aprovado pela ANVISA para suplemento alimentar.",
+      "suggestion": "Hedgear: 'Em estudos in vitro, compostos da Laranja Moro foram associados à modulação de receptores de adipócitos.'"
+    },
+    {
+      "severity": "warning",
+      "element": "CTA",
+      "tag": "CITB_v1_C1",
+      "description": "Facebook + Google + ANVISA: 'Desbloquear meu metabolismo' é claim funcional metabólico direto não padronizado pela ANVISA.",
+      "suggestion": "Substituir por: 'Conhecer o mecanismo do CitrusBurn' ou 'Quero entender como a Laranja Moro age no metabolismo'."
+    },
+    {
+      "severity": "warning",
+      "element": "CTA",
+      "tag": "CITB_v1_C2",
+      "description": "Facebook: 'minha gordura abdominal' é claim body-part específico em CTA dirigido ao usuário.",
+      "suggestion": "Reformular: 'Ver como a Laranja Moro pode ajudar na gordura abdominal persistente'."
+    },
+    {
+      "severity": "critical",
+      "element": "CTA",
+      "tag": "CITB_v1_C3",
+      "description": "ANVISA RDC 243/2018: 'sem estímulos que aceleram o coração' constitui claim de efeito cardiovascular (ausência de taquicardia) para suplemento alimentar — categoria completamente vedada. Também viola Google Ads Healthcare Policy (safety claim sem respaldo médico regulado).",
+      "suggestion": "Remover completamente o claim cardiovascular. Substituir por: 'Experimentar CitrusBurn — formulado sem cafeína e estimulantes adicionados'."
+    }
+  ],
+  "approved_components": ["CITB_v1_H1", "CITB_v1_B3"],
+  "rejected_components": ["CITB_v1_H2", "CITB_v1_B1", "CITB_v1_B2", "CITB_v1_C3"],
+  "compliance_notes": "4 componentes com issues críticos impedem aprovação geral. Issues críticos: (1) CITB_v1_H2 — personal attribute claim em headline Facebook; (2) CITB_v1_B1 — violação ANVISA RDC 243/2018 por associar emagrecimento a suplemento sem ressalva de dieta/exercício; (3) CITB_v1_B2 — depoimento fictício 'Patrícia, 38 anos' em categoria saúde, risco crítico de banimento de conta; (4) CITB_v1_C3 — claim cardiovascular vedado para suplementos pela ANVISA. Componentes H1, H3, B3, C1, C2 aprovados com warnings que devem ser corrigidos antes do lançamento em escala. Recomendação: revisão jurídica com especialista em ANVISA antes de veiculação no Brasil."
+}

@@ -1,0 +1,143 @@
+{
+  "campaign_objective": "conversao",
+  "primary_platform": "facebook",
+  "platform_rationale": "Avatar feminino 35-45 anos (Patricia) tem consumo massivo de Facebook e Instagram. O produto é emocional e de confiança — requer storytelling visual longo (video 60-90s) que o Meta Ads suporta melhor que TikTok para esta faixa etária. A dor de gordura abdominal e frustração pós-menopausa ressoa via feed e Reels. Facebook Ads domina conversão direta para suplementos ClickBank no BR com CPAs mais estáveis para público 35+.",
+  "secondary_platforms": [
+    {
+      "platform": "instagram",
+      "rationale": "Extensão natural do Meta Ads Manager — mesma campanha com criativos verticais para Reels e Stories. Alcança a mesma Patricia em contexto mais visual e aspiracional.",
+      "priority": 1
+    },
+    {
+      "platform": "youtube",
+      "rationale": "VSL longa (8-12 min) para consideração — avatar 35-45 usa YouTube para pesquisa de saúde. Funciona como warm traffic após exposição inicial no Meta.",
+      "priority": 2
+    }
+  ],
+  "policy_warnings": [
+    "ANVISA/Meta Health Policy: proibido prometer resultados específicos como perca X kg em Y dias — usar linguagem de suporte e bem-estar",
+    "Meta Ads: categoria de saúde proíbe imagens de antes/depois com alterações corporais exageradas nos criativos",
+    "ClickBank BR: produto precificado em USD — comunicar preço em BRL no criativo para evitar abandono no checkout por surpresa cambial",
+    "Proibido usar palavras como cure, trate ou elimine completamente em referência a condições médicas — usar apoie, contribua, auxilie",
+    "Depoimentos devem ter disclaimer: resultados individuais podem variar",
+    "Evitar claims sobre hormônios de forma médica — posicionar como comunicação celular natural, não terapia hormonal",
+    "CONAR BR: publicidade de suplementos não pode associar produto a diagnóstico ou tratamento de doenças",
+    "Garantia de 90 dias deve ser explicitamente comunicada no criativo para reduzir fricção e chargebacks"
+  ],
+  "budget_warnings": [
+    "Produto precificado em USD ($79) — câmbio afeta margem: recalcular CPA em BRL com câmbio do dia antes de escalar",
+    "Com 87 anúncios ativos no nicho, CPM tende a ser elevado (R$35-65) — monitorar frequência e renovar criativos a cada 10-14 dias",
+    "Budget de teste (fase 1) abaixo do ideal estatístico — aguardar 14+ dias de dados antes de tomar decisões de escala"
+  ],
+  "target_audiences": [
+    {
+      "name": "Mulheres 35-50 Saúde Hormonal Frio",
+      "platform": "facebook",
+      "targeting_type": "interest",
+      "funnel_stage": "awareness",
+      "description": "Público frio baseado em interesses de saúde feminina, emagrecimento e bem-estar para mulheres 35-50 em grandes centros urbanos brasileiros. Exclui quem já interagiu com a página ou realizou compra.",
+      "interests": [
+        "Emagrecimento",
+        "Saúde da mulher",
+        "Menopausa e saúde hormonal",
+        "Suplementos alimentares",
+        "Nutrição funcional",
+        "Atividade física feminina",
+        "Kimera Woman",
+        "Desinchamento e retenção de líquidos",
+        "Dieta low carb",
+        "Corpo em forma após os 40"
+      ],
+      "demographics": {
+        "age_min": 33,
+        "age_max": 52,
+        "gender": "female",
+        "locations": ["Brasil — capitais e regiões metropolitanas"],
+        "income_tier": "top_50_percent"
+      }
+    },
+    {
+      "name": "Lookalike Compradoras Suplementos Femininos",
+      "platform": "facebook",
+      "targeting_type": "lookalike",
+      "funnel_stage": "consideration",
+      "description": "LAL 1-3% baseado em lista de emails de compradores ou pixel de Purchase de campanhas anteriores de suplementos femininos. Quando não houver histórico suficiente, usar LAL de engajamento de vídeo (75%+) da fase awareness.",
+      "interests": [],
+      "demographics": {
+        "age_min": 30,
+        "age_max": 55,
+        "gender": "female",
+        "locations": ["Brasil"]
+      },
+      "seed_audience": "Pixel Purchase ou lista CRM de compradores — mínimo 500 eventos para LAL estável"
+    },
+    {
+      "name": "Retargeting Quente — Visitantes e Engajamento",
+      "platform": "facebook",
+      "targeting_type": "retargeting",
+      "funnel_stage": "conversion",
+      "description": "Segmento quente: visitantes da landing page nos últimos 14 dias que não compraram + quem assistiu 50%+ do vídeo de awareness + engajamento com posts da página nos últimos 30 dias. Mensagem de urgência com garantia 90 dias e zero risco.",
+      "interests": [],
+      "demographics": {
+        "age_min": 30,
+        "age_max": 55,
+        "gender": "female"
+      },
+      "exclusions": "Excluir pixel Purchase (já comprou)"
+    }
+  ],
+  "funnel_stages": {
+    "awareness": {
+      "budget_percent": 20,
+      "creative_type": "hook_video",
+      "objective": "video_views",
+      "kpi_target": "Hook rate >= 30% (3s/impressões); CPV <= R$0,15; VV 50% >= 25%",
+      "ad_formats": ["Reels vertical 9:16 de 60-90s", "Feed quadrado 1:1 de 60s"],
+      "copy_angle": "Hook Variante A — pergunta emocional: Depois dos 30, seu corpo simplesmente parou de responder?",
+      "recommended_daily_budget_brl": 100.0,
+      "notes": "Testar variantes A e B do hook nas primeiras 2 semanas. Otimizar para ThruPlay. Cortar variante com hook rate < 15% após 3 dias."
+    },
+    "consideration": {
+      "budget_percent": 30,
+      "creative_type": "social_proof",
+      "objective": "traffic",
+      "kpi_target": "CTR >= 1,5%; CPC <= R$3,50; Tempo médio na LP >= 45s",
+      "ad_formats": ["Carrossel com depoimentos", "Vídeo de prova social 30-45s", "Story com enquete"],
+      "copy_angle": "Validação científica + depoimentos de mulheres 35-45 + mecanismo Laranja Moro da Sicília explicado de forma acessível",
+      "recommended_daily_budget_brl": 150.0,
+      "notes": "Direcionar para artigo de blog ou VSL intermediária antes do checkout para aquecer tráfego frio."
+    },
+    "conversion": {
+      "budget_percent": 50,
+      "creative_type": "direct_offer",
+      "objective": "purchase",
+      "kpi_target": "CPA <= R$139; ROAS >= 2,5x; Taxa de conversão LP >= 3%",
+      "ad_formats": ["VSL longa 8-12min (YouTube/LP)", "Single image com oferta direta", "Vídeo UGC 60s com CTA direto"],
+      "copy_angle": "Oferta direta: garantia 90 dias + mecanismo único Moro + sem estimulantes + resultado sem ansiedade nem taquicardia",
+      "recommended_daily_budget_brl": 250.0,
+      "notes": "Usar pixel Purchase otimizado. Testar bid cap R$139 após 50+ eventos de Purchase acumulados no pixel."
+    }
+  },
+  "recommended_daily_budget_brl": 500.0,
+  "budget_calculation": "Margem real: R$348/venda (85% de $79 USD x câmbio ~R$5,20). CPA_target = R$348 x 40% = R$139. Budget mínimo estatístico = CPA x 3 = R$417/dia. Budget ideal = CPA x 5 = R$695/dia. Para fase de teste (dias 1-14), adotar R$300-500/dia para acumular dados sem queimar verba antes de otimização de pixel. Escalar para R$695/dia após CPA validado abaixo de R$139 com 20+ conversões acumuladas.",
+  "launch_sequence": [
+    "Dias 1-7 (Aquecimento de Pixel): Budget R$200/dia. Rodar apenas awareness com vídeo hook variante A e B em teste AB. Objetivo ThruPlay. Instalar pixel completo (PageView, InitiateCheckout, Purchase). Critério de corte: se hook rate < 15% em ambas as variantes após 3 dias, pausar e revisar abertura do vídeo.",
+    "Dias 8-14 (Validação de CPA): Budget R$350/dia — 40% awareness, 60% conversão direta com retargeting dos espectadores de vídeo. Introduzir público frio de interesses direto para Purchase. Critério de corte: se CPA > R$280 (2x target) após 7 dias com 10+ conversões, pausar e revisar LP e oferta. Se CPA entre R$139-280, manter e otimizar criativos.",
+    "Dias 15-28 (Escala Controlada): Budget R$500-695/dia. Ativar os 3 estágios do funil completo. Criar LAL 1% baseado em compradores. Testar VSL longa no YouTube para warm traffic. Critério de escala: aumentar budget 20% a cada 3 dias se CPA <= R$139 e ROAS >= 2,5x. Critério de pausa: frequência > 3,5 no público frio indica necessidade de novos criativos.",
+    "Semana 4+ (Otimização e Consolidação): Budget sustentável R$695/dia. Manter 3 campanhas ativas: awareness (LAL frio), consideration (LAL morno + interesses), conversion (retargeting 14 dias + broad com bid cap R$139). Renovar criativos a cada 14 dias para evitar fadiga criativa. Meta: CPA sustentado abaixo de R$120 com escala de R$1.000/dia em 60 dias."
+  ],
+  "kpis": {
+    "target_cpa_brl": 139.0,
+    "target_roas": 2.5,
+    "target_ctr_percent": 1.5,
+    "target_hook_rate_percent": 30.0,
+    "max_cpm_brl": 65.0,
+    "max_cpc_brl": 3.5,
+    "min_conversion_rate_lp_percent": 3.0,
+    "target_vv50_percent": 25.0,
+    "max_frequency_before_creative_refresh": 3.5,
+    "target_monthly_revenue_brl": 34800.0,
+    "notes": "Revenue target baseado em 100 vendas/mês x R$348 margem. Com budget R$500/dia (R$15.000/mês) e CPA R$139, expectativa de 108 vendas/mês e lucro líquido de aproximadamente R$19.800/mês."
+  },
+  "angle_to_use": "Ângulo Primário: O Desbloqueio Metabólico — células de gordura ficam surdas aos sinais de queima após os 35. Hook Variante A selecionada: pergunta emocional que valida a experiência da Patricia antes de apresentar o mecanismo (Laranja Moro da Sicília). Narrativa em 4 atos: (1) validar a dor — você não é preguiçosa, suas células estão bloqueadas; (2) revelar o vilão — termogênicos com estimulantes pioraram o problema; (3) apresentar solução única — Moro religa a comunicação hormonal sem ansiedade; (4) prova e garantia 90 dias sem risco."
+}

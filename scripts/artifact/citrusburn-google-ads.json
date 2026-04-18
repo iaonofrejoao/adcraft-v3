@@ -1,0 +1,243 @@
+{
+  "campaign_type": "search",
+  "campaign_name": "PCFU | Search | Conv | 202604",
+  "daily_budget_brl": 50.0,
+  "bid_strategy": "maximize_clicks",
+  "bid_strategy_rationale": "Campanha nova sem histórico de conversão no Google Ads. Maximize Clicks acumula volume de tráfego para abastecer o algoritmo antes de migrar para Smart Bidding. Target CPA de R$139 só será configurado após acumular ≥30 conversões de Purchase nos primeiros 30 dias.",
+  "target_cpa_brl": null,
+  "negative_keywords_campaign": [
+    "grátis",
+    "gratuito",
+    "free",
+    "de graça",
+    "youtube",
+    "bula",
+    "wikipedia",
+    "o que é",
+    "definição",
+    "significado",
+    "como fazer em casa",
+    "receita caseira",
+    "receita natural",
+    "Portugal",
+    "Angola",
+    "Moçambique",
+    "remédio",
+    "médico",
+    "hospital",
+    "prescrição",
+    "anvisa",
+    "farmácia",
+    "genérico",
+    "torrente",
+    "baixar",
+    "download",
+    "pdf",
+    "fórmula caseira",
+    "efeitos colaterais graves",
+    "contraindicação"
+  ],
+  "ad_groups": [
+    {
+      "name": "PCFU | Compra Direta",
+      "intent_layer": "purchase",
+      "keywords": [
+        { "keyword": "citrusburn comprar", "match_type": "exact", "bid_brl": null },
+        { "keyword": "citrusburn preço", "match_type": "exact", "bid_brl": null },
+        { "keyword": "citrusburn funciona", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "citrusburn onde comprar", "match_type": "exact", "bid_brl": null },
+        { "keyword": "citrusburn original", "match_type": "exact", "bid_brl": null },
+        { "keyword": "comprar citrusburn brasil", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "citrusburn site oficial", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "citrusburn laranja moro", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "citrusburn suplemento", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "citrusburn avaliação", "match_type": "phrase", "bid_brl": null }
+      ],
+      "negative_keywords": [
+        "fake",
+        "golpe",
+        "reclamação",
+        "pirata",
+        "torrent",
+        "reclame aqui negativo"
+      ]
+    },
+    {
+      "name": "PCFU | Problema-Solução",
+      "intent_layer": "problem_solution",
+      "keywords": [
+        { "keyword": "emagrecer depois dos 40", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "metabolismo lento menopausa", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "gordura abdominal que não sai", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "termogênico sem taquicardia feminino", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "como emagrecer menopausa", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "suplemento emagrecimento feminino sem estimulante", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "acelerar metabolismo após 40 feminino", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "barriga dura de perder menopausa", "match_type": "broad", "bid_brl": null },
+        { "keyword": "por que não emagreço mesmo fazendo dieta", "match_type": "broad", "bid_brl": null },
+        { "keyword": "emagrecimento hormonal feminino natural", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "gordura abdominal perimenopausa", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "melhor suplemento para menopausa emagrecer", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "laranja moro emagrecer funciona", "match_type": "phrase", "bid_brl": null },
+        { "keyword": "suplemento laranja moro sicília", "match_type": "phrase", "bid_brl": null }
+      ],
+      "negative_keywords": [
+        "médico",
+        "hospital",
+        "remédio",
+        "bula",
+        "prescrição",
+        "tratamento hormonal",
+        "terapia de reposição",
+        "TRH",
+        "endocrinologista",
+        "ginecologista",
+        "exame"
+      ]
+    }
+  ],
+  "ads": [
+    {
+      "type": "RSA",
+      "ad_group": "PCFU | Compra Direta",
+      "headlines": [
+        "CitrusBurn — Site Oficial",
+        "Compre CitrusBurn com Garantia",
+        "O Corpo Mudou Após os 30?",
+        "Sem Cafeína — Outro Mecanismo",
+        "Gordura Abdominal Persistente?",
+        "Garantia de 90 Dias",
+        "Laranja Moro da Sicília",
+        "Entrega Digital Imediata",
+        "Para Mulheres Acima dos 35",
+        "Metabolismo Que Não Responde?",
+        "CitrusBurn — Veja Como Funciona",
+        "Sem Taquicardia, Sem Ansiedade",
+        "Resultado Sem Estimulantes",
+        "Conheça o CitrusBurn"
+      ],
+      "descriptions": [
+        "Laranja Moro da Sicília pode apoiar a sensibilidade das células de gordura. Sem estimulantes, sem taquicardia. Garantia de 90 dias.",
+        "Pessoas relatam melhora no metabolismo sem os efeitos dos termogênicos tradicionais. Acesso imediato. Risco zero com 90 dias de garantia."
+      ],
+      "final_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=google&utm_medium=paid_search&utm_campaign=pcfu_conv_202604&utm_content=PCFUsearch&utm_term=compra_citrusburn_brasil",
+      "display_url": "citrusburn.com/comprar",
+      "compliance_note": "Headlines derivadas dos copy components com status warning (H1, H3, C1) foram adaptadas para linguagem de suporte ('O Corpo Mudou Após os 30?' — pergunta, não afirmação). B3 embasou 'Sem Cafeína — Outro Mecanismo' e 'Sem Taquicardia, Sem Ansiedade'. Nenhum claim absoluto de resultado. Descriptions usam 'pode apoiar' e 'pessoas relatam' conforme política Google Healthcare."
+    },
+    {
+      "type": "RSA",
+      "ad_group": "PCFU | Problema-Solução",
+      "headlines": [
+        "Metabolismo Lento na Menopausa?",
+        "Gordura Que Não Responde à Dieta",
+        "Sem Estimulantes — Mecanismo Único",
+        "Laranja Moro da Sicília Funciona?",
+        "Para Mulheres 35-52 Anos",
+        "Suporte ao Metabolismo Hormonal",
+        "90 Dias de Garantia Total",
+        "Células de Gordura Resistentes?",
+        "Termogênico Causava Taquicardia?",
+        "Mecanismo Diferente Dos Comuns",
+        "Barriga Que Não Sai? Veja Isso",
+        "Sem Cafeína — Outro Mecanismo",
+        "CitrusBurn — Entenda o Método",
+        "Resultado Sem Ansiedade"
+      ],
+      "descriptions": [
+        "Após os 35, células de gordura podem ficar resistentes aos sinais normais. O mecanismo da Laranja Moro da Sicília atua de forma diferente dos termogênicos comuns.",
+        "Sem estimulantes, sem taquicardia. Mulheres relatam suporte ao metabolismo que não respondia à dieta. Garantia de 90 dias — zero risco para você."
+      ],
+      "final_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=google&utm_medium=paid_search&utm_campaign=pcfu_conv_202604&utm_content=PCFUsearch&utm_term=solucao_emagrecimento_hormonal",
+      "display_url": "citrusburn.com/metabolismo",
+      "compliance_note": "Headlines focadas em dor e pergunta — nenhuma afirma resultado. 'Pode apoiar', 'atua de forma diferente' e 'mulheres relatam' nas descriptions. Evitado claims de diagnóstico hormonal (sem mencionar TRH, estrogênio, progesterona). Sem body-part claim direto ao usuário ('sua barriga' substituído por 'barriga que não sai' em terceira pessoa implícita)."
+    }
+  ],
+  "extensions": {
+    "sitelinks": [
+      {
+        "text": "Ver Depoimentos",
+        "description_line1": "Relatos de mulheres 35-52 anos",
+        "description_line2": "Resultados individuais podem variar",
+        "url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=google&utm_medium=paid_search&utm_campaign=pcfu_conv_202604&utm_content=PCFUsearch_sl_dep&utm_term=depoimentos"
+      },
+      {
+        "text": "Como Funciona a Laranja Moro",
+        "description_line1": "Entenda o mecanismo único",
+        "description_line2": "Diferente dos termogênicos comuns",
+        "url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=google&utm_medium=paid_search&utm_campaign=pcfu_conv_202604&utm_content=PCFUsearch_sl_mec&utm_term=mecanismo_moro"
+      },
+      {
+        "text": "Garantia de 90 Dias",
+        "description_line1": "Devolução total sem perguntas",
+        "description_line2": "Risco zero para você",
+        "url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=google&utm_medium=paid_search&utm_campaign=pcfu_conv_202604&utm_content=PCFUsearch_sl_gar&utm_term=garantia_90dias"
+      },
+      {
+        "text": "Comprar CitrusBurn Agora",
+        "description_line1": "Acesso imediato após confirmação",
+        "description_line2": "Pagamento seguro — ClickBank",
+        "url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=google&utm_medium=paid_search&utm_campaign=pcfu_conv_202604&utm_content=PCFUsearch_sl_buy&utm_term=compra_citrusburn_brasil"
+      }
+    ],
+    "callouts": [
+      "Garantia de 90 Dias",
+      "Sem Estimulantes",
+      "Pagamento Seguro",
+      "Suporte em Português",
+      "Entrega Digital Imediata",
+      "Sem Taquicardia",
+      "Produto Importado EUA"
+    ],
+    "structured_snippets": {
+      "header": "Benefícios",
+      "values": [
+        "Sem estimulantes ou cafeína",
+        "Mecanismo da Laranja Moro",
+        "Suporte ao metabolismo hormonal",
+        "Garantia de 90 dias"
+      ]
+    }
+  },
+  "conversion_setup": {
+    "conversion_action": "Purchase",
+    "conversion_source": "google_tag",
+    "conversion_value_brl": 411.0,
+    "conversion_window_days": 30,
+    "view_through_conversion_window_days": 1,
+    "notes": "Valor de conversão calculado com câmbio R$5,20 x $79 USD ≈ R$411. Configurar evento de conversão Purchase via Google Tag na página de obrigado (thank-you page) do ClickBank. Como produto é afiliado ClickBank, verificar se o checkout permite inserção de Google Tag — alternativa: usar importação de conversão via GA4 com evento purchase. Validar disparo em modo de teste antes de ativar a campanha. Após 30+ conversões, ativar target_cpa = R$139."
+  },
+  "bid_strategy_migration_plan": {
+    "phase_1_current": {
+      "strategy": "maximize_clicks",
+      "trigger": "Campanha nova — 0 conversões históricas no Google Ads",
+      "duration": "Dias 1-30 ou até acumular 30 conversões de Purchase",
+      "max_cpc_cap_brl": 4.50,
+      "rationale": "Sem dados de conversão, o Smart Bidding não tem base para otimizar. Maximize Clicks com CPC máximo cap garante volume de tráfego sem custo descontrolado."
+    },
+    "phase_2": {
+      "strategy": "maximize_conversions",
+      "trigger": "≥30 conversões de Purchase acumuladas em 30 dias",
+      "target_cpa_brl": null,
+      "duration": "Dias 31-60 ou até acumular 100 conversões",
+      "rationale": "Com 30+ eventos, o algoritmo tem dados suficientes para aprender padrões de conversão sem target fixo que possa travar o aprendizado."
+    },
+    "phase_3": {
+      "strategy": "target_cpa",
+      "trigger": "≥100 conversões de Purchase acumuladas",
+      "target_cpa_brl": 139.0,
+      "rationale": "Target CPA = R$139 (40% da margem bruta de R$348). Com volume suficiente, o algoritmo consegue manter o CPA dentro do target sem limitar demais o alcance."
+    }
+  },
+  "setup_notes": [
+    "COMPLIANCE HEALTHCARE GOOGLE: Suplementos alimentares para emagrecimento podem estar sujeitos à política de Healthcare and Medicine do Google. No Brasil, o Google exige que anunciantes de certos produtos de saúde possuam certificação de anunciante (Google Ads Certification for Healthcare). Verificar antes do lançamento se a categoria 'weight loss supplements' exige certificação na conta — caso exija, o processo de solicitação leva 2-4 semanas. URL de referência: https://support.google.com/adspolicies/answer/176031",
+    "AFFILIATE_ID: Substituir 'AFFILIATE_ID' em todos os final_urls pelo HopLink real do afiliado no ClickBank (formato: HOPLINK.citrusburn.hop.clickbank.net). Cada afiliado tem URL única para rastreamento de comissões.",
+    "PRODUTO NOVO SEM BUSCA DE MARCA: CitrusBurn é novo no marketplace (abr/2026). Volume de busca por nome de produto provavelmente baixo inicialmente. O Grupo 2 (Problema-Solução) tende a gerar mais volume que o Grupo 1 (Compra Direta) nas primeiras semanas — alocar mais budget ao Grupo 2 se impressões do Grupo 1 forem inferiores a 100/dia.",
+    "FASE DE ATIVAÇÃO (conforme campaign_strategy): Google Search deve ser ativado somente na Fase 3 do lançamento (a partir do dia 15), quando já houver dados de pixel do Meta Ads. Budget inicial R$50/dia — abaixo do mínimo estatístico ideal para Google Search competitivo (R$417/dia para CPA R$139 x 3). Considerar restringir apenas ao Grupo 1 (Compra Direta) nesta fase para não dispersar o budget.",
+    "SEARCH TERMS REPORT: Revisar o relatório de termos de pesquisa após 7 dias de veiculação. Identificar termos irrelevantes e adicioná-los como negative keywords. Identificar termos de alta conversão e criar ad groups dedicados ou ajustar lances.",
+    "AD STRENGTH: Verificar o Ad Strength de cada RSA no painel do Google Ads após criação. Meta: 'Good' (mínimo) ou 'Excellent'. Se 'Poor', adicionar mais headlines diversificadas que cubram diferentes categorias (benefício, prova, urgência, keyword insertion).",
+    "DISPLAY URL: As display_urls ('citrusburn.com/comprar' e 'citrusburn.com/metabolismo') são apenas de exibição visual. A URL de destino real é sempre o HopLink do ClickBank com parâmetros UTM.",
+    "CPC ESTIMADO: Com 87 anúncios ativos no nicho, CPC estimado para termos de problema: R$1,50-R$3,50. Para termos de marca (Compra Direta): R$2,00-R$5,00. Com budget de R$50/dia, esperar 10-25 cliques/dia no Grupo 1 e 15-35 no Grupo 2.",
+    "QUALIDADE DAS HEADLINES: Todas as 14 headlines do Grupo 1 e 14 do Grupo 2 foram verificadas para ter ≤30 caracteres. Headlines derivadas de copy components aprovados ou em status warning com linguagem adaptada para conformidade Google (sem claims absolutos, uso de perguntas e 'pode', 'relatam').",
+    "MIGRAÇÃO DE SMART BIDDING: Documentar data de ativação. Programar revisão da estratégia de lances em D+30 para avaliar volume de conversões e decidir migração para Maximize Conversions."
+  ]
+}

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -132,7 +133,8 @@ export function PipelineTable({
   return (
     <div className="flex flex-col h-full">
       {/* Tabela */}
-      <div className="flex-1 overflow-x-auto px-6">
+      <ScrollArea className="flex-1" scrollbars="horizontal">
+        <div className="px-6">
         <table className="w-full min-w-[800px] text-[13px]">
           <thead>
             <tr className="border-b border-outline-variant/10">
@@ -286,7 +288,8 @@ export function PipelineTable({
             ))}
           </tbody>
         </table>
-      </div>
+        </div>
+      </ScrollArea>
 
       {/* Paginação */}
       {totalPages > 1 && (

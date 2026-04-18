@@ -9,6 +9,7 @@ import {
 } from '@/components/detalhes-produto'
 import type { Product } from '@/components/detalhes-produto'
 import { VSLUpload } from '@/components/products/VSLUpload'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface ProductWithVSL extends Product {
   vsl_url?: string | null
@@ -49,10 +50,11 @@ export default function VSLPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-surface overflow-y-auto">
+    <ScrollArea className="h-full bg-surface">
+      <div className="flex flex-col">
       <ProductDetailHeader product={product} sku={sku!} />
 
-      <section className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-7 pb-12">
+      <section className="w-full max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-7 pb-12">
 
         {/* Header da seção */}
         <div className="flex items-center gap-3 mb-6">
@@ -101,6 +103,7 @@ export default function VSLPage() {
         </div>
 
       </section>
-    </div>
+      </div>
+    </ScrollArea>
   )
 }

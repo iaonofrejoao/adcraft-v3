@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -99,7 +100,8 @@ function ComponenteModal({
         </DialogHeader>
 
         {/* Content */}
-        <div className="px-5 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+        <ScrollArea className="max-h-[60vh]">
+        <div className="px-5 py-4 space-y-4">
           {/* Copy text */}
           <p className={cn(
             'text-[0.9375rem] leading-relaxed break-words',
@@ -138,6 +140,7 @@ function ComponenteModal({
             </div>
           )}
         </div>
+        </ScrollArea>
 
         {/* Footer actions */}
         <div className="flex items-center gap-3 px-5 py-4 border-t border-white/5 bg-surface-highest/40">

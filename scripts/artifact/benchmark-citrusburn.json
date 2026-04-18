@@ -1,0 +1,200 @@
+{
+  "competitors": [
+    {
+      "name": "Seca Garota",
+      "product_name": "Seca Garota® Drink Termogênico",
+      "website": "https://secagarota.com.br",
+      "estimated_ads_count": 15,
+      "ads_active_since": "2024-06",
+      "primary_angle": "dor",
+      "price_range": "R$167 a R$397",
+      "offer_structure": {
+        "price": "R$297 (kit 2 potes — mais popular)",
+        "bonuses": ["Frete grátis via correio"],
+        "guarantee": "data_unavailable",
+        "payment_options": "12x sem juros"
+      },
+      "social_proof_type": "antes_depois",
+      "strengths": [
+        "Produto em pó (drink) — formato diferenciado dos concorrentes em cápsula",
+        "Posicionamento em desinflame intestinal + queima gordura localizada (ângulo duplo)",
+        "Afirmação de 90% de clientes com resultados visíveis em 3 dias — alto impacto na conversão",
+        "Plataforma B4You com rede de 100k+ criadores afiliados gerando volume de tráfego",
+        "Fórmula sem açúcar, glúten e lactose — apela a consumidoras com restrições"
+      ],
+      "weaknesses": [
+        "Produto em pó pode ser inconveniente para uso fora de casa vs. cápsula",
+        "Ingrediente principal (inulina, FOS, laranja amarga) sem mecanismo hormonal feminino específico",
+        "Reclamação documentada de produto solidificando dentro da embalagem (problema de qualidade)",
+        "Sem posicionamento para mulheres acima de 40 anos — comunicação genérica",
+        "Ausência de ingrediente com estudo clínico certificado (sem selo Morosil ou similar)"
+      ],
+      "ad_examples": ["https://www.facebook.com/61583955141416/videos/clique-aqui-para-saber-como-/2069803827122719/"],
+      "source": "landing_page"
+    },
+    {
+      "name": "Iridium Labs",
+      "product_name": "Kimera Woman",
+      "website": "https://www.iridiumlabs.com.br/products/kimera-woman-60-caps",
+      "estimated_ads_count": 25,
+      "ads_active_since": "2019-01",
+      "primary_angle": "transformação",
+      "price_range": "R$60 a R$90",
+      "offer_structure": {
+        "price": "R$74,99 (1 pote — 60 caps)",
+        "bonuses": [],
+        "guarantee": "data_unavailable",
+        "payment_options": "Parcelamento disponível"
+      },
+      "social_proof_type": "depoimentos_texto",
+      "strengths": [
+        "Marca consolidada com distribuição nacional em grandes redes (Amazon, Mercado Livre, lojas físicas)",
+        "Alta nota: 4.9 estrelas com 173 reviews na loja oficial",
+        "Posicionamento exclusivo para mulheres com ingredientes como safflower oil e grape seed oil",
+        "Ticket baixo (R$74,99) — menor barreira de entrada para testar",
+        "Marca com histórico de mais de 6 anos no mercado feminino"
+      ],
+      "weaknesses": [
+        "Múltiplas reclamações documentadas de efeitos adversos: tontura, cólica, vômito, mal-estar",
+        "Reclamação de reação adversa severa após uso — risco reputacional ativo",
+        "200mg de cafeína por dose causa taquicardia e ansiedade em mulheres acima de 40 anos",
+        "Sem posicionamento hormonal — comunicação genérica de termogênico",
+        "Reclamações de reformulação da fórmula sem aviso ao consumidor",
+        "Não funciona para metabolismo hormonal pós-menopausa — posicionamento fora do nicho"
+      ],
+      "ad_examples": ["https://www.iridiumlabs.com.br/products/kimera-woman-60-caps"],
+      "source": "landing_page"
+    },
+    {
+      "name": "Equaliv",
+      "product_name": "Moro Skinny",
+      "website": "https://www.lojaequaliv.com.br/moro-skinny---60-capsulas/p",
+      "estimated_ads_count": 8,
+      "ads_active_since": "2023-06",
+      "primary_angle": "autoridade",
+      "price_range": "R$100 a R$130",
+      "offer_structure": {
+        "price": "R$119,90 (1 pote — 60 caps)",
+        "bonuses": ["Frete grátis acima de R$249 (Sul e Sudeste)"],
+        "guarantee": "data_unavailable",
+        "payment_options": "2x sem juros"
+      },
+      "social_proof_type": "certificações",
+      "strengths": [
+        "Ingrediente ativo certificado Morosil® com estudos clínicos publicados",
+        "Mesmo mecanismo de laranja moro do CitrusBurn — valida o ingrediente ativo",
+        "Posicionamento científico coerente (A ciência que performa)",
+        "Fórmula vegana, sem glúten — apela a consumidoras conscientes"
+      ],
+      "weaknesses": [
+        "Sem posicionamento para mulheres acima de 40 anos ou foco hormonal feminino",
+        "Garantia não explicitada — desvantagem competitiva em conversão",
+        "Parcelamento máximo 2x — barreira de entrada alta para ticket R$120",
+        "Distribuição principalmente em drogarias — menor alcance de afiliados",
+        "Comunicação fria e técnica — baixo apelo emocional nos criativos"
+      ],
+      "ad_examples": ["https://www.lojaequaliv.com.br/moro-skinny---60-capsulas/p"],
+      "source": "landing_page"
+    },
+    {
+      "name": "Botica Alternativa",
+      "product_name": "Fit Femme",
+      "website": "https://boticaalternativa.com.br/produto/fit-femme-emagrecedor-para-mulheres-na-menopausa-60-doses/",
+      "estimated_ads_count": 3,
+      "ads_active_since": "2023-01",
+      "primary_angle": "dor",
+      "price_range": "R$80 a R$100",
+      "offer_structure": {
+        "price": "R$84,70 (1 embalagem — 60 doses)",
+        "bonuses": [],
+        "guarantee": "data_unavailable",
+        "payment_options": "data_unavailable"
+      },
+      "social_proof_type": "depoimentos_texto",
+      "strengths": [
+        "Único concorrente que menciona explicitamente MENOPAUSA na comunicação",
+        "Ingrediente Cimicífuga (regulador hormonal de estrogênio) — diferenciado",
+        "Inclui Citrus Sinensis + Cromo Picolinato + Magnésio — fórmula alinhada ao nicho hormonal",
+        "Posicionamento natural e seguro — apelo à ansiedade por efeitos colaterais de termogênicos"
+      ],
+      "weaknesses": [
+        "Farmácia de manipulação — percepção de baixa escala vs. marca nacional",
+        "Ausência de garantia explícita — barreira de conversão",
+        "Sem mecanismo único narrativo — comunicação técnica sem storytelling",
+        "Sem prova social forte (antes/depois, influencer, médico) — baixa persuasão",
+        "Ticket por dose alto sem justificativa clara de valor"
+      ],
+      "ad_examples": ["https://boticaalternativa.com.br/produto/fit-femme-emagrecedor-para-mulheres-na-menopausa-60-doses/"],
+      "source": "landing_page"
+    },
+    {
+      "name": "Nutrex Research",
+      "product_name": "Lipo-6 Black Hers Ultra Concentrate",
+      "website": "https://www.lipo6.black",
+      "estimated_ads_count": 20,
+      "ads_active_since": "2018-01",
+      "primary_angle": "transformação",
+      "price_range": "R$80 a R$180",
+      "offer_structure": {
+        "price": "R$90 a R$130 (varia por revendedor)",
+        "bonuses": [],
+        "guarantee": "data_unavailable",
+        "payment_options": "Varia por revendedor"
+      },
+      "social_proof_type": "certificações",
+      "strengths": [
+        "Marca americana com credibilidade internacional",
+        "Posicionamento premium — fórmula importada justifica preço maior",
+        "Ampla distribuição nacional em lojas físicas e e-commerce",
+        "Alta concentração de ativos — percepção de potência"
+      ],
+      "weaknesses": [
+        "Produto importado — preço alto e dependência de câmbio",
+        "Alta dose de estimulantes — efeitos colaterais documentados em mulheres 40+",
+        "Posicionamento fitness/academia — não atinge mulheres sedentárias acima de 40 anos",
+        "Comunicação em inglês/traduzida — menos autêntica para o mercado brasileiro",
+        "Sem abordagem hormonal feminina — genérico como queimador de gordura"
+      ],
+      "ad_examples": ["https://www.lipo6.black/"],
+      "source": "landing_page"
+    }
+  ],
+  "market_gaps": [
+    "Nenhum concorrente usa o mecanismo de resistência hormonal celular como ângulo principal — apenas Fit Femme toca tangencialmente em menopausa, mas sem narrativa de mecanismo único",
+    "Mulheres 40-55 anos que já usaram termogênicos e sofreram ansiedade/taquicardia são público órfão — nenhuma marca comunica diretamente para quem NÃO pode usar estimulantes",
+    "Laranja Moro (Morosil) é ingrediente ativo com estudos clínicos mas nenhum concorrente o posiciona como mecanismo hormonal da Sicília com storytelling emocional — apenas como ingrediente técnico",
+    "Não há produto de ticket ~R$79 com garantia 30+ dias, bônus digitais e posicionamento exclusivo mulher 40+ sem estimulantes no canal afiliado ClickBank — espaço aberto nessa combinação",
+    "Ângulo de confiança médica (ginecologista, endocrinologista) não explorado por nenhuma marca no nicho — 100% do mercado usa depoimentos de consumidoras, nenhum usa autoridade médica especializada em hormônios femininos"
+  ],
+  "winning_angles_in_market": [
+    "Gordura localizada/abdominal como problema específico e emocional — Seca Garota e FeminyX lideram com esse ângulo, gerando identificação imediata no criativo",
+    "Intestino/inflamação como vilão oculto — Seca Garota usa ângulo de desinflame intestinal com alta tração em vídeo (VSL), evidenciado pela presença ativa na Meta",
+    "Antes/depois visual — todas as marcas com mais anúncios usam prova social fotográfica como elemento central do criativo",
+    "Bebida/drink como formato lifestyle — Seca Garota diferencia com drink rosa (identidade visual forte para redes sociais)",
+    "Efeito rápido prometido (3 dias, 21 dias, 30 dias) — urgência de resultado curto converte melhor que promessa de longo prazo"
+  ],
+  "differentiation_opportunities": [
+    "Posicionar o CitrusBurn como o ÚNICO suplemento sem estimulantes para mulheres acima de 40 que já fracassaram com termogênicos — explorar o trauma de taquicardia/ansiedade como gancho de abertura de VSL",
+    "Usar a origem geográfica da laranja moro (Sicília, Itália) como elemento de credibilidade e exotismo — storytelling que nenhum concorrente explora apesar de alguns usarem o mesmo ingrediente",
+    "Criar ângulo de resistência hormonal celular (gordura que não escuta os hormônios) — mecanismo novo que explica por que dieta e exercício falham especificamente após os 40 anos",
+    "Garantia de 60-90 dias explícita na comunicação — diferencial contra concorrentes que omitem garantia ou oferecem prazos menores",
+    "Bônus digitais de valor percebido alto (guia nutricional hormonal, planner de jejum, acesso a grupo) — aumenta ticket percebido sem aumentar custo de produção, modelo validado por ClickBank"
+  ],
+  "dominant_player": "Iridium Labs (Kimera Woman)",
+  "market_maturity": "maduro",
+  "data_sources": [
+    "https://secagarota.com.br",
+    "https://www.iridiumlabs.com.br/products/kimera-woman-60-caps",
+    "https://www.lojaequaliv.com.br/moro-skinny---60-capsulas/p",
+    "https://boticaalternativa.com.br/produto/fit-femme-emagrecedor-para-mulheres-na-menopausa-60-doses/",
+    "https://www.lipo6.black",
+    "https://www.reclameaqui.com.br/iridium-labs/kimera-woman-me-fez-mal_CNCb3B8ls9Ph1ji9/",
+    "https://www.reclameaqui.com.br/iridium-labs/reacao-adversa-severa-apos-uso-de-kimera-woman_M4PR1q_qwZSh9tUe/",
+    "https://www.reclameaqui.com.br/empresa/feminyx/",
+    "https://www.tiktok.com/discover/seca-garota-suplemento-como-se-afiliar-na-b4you",
+    "https://www.reclameaqui.com.br/lbx-suplementos-ltda/suplemento-saca-garota-pink-lemonade-endurece-e-se-torna-inutilizavel-apos-poucos-dias-de-uso-apesar-de-estar-dentro-da-validade_wa9LrY-tCV9hs61U/",
+    "https://nutritotal.com.br/pro/qual-a-relacao-entre-a-laranja-moro-e-o-emagrecimento/",
+    "https://www.rbne.com.br/index.php/rbne/article/view/2504",
+    "https://guiaomelhor.com.br/melhor-suplemento-para-emagrecer-na-menopausa"
+  ]
+}

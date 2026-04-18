@@ -13,6 +13,7 @@ import {
   AngulosTabEmpty,
 } from '@/components/produto-tabs/AngulosTab'
 import type { AngulosArtifactData } from '@/components/produto-tabs/AngulosTab'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { useProductKnowledge } from '@/hooks/useProductKnowledge'
 
 export default function AngulosPage() {
@@ -42,22 +43,24 @@ export default function AngulosPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-surface overflow-y-auto">
-      <ProductDetailHeader product={product} sku={sku!} />
+    <ScrollArea className="h-full bg-surface">
+      <div className="flex flex-col">
+        <ProductDetailHeader product={product} sku={sku!} />
 
-      <section className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-7 pb-12">
-        {loadingKnowledge ? (
-          <AngulosTabSkeleton />
-        ) : !knowledge ? (
-          <AngulosTabEmpty sku={sku!} />
-        ) : (
-          <AngulosTab
-            data={knowledge.artifact_data as unknown as AngulosArtifactData}
-            createdAt={knowledge.created_at}
-            sku={sku!}
-          />
-        )}
-      </section>
-    </div>
+        <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-7 pb-12">
+          {loadingKnowledge ? (
+            <AngulosTabSkeleton />
+          ) : !knowledge ? (
+            <AngulosTabEmpty sku={sku!} />
+          ) : (
+            <AngulosTab
+              data={knowledge.artifact_data as unknown as AngulosArtifactData}
+              createdAt={knowledge.created_at}
+              sku={sku!}
+            />
+          )}
+        </section>
+      </div>
+    </ScrollArea>
   )
 }

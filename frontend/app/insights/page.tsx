@@ -7,6 +7,7 @@ import {
 import { cn }               from '@/lib/utils'
 import { Skeleton }         from '@/components/ui/skeleton'
 import { FilterBar, type FilterOption } from '@/components/ui/FilterBar'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { useInsights }      from '@/hooks/useInsights'
 import type { Learning, Pattern, Insight } from '@/hooks/useInsights'
 
@@ -304,7 +305,8 @@ export default function InsightsPage() {
       )}
 
       {/* Conteúdo */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <ScrollArea className="flex-1">
+      <div className="px-6 py-6">
 
         {/* Tab: Insights */}
         {activeTab === 'insights' && (
@@ -386,6 +388,7 @@ export default function InsightsPage() {
           </div>
         )}
       </div>
+      </ScrollArea>
     </div>
   )
 }

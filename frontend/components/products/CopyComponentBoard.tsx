@@ -55,7 +55,7 @@ export function CopyComponentBoard({ sku, pipelineId, productId }: CopyComponent
           const items = colItems[type]
           const approvedCount = items.filter((c) => c.approval_status === 'approved').length
           return (
-            <div key={type}>
+            <div key={type} className="min-w-0 overflow-hidden">
               {/* Header da coluna */}
               <div className="flex items-center justify-between mb-2.5">
                 <h3 className="text-sm font-semibold text-on-surface">
@@ -155,20 +155,20 @@ function ComponentCard({
       isApproved ? 'border-status-done-text' : isRejected ? 'border-status-failed-text' : 'border-border'
     }`}>
       {/* Tag + badges */}
-      <div className="px-3 py-2 flex items-center gap-2 border-b border-border bg-surface">
-        <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-brand-muted text-brand">
+      <div className="px-3 py-2 flex items-center gap-2 border-b border-border bg-surface min-w-0">
+        <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-brand-muted text-brand truncate min-w-0 max-w-[45%]">
           {c.tag}
         </span>
-        <ComplianceBadge status={compliance} />
-        <ApprovalBadge status={c.approval_status} />
+        <span className="shrink-0"><ComplianceBadge status={compliance} /></span>
+        <span className="shrink-0"><ApprovalBadge status={c.approval_status} /></span>
         <button onClick={() => setExpanded((v) => !v)}
-          className="ml-auto text-xs hover:opacity-60 text-on-surface-muted">
+          className="ml-auto shrink-0 text-xs hover:opacity-60 text-on-surface-muted">
           {expanded ? '▲' : '▼'}
         </button>
       </div>
 
       {/* Conteúdo */}
-      <div className={`px-3 py-2.5 text-sm text-on-surface whitespace-pre-wrap ${!expanded ? 'line-clamp-3' : ''}`}>
+      <div className={`px-3 py-2.5 text-sm text-on-surface whitespace-pre-wrap break-words ${!expanded ? 'line-clamp-3' : ''}`}>
         {c.content ?? <span className="text-on-surface-muted">Sem conteúdo</span>}
       </div>
 

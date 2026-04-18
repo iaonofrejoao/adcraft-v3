@@ -13,6 +13,7 @@ import {
   PersonasTabEmpty,
 } from '@/components/produto-tabs/PersonasTab'
 import type { AvatarArtifactData } from '@/components/produto-tabs/PersonasTab'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { useProductKnowledge } from '@/hooks/useProductKnowledge'
 
 export default function PersonasPage() {
@@ -42,22 +43,24 @@ export default function PersonasPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-surface overflow-y-auto">
-      <ProductDetailHeader product={product} sku={sku!} />
+    <ScrollArea className="h-full bg-surface">
+      <div className="flex flex-col">
+        <ProductDetailHeader product={product} sku={sku!} />
 
-      <section className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-7 pb-12">
-        {loadingKnowledge ? (
-          <PersonasTabSkeleton />
-        ) : !knowledge ? (
-          <PersonasTabEmpty sku={sku!} />
-        ) : (
-          <PersonasTab
-            data={knowledge.artifact_data as unknown as AvatarArtifactData}
-            createdAt={knowledge.created_at}
-            sku={sku!}
-          />
-        )}
-      </section>
-    </div>
+        <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-7 pb-12">
+          {loadingKnowledge ? (
+            <PersonasTabSkeleton />
+          ) : !knowledge ? (
+            <PersonasTabEmpty sku={sku!} />
+          ) : (
+            <PersonasTab
+              data={knowledge.artifact_data as unknown as AvatarArtifactData}
+              createdAt={knowledge.created_at}
+              sku={sku!}
+            />
+          )}
+        </section>
+      </div>
+    </ScrollArea>
   )
 }

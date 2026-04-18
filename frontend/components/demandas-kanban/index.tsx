@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { KanbanColumn } from './KanbanColumn'
@@ -115,8 +116,8 @@ export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId, onCard
       )}
 
       {/* Board */}
-      <div className="flex-1 min-h-0 overflow-x-auto px-6 pb-20">
-        <div className="flex gap-6 h-full min-w-max">
+      <ScrollArea className="flex-1 min-h-0" scrollbars="horizontal">
+        <div className="flex gap-6 h-full min-w-max px-6 pb-20">
           {COLUMNS.map((col) => (
             <KanbanColumn
               key={col.id}
@@ -127,7 +128,7 @@ export function KanbanBoard({ isLoading, tasksByStatus, filterPipelineId, onCard
             />
           ))}
         </div>
-      </div>
+      </ScrollArea>
 
       {/* AI Command Bar flutuante */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[520px]

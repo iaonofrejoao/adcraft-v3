@@ -154,7 +154,7 @@ export async function POST(
   const { data: created, error: insertErr } = await supabase
     .from('copy_combinations')
     .insert(rows)
-    .select('id, tag, hook_id, body_id, cta_id, selected_for_video, created_at');
+    .select('id, tag, hook_id, body_id, cta_id, full_text, selected_for_video, created_at');
 
   if (insertErr) {
     // 23514 = check constraint violation (trigger de componentes não aprovados)

@@ -7,6 +7,7 @@ import {
 import { cn } from '@/lib/utils'
 import { usePipelineDetail } from '@/hooks/usePipelineDetail'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -267,7 +268,8 @@ export default function PipelineDetailPage({
       </div>
 
       {/* Timeline */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
+      <ScrollArea className="flex-1 min-h-0">
+      <div className="px-6 py-6">
         {pipeline.tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Zap size={28} strokeWidth={1} className="text-on-surface-muted mb-3" />
@@ -329,6 +331,7 @@ export default function PipelineDetailPage({
           </div>
         )}
       </div>
+      </ScrollArea>
 
       {/* Modal re-executar tudo */}
       <RerunModal

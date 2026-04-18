@@ -1,0 +1,152 @@
+{
+  "base_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/",
+  "sku": "PCFU",
+  "campaign_month": "202604",
+  "utm_sets": [
+    {
+      "label": "Top combination (CITB_v1_H1_B1_C3) — Facebook/Instagram",
+      "creative_tag": "CITB_v1_H1_B1_C3",
+      "funnel_stage": "conversion",
+      "platform": "facebook",
+      "utm_source": "facebook",
+      "utm_medium": "paid_social",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "CITBv1H1B1C3",
+      "utm_term": null,
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=facebook&utm_medium=paid_social&utm_campaign=pcfu_conv_202604&utm_content=CITBv1H1B1C3"
+    },
+    {
+      "label": "Variante A (CITB_v1_H2_B3_C1) — Facebook/Instagram",
+      "creative_tag": "CITB_v1_H2_B3_C1",
+      "funnel_stage": "consideration",
+      "platform": "facebook",
+      "utm_source": "facebook",
+      "utm_medium": "paid_social",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "CITBv1H2B3C1",
+      "utm_term": null,
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=facebook&utm_medium=paid_social&utm_campaign=pcfu_conv_202604&utm_content=CITBv1H2B3C1"
+    },
+    {
+      "label": "Variante B cold audiences (CITB_v1_H1_B2_C2) — Facebook/Instagram",
+      "creative_tag": "CITB_v1_H1_B2_C2",
+      "funnel_stage": "awareness",
+      "platform": "facebook",
+      "utm_source": "facebook",
+      "utm_medium": "paid_social",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "CITBv1H1B2C2",
+      "utm_term": null,
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=facebook&utm_medium=paid_social&utm_campaign=pcfu_conv_202604&utm_content=CITBv1H1B2C2"
+    },
+    {
+      "label": "Topo de funil (TOFU) — Facebook awareness",
+      "creative_tag": null,
+      "funnel_stage": "awareness",
+      "platform": "facebook",
+      "utm_source": "facebook",
+      "utm_medium": "paid_social",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "PCFUv1tofu",
+      "utm_term": null,
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=facebook&utm_medium=paid_social&utm_campaign=pcfu_conv_202604&utm_content=PCFUv1tofu"
+    },
+    {
+      "label": "Meio de funil (MOFU) — Facebook retargeting",
+      "creative_tag": null,
+      "funnel_stage": "consideration",
+      "platform": "facebook",
+      "utm_source": "facebook",
+      "utm_medium": "paid_social",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "PCFUv1mofu",
+      "utm_term": null,
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=facebook&utm_medium=paid_social&utm_campaign=pcfu_conv_202604&utm_content=PCFUv1mofu"
+    },
+    {
+      "label": "Fundo de funil (BOFU) — Facebook retargeting quente",
+      "creative_tag": null,
+      "funnel_stage": "conversion",
+      "platform": "facebook",
+      "utm_source": "facebook",
+      "utm_medium": "paid_social",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "PCFUv1bofu",
+      "utm_term": null,
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=facebook&utm_medium=paid_social&utm_campaign=pcfu_conv_202604&utm_content=PCFUv1bofu"
+    },
+    {
+      "label": "Top combination (CITB_v1_H1_B1_C3) — YouTube paid_video",
+      "creative_tag": "CITB_v1_H1_B1_C3",
+      "funnel_stage": "consideration",
+      "platform": "youtube",
+      "utm_source": "youtube",
+      "utm_medium": "paid_video",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "CITBv1H1B1C3",
+      "utm_term": null,
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=youtube&utm_medium=paid_video&utm_campaign=pcfu_conv_202604&utm_content=CITBv1H1B1C3"
+    },
+    {
+      "label": "Variante A (CITB_v1_H2_B3_C1) — YouTube paid_video",
+      "creative_tag": "CITB_v1_H2_B3_C1",
+      "funnel_stage": "consideration",
+      "platform": "youtube",
+      "utm_source": "youtube",
+      "utm_medium": "paid_video",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "CITBv1H2B3C1",
+      "utm_term": null,
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=youtube&utm_medium=paid_video&utm_campaign=pcfu_conv_202604&utm_content=CITBv1H2B3C1"
+    },
+    {
+      "label": "Variante B cold (CITB_v1_H1_B2_C2) — YouTube paid_video",
+      "creative_tag": "CITB_v1_H1_B2_C2",
+      "funnel_stage": "awareness",
+      "platform": "youtube",
+      "utm_source": "youtube",
+      "utm_medium": "paid_video",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "CITBv1H1B2C2",
+      "utm_term": null,
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=youtube&utm_medium=paid_video&utm_campaign=pcfu_conv_202604&utm_content=CITBv1H1B2C2"
+    },
+    {
+      "label": "Google Search — intenção de compra",
+      "creative_tag": null,
+      "funnel_stage": "conversion",
+      "platform": "google",
+      "utm_source": "google",
+      "utm_medium": "paid_search",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "PCFUsearch",
+      "utm_term": "compra_citrusburn_brasil",
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=google&utm_medium=paid_search&utm_campaign=pcfu_conv_202604&utm_content=PCFUsearch&utm_term=compra_citrusburn_brasil"
+    },
+    {
+      "label": "Google Search — intenção problema (saúde hormonal)",
+      "creative_tag": null,
+      "funnel_stage": "awareness",
+      "platform": "google",
+      "utm_source": "google",
+      "utm_medium": "paid_search",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "PCFUsearch",
+      "utm_term": "solucao_emagrecimento_hormonal",
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=google&utm_medium=paid_search&utm_campaign=pcfu_conv_202604&utm_content=PCFUsearch&utm_term=solucao_emagrecimento_hormonal"
+    },
+    {
+      "label": "Google Search — retargeting saúde feminina",
+      "creative_tag": null,
+      "funnel_stage": "conversion",
+      "platform": "google",
+      "utm_source": "google",
+      "utm_medium": "paid_search",
+      "utm_campaign": "pcfu_conv_202604",
+      "utm_content": "PCFUsearch_rtg",
+      "utm_term": "retargeting_saude_feminina",
+      "full_url": "https://AFFILIATE_ID.citrusburn.hop.clickbank.net/?utm_source=google&utm_medium=paid_search&utm_campaign=pcfu_conv_202604&utm_content=PCFUsearch_rtg&utm_term=retargeting_saude_feminina"
+    }
+  ],
+  "tracking_notes": "AÇÃO OBRIGATÓRIA PRÉ-LANÇAMENTO: Substituir AFFILIATE_ID em todas as full_url pelo ID real do afiliado no ClickBank (ex: seulogin.citrusburn.hop.clickbank.net). | SEQUÊNCIA DE ATIVAÇÃO: Fase 1 (dias 1-7 awareness): ativar UTMs tofu + CITBv1H1B2C2 para audiência Saúde Hormonal Frio. Fase 2 (dias 8-14 validação CPA): ativar CITBv1H1B1C3 + CITBv1H2B3C1 com Lookalike Compradoras. Fase 3 (dias 15+ escala): ativar mofu/bofu para Retargeting Quente. | YOUTUBE: UTMs paid_video para fase de consideração — ativar na Fase 2. | GOOGLE SEARCH: Recomendado iniciar somente na Fase 3 para concentrar budget de teste no Facebook. | CLICKBANK: Se a plataforma perder parâmetros no redirecionamento, testar também o parâmetro nativo ?tid= em paralelo para comparar atribuição."
+}

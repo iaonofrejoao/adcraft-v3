@@ -11,6 +11,7 @@ import {
   CriativosTab,
   CriativosTabSkeleton,
 } from '@/components/produto-tabs/CriativosTab'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 export default function CriativosPage() {
   const { sku } = useParams<{ sku: string }>()
@@ -43,12 +44,14 @@ export default function CriativosPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-surface overflow-y-auto">
-      <ProductDetailHeader product={product} sku={sku!} />
+    <ScrollArea className="h-full bg-surface">
+      <div className="flex flex-col">
+        <ProductDetailHeader product={product} sku={sku!} />
 
-      <section className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-7 pb-12">
-        <CriativosTab pipelines={pipelines} sku={sku!} />
-      </section>
-    </div>
+        <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-7 pb-12">
+          <CriativosTab pipelines={pipelines} sku={sku!} />
+        </section>
+      </div>
+    </ScrollArea>
   )
 }

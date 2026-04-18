@@ -16,21 +16,30 @@ export function ProductGrid({ products, isLoading, onAddProduct }: ProductGridPr
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-surface-container border border-white/5 rounded-xl p-4 flex flex-col gap-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 space-y-2">
+          <div key={i} className="bg-surface-container border border-white/5 rounded-xl overflow-hidden flex flex-col">
+            {/* Thumbnail skeleton */}
+            <Skeleton className="h-20 w-full rounded-none bg-surface-high" />
+            {/* Body skeleton */}
+            <div className="p-3.5 flex flex-col gap-2.5">
+              <div className="space-y-1.5">
                 <Skeleton className="h-4 w-40 bg-surface-high" />
                 <Skeleton className="h-3 w-24 bg-surface-high" />
               </div>
-              <Skeleton className="h-3 w-3 rounded bg-surface-high" />
+              <Skeleton className="h-4 w-28 bg-surface-high" />
+              <div className="space-y-1.5">
+                <div className="flex justify-between">
+                  <Skeleton className="h-2.5 w-16 bg-surface-high" />
+                  <Skeleton className="h-2.5 w-8 bg-surface-high" />
+                </div>
+                <Skeleton className="h-[3px] w-full rounded-full bg-surface-high" />
+              </div>
+              <div className="flex gap-3">
+                {Array.from({ length: 5 }).map((_, j) => (
+                  <Skeleton key={j} className="h-3.5 w-3.5 rounded bg-surface-high" />
+                ))}
+              </div>
+              <Skeleton className="h-2.5 w-full bg-surface-high mt-auto" />
             </div>
-            <Skeleton className="h-3 w-20 bg-surface-high" />
-            <div className="flex gap-2.5">
-              {Array.from({ length: 5 }).map((_, j) => (
-                <Skeleton key={j} className="h-4 w-4 rounded bg-surface-high" />
-              ))}
-            </div>
-            <Skeleton className="h-2.5 w-28 bg-surface-high" />
           </div>
         ))}
       </div>

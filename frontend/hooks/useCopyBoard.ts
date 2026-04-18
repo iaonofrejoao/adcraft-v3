@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase'
 
 // ── Tipos exportados ──────────────────────────────────────────────────────────
@@ -199,12 +200,17 @@ export function useCopyBoard(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pipeline_id: pipelineId }),
       })
+      const d = await res.json()
       if (res.ok) {
-        const d = await res.json()
         setCombinations((prev) => [...prev, ...(d.combinations ?? [])])
+        toast.success(`${d.created ?? (d.combinations?.length ?? 0)} combinações geradas`)
+      } else {
+        console.error('[useCopyBoard] materializeCombinations error', d)
+        toast.error('Erro ao gerar combinações', { description: d.error ?? res.statusText })
       }
     } catch (err) {
       console.error('[useCopyBoard] materializeCombinations failed', err)
+      toast.error('Erro de rede ao gerar combinações')
     } finally {
       setIsMaterializing(false)
     }

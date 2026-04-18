@@ -10,6 +10,7 @@ import {
 import type { Product } from '@/components/detalhes-produto'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { AprovacaoBoard } from '@/components/aprovacao-componentes'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select,
   SelectContent,
@@ -70,7 +71,8 @@ export default function CopiesPage() {
 
   /* ── Main ── */
   return (
-    <div className="flex flex-col h-full bg-surface overflow-y-auto">
+    <ScrollArea className="h-full bg-surface">
+      <div className="flex flex-col">
       <ProductDetailHeader product={product} sku={sku!} />
 
       {/* Copies toolbar */}
@@ -118,6 +120,7 @@ export default function CopiesPage() {
           />
         </div>
       )}
-    </div>
+      </div>
+    </ScrollArea>
   )
 }

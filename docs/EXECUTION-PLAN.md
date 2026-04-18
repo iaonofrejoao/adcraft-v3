@@ -252,9 +252,9 @@ Verificar que os agentes de pesquisa (market_research, avatar_research) estão r
 | 5     | Pipeline criativo             | ⬜ pendente |
 | 6     | Pipeline lançamento           | ⬜ pendente |
 | 7     | Migrar scripts para MCP       | ✅ concluído |
-| 8     | Ajustes de frontend           | 🔄 em andamento |
-| 9     | niche_curator (decisão)       | ⬜ pendente |
-| 10    | Memória vetorial end-to-end   | ⬜ pendente |
+| 8     | Ajustes de frontend           | ✅ concluído |
+| 9     | niche_curator (decisão)       | ✅ opção A — job avulso (.claude/skills/agents/niche-curator.md) |
+| 10    | Memória vetorial end-to-end   | ✅ infraestrutura pronta (learnings populam após 1º pipeline Ultron) |
 
 ---
 

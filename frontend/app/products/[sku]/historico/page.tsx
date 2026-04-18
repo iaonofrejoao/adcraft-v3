@@ -46,7 +46,7 @@ export default function HistoricoPage() {
     <div className="flex flex-col h-full bg-surface overflow-y-auto">
       <ProductDetailHeader product={product} sku={sku!} />
 
-      <section className="flex-1 px-8 py-6 pb-10">
+      <section className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-7 pb-12">
         {loading ? (
           <HistoricoTabSkeleton />
         ) : (

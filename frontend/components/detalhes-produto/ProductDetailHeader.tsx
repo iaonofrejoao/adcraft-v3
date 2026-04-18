@@ -151,7 +151,7 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
   return (
     <header className="bg-surface-low shrink-0">
       {/* Top bar: breadcrumb + actions */}
-      <div className="flex items-start justify-between px-8 pt-6 pb-3">
+      <div className="flex items-start justify-between px-4 sm:px-6 lg:px-10 pt-6 pb-3">
         <div className="flex flex-col gap-1">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-[0.6875rem] font-medium tracking-wide">
@@ -300,7 +300,7 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
       </div>
 
       {/* Tab navigation */}
-      <nav className="flex gap-6 px-8">
+      <nav className="flex gap-6 px-4 sm:px-6 lg:px-10">
         {TABS.map(({ label, href }) => {
           const target   = href(sku)
           const isActive = pathname === target

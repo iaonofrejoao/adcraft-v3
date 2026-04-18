@@ -248,15 +248,15 @@ export function MercadoTab({ data, createdAt, sku }: MercadoTabProps) {
     : '–'
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <ViabilityScoreCard
         score={data.viability_score}
         verdict={data.viability_verdict}
         justification={data.viability_justification}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-surface-container border border-outline-variant/10 rounded-xl p-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="bg-surface-container border border-outline-variant/10 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-on-surface mb-4">Mercado e Concorrência</h3>
           <MetricRow label="Nível de competição"           value={<CompetitionBadge level={data.competition_level} />} />
           <MetricRow label="Anúncios ativos (estimativa)"  value={adsCount} monospace />
@@ -266,7 +266,7 @@ export function MercadoTab({ data, createdAt, sku }: MercadoTabProps) {
           )}
         </div>
 
-        <div className="bg-surface-container border border-outline-variant/10 rounded-xl p-5">
+        <div className="bg-surface-container border border-outline-variant/10 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-on-surface mb-4">Financeiro</h3>
           <MetricRow label="Margem estimada" value={margin} monospace />
           <MetricRow
@@ -302,7 +302,7 @@ export function MercadoTab({ data, createdAt, sku }: MercadoTabProps) {
       </div>
 
       {(data.market_warnings?.length ?? 0) > 0 && (
-        <div className="bg-brand-muted border border-brand/20 rounded-xl p-5">
+        <div className="bg-brand-muted border border-brand/20 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle size={16} strokeWidth={1.5} className="text-brand shrink-0" />
             <h3 className="text-sm font-semibold text-brand">Alertas de mercado</h3>
@@ -319,7 +319,7 @@ export function MercadoTab({ data, createdAt, sku }: MercadoTabProps) {
       )}
 
       {(data.data_sources?.length ?? 0) > 0 && (
-        <div className="bg-surface-container border border-outline-variant/10 rounded-xl p-5">
+        <div className="bg-surface-container border border-outline-variant/10 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-on-surface mb-3">Fontes pesquisadas</h3>
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             {data.data_sources!.map((url, i) => (

@@ -52,7 +52,7 @@ export default function VSLPage() {
     <div className="flex flex-col h-full bg-surface overflow-y-auto">
       <ProductDetailHeader product={product} sku={sku!} />
 
-      <section className="flex-1 px-8 py-8 pb-12 max-w-2xl w-full">
+      <section className="flex-1 w-full max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-7 pb-12">
 
         {/* Header da seção */}
         <div className="flex items-center gap-3 mb-6">

@@ -163,10 +163,10 @@ export function AngulosTab({ data, createdAt, sku }: AngulosTabProps) {
   const angleColor = ANGLE_TYPE_COLOR[data.angle_type] ?? 'text-on-surface-muted bg-surface-high border-white/10'
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       {/* Primary angle card */}
-      <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+      <div className="bg-surface-container border border-white/5 rounded-xl p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
@@ -197,8 +197,8 @@ export function AngulosTab({ data, createdAt, sku }: AngulosTabProps) {
       </div>
 
       {/* USP + Emotional trigger */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-2">
             <Lightbulb size={14} strokeWidth={1.5} className="text-status-paused-text" />
             <h3 className="text-[0.6875rem] font-semibold uppercase tracking-wider text-status-paused-text/80">
@@ -208,7 +208,7 @@ export function AngulosTab({ data, createdAt, sku }: AngulosTabProps) {
           <p className="text-[0.8125rem] text-on-surface-variant leading-relaxed">{data.usp}</p>
         </div>
 
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-2">
             <Heart size={14} strokeWidth={1.5} className="text-status-failed-text" />
             <h3 className="text-[0.6875rem] font-semibold uppercase tracking-wider text-status-failed-text/80">
@@ -221,7 +221,7 @@ export function AngulosTab({ data, createdAt, sku }: AngulosTabProps) {
 
       {/* Hooks */}
       {data.hooks?.length > 0 && (
-        <div className="bg-surface-low border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-low border border-white/5 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2">
               <Zap size={14} strokeWidth={1.5} className="text-brand" />
@@ -246,7 +246,7 @@ export function AngulosTab({ data, createdAt, sku }: AngulosTabProps) {
 
       {/* Rationale */}
       {data.angle_rationale && (
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <h3 className="text-[0.6875rem] font-semibold uppercase tracking-wider text-on-surface-muted/60 mb-2">
             Raciocínio estratégico
           </h3>
@@ -258,7 +258,7 @@ export function AngulosTab({ data, createdAt, sku }: AngulosTabProps) {
 
       {/* Alternative angles */}
       {data.alternative_angles?.length > 0 && (
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <div className="mb-3">
             <h3 className="text-sm font-semibold text-on-surface">Ângulos alternativos</h3>
           </div>

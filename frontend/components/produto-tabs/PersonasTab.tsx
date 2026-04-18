@@ -204,9 +204,9 @@ export function PersonasTab({ data, createdAt, sku }: PersonasTabProps) {
   const { full_profile: fp, psychographic: psy } = data
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Summary card */}
-      <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+      <div className="bg-surface-container border border-white/5 rounded-xl p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-brand-muted border border-agent-research/20 flex items-center justify-center shrink-0">
@@ -243,9 +243,9 @@ export function PersonasTab({ data, createdAt, sku }: PersonasTabProps) {
       </div>
 
       {/* Profile + Psychographic grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Demographic profile */}
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-on-surface mb-4">Perfil demográfico</h3>
           <ProfileRow Icon={MapPin}    label="Localização"    value={fp.location} />
           <ProfileRow Icon={Briefcase} label="Ocupação"       value={fp.occupation} />
@@ -254,7 +254,7 @@ export function PersonasTab({ data, createdAt, sku }: PersonasTabProps) {
         </div>
 
         {/* Psychographic */}
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5 space-y-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6 space-y-5">
           <h3 className="text-sm font-semibold text-on-surface">Psicografia</h3>
 
           <div>
@@ -285,8 +285,8 @@ export function PersonasTab({ data, createdAt, sku }: PersonasTabProps) {
       </div>
 
       {/* Secondary data */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5 space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6 space-y-3">
           <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2">
             <Heart size={14} strokeWidth={1.5} className="text-status-failed-text" />
             Dores secundárias
@@ -294,7 +294,7 @@ export function PersonasTab({ data, createdAt, sku }: PersonasTabProps) {
           <ListSection title="" items={psy.secondary_pains} accent="text-status-failed-text/50" />
         </div>
 
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5 space-y-3">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6 space-y-3">
           <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2">
             <AlertCircle size={14} strokeWidth={1.5} className="text-status-paused-text" />
             Objeções
@@ -302,7 +302,7 @@ export function PersonasTab({ data, createdAt, sku }: PersonasTabProps) {
           <ListSection title="" items={psy.objections} accent="text-status-paused-text/50" />
         </div>
 
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5 space-y-3">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6 space-y-3">
           <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2">
             <MessageCircle size={14} strokeWidth={1.5} className="text-status-running-text" />
             Já tentou antes
@@ -313,14 +313,14 @@ export function PersonasTab({ data, createdAt, sku }: PersonasTabProps) {
 
       {/* Verbatim expressions */}
       {psy.secondary_desires?.length > 0 && (
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-on-surface mb-3">Desejos secundários</h3>
           <ListSection title="" items={psy.secondary_desires} accent="text-status-done-text/50" />
         </div>
       )}
 
       {data.verbatim_expressions?.length > 0 && (
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-on-surface mb-3">Expressões literais do avatar</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {data.verbatim_expressions.map((expr, i) => (
@@ -332,7 +332,7 @@ export function PersonasTab({ data, createdAt, sku }: PersonasTabProps) {
 
       {/* Sources */}
       {(data.data_sources?.length ?? 0) > 0 && (
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <div className="flex items-center justify-between gap-3 mb-3">
             <h3 className="text-sm font-semibold text-on-surface">Fontes pesquisadas</h3>
             <span className="text-[0.6875rem] text-on-surface-muted font-mono">

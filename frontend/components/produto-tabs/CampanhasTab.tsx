@@ -172,10 +172,10 @@ export function CampanhasTab({ sku }: CampanhasTabProps) {
   })
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       {/* ── Header: plataforma + rationale ── */}
-      <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+      <div className="bg-surface-container border border-white/5 rounded-xl p-6">
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="flex items-center gap-2">
             <Target size={16} strokeWidth={1.5} className="text-brand shrink-0" />
@@ -205,9 +205,9 @@ export function CampanhasTab({ sku }: CampanhasTabProps) {
       </div>
 
       {/* ── Budget + KPIs / Funil ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
             <DollarSign size={15} strokeWidth={1.5} className="text-on-surface-muted" />
             <h3 className="text-sm font-semibold text-on-surface">Budget e KPIs</h3>
@@ -226,7 +226,7 @@ export function CampanhasTab({ sku }: CampanhasTabProps) {
           )}
         </div>
 
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-on-surface mb-4">Funil de campanha</h3>
           <div className="space-y-3">
             {Object.entries(d.funnel_stages ?? {}).map(([stage, info]) => (
@@ -257,7 +257,7 @@ export function CampanhasTab({ sku }: CampanhasTabProps) {
 
       {/* ── Públicos-alvo ── */}
       {d.target_audiences?.length > 0 && (
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
             <Users size={15} strokeWidth={1.5} className="text-on-surface-muted" />
             <h3 className="text-sm font-semibold text-on-surface">
@@ -302,7 +302,7 @@ export function CampanhasTab({ sku }: CampanhasTabProps) {
 
       {/* ── Cronograma de lançamento ── */}
       {d.launch_sequence?.length > 0 && (
-        <div className="bg-surface-container border border-white/5 rounded-xl p-5">
+        <div className="bg-surface-container border border-white/5 rounded-xl p-6">
           <div className="flex items-center gap-2 mb-4">
             <Clock size={15} strokeWidth={1.5} className="text-on-surface-muted" />
             <h3 className="text-sm font-semibold text-on-surface">Cronograma de lançamento</h3>

@@ -29,11 +29,17 @@ interface CampaignKPIs {
   max_cpm_brl?:            number
 }
 
+type SecondaryPlatform = string | { platform: string; rationale?: string; priority?: number }
+
+function toSecondaryPlatformKey(p: SecondaryPlatform): string {
+  return typeof p === 'string' ? p : p.platform
+}
+
 interface CampaignStrategyData {
   campaign_objective:         string
   primary_platform:           string
   platform_rationale:         string
-  secondary_platforms:        string[]
+  secondary_platforms:        SecondaryPlatform[]
   policy_warnings:            string[]
   budget_warnings:            string[]
   target_audiences:           TargetAudience[]
@@ -185,7 +191,10 @@ export function CampanhasTab({ sku }: CampanhasTabProps) {
         {d.secondary_platforms?.length > 0 && (
           <div className="flex items-center gap-1.5 mb-3">
             <span className="text-[0.6875rem] text-on-surface-muted">Secundárias:</span>
-            {d.secondary_platforms.map(p => <PlatformBadge key={p} platform={p} />)}
+            {d.secondary_platforms.map(p => {
+                const key = toSecondaryPlatformKey(p)
+                return <PlatformBadge key={key} platform={key} />
+              })}
           </div>
         )}
 

@@ -1,8 +1,8 @@
 'use client'
 import Link from 'next/link'
 import {
-  Crosshair, Zap, Heart, Lightbulb, RefreshCw,
-  ChevronRight, Sparkles,
+  Crosshair, Zap, Heart, Lightbulb,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -76,7 +76,7 @@ export function AngulosTabSkeleton() {
 }
 
 /* ── Empty state ────────────────────────────────────────────────────── */
-export function AngulosTabEmpty({ sku }: { sku: string }) {
+export function AngulosTabEmpty({ sku: _sku }: { sku: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
       <div className="w-14 h-14 rounded-xl bg-surface-container border border-white/5 flex items-center justify-center">
@@ -85,17 +85,17 @@ export function AngulosTabEmpty({ sku }: { sku: string }) {
       <div className="text-center space-y-1">
         <p className="text-sm font-semibold text-on-surface">Nenhum ângulo encontrado</p>
         <p className="text-[0.6875rem] text-on-surface-variant">
-          Solicite ao Jarvis para descobrir o ângulo campeão deste produto
+          Execute o pipeline completo para gerar os ângulos deste produto
         </p>
       </div>
       <Link
-        href={`/?msg=@${sku}+/angulos`}
+        href="/demandas"
         className="text-sm px-4 py-2 rounded font-medium text-on-primary
           bg-brand-gradient
           hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
           transition-shadow duration-150"
       >
-        Gerar ângulos via Jarvis
+        Ver demandas
       </Link>
     </div>
   )
@@ -117,43 +117,31 @@ function HookCard({ hook, isSelected, sku }: {
         : 'border-white/5'
     )}>
       {/* Header row */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          {/* Variant badge */}
-          <span className={cn(
-            'text-[0.625rem] font-bold font-mono px-2 py-0.5 rounded border',
-            isSelected
-              ? 'text-brand bg-brand/10 border-brand/30'
-              : 'text-on-surface-muted bg-surface-high border-white/10'
-          )}>
-            {hook.variant_id}
+      <div className="flex items-center gap-2">
+        {/* Variant badge */}
+        <span className={cn(
+          'text-[0.625rem] font-bold font-mono px-2 py-0.5 rounded border',
+          isSelected
+            ? 'text-brand bg-brand/10 border-brand/30'
+            : 'text-on-surface-muted bg-surface-high border-white/10'
+        )}>
+          {hook.variant_id}
+        </span>
+
+        {/* Hook type badge */}
+        <span className={cn(
+          'text-[0.625rem] font-medium px-2 py-0.5 rounded border',
+          colorClass
+        )}>
+          {HOOK_TYPE_LABELS[hook.hook_type]}
+        </span>
+
+        {isSelected && (
+          <span className="text-[0.625rem] font-semibold text-brand flex items-center gap-1">
+            <Sparkles size={10} strokeWidth={1.5} />
+            Selecionado
           </span>
-
-          {/* Hook type badge */}
-          <span className={cn(
-            'text-[0.625rem] font-medium px-2 py-0.5 rounded border',
-            colorClass
-          )}>
-            {HOOK_TYPE_LABELS[hook.hook_type]}
-          </span>
-
-          {isSelected && (
-            <span className="text-[0.625rem] font-semibold text-brand flex items-center gap-1">
-              <Sparkles size={10} strokeWidth={1.5} />
-              Selecionado
-            </span>
-          )}
-        </div>
-
-        {/* CTA: gerar criativo com este hook */}
-        <Link
-          href={`/?msg=@${sku} gere um criativo com o hook: "${hook.hook_text}"`}
-          className="flex items-center gap-1 text-[0.6875rem] text-on-surface-muted hover:text-brand transition-colors shrink-0"
-        >
-          <Zap size={11} strokeWidth={1.5} />
-          Gerar criativo
-          <ChevronRight size={10} strokeWidth={1.5} />
-        </Link>
+        )}
       </div>
 
       {/* Hook text */}
@@ -199,13 +187,9 @@ export function AngulosTab({ data, createdAt, sku }: AngulosTabProps) {
               </p>
             </div>
           </div>
-          <Link
-            href={`/?msg=@${sku}+/angulos`}
-            className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-brand transition-colors duration-150 shrink-0"
-          >
-            <RefreshCw size={12} strokeWidth={1.5} />
-            Novo ângulo
-          </Link>
+          <span className="text-[0.6875rem] text-on-surface-muted font-mono">
+            {new Date(createdAt).toLocaleDateString('pt-BR')}
+          </span>
         </div>
         <p className="mt-4 text-[0.9375rem] font-medium text-on-surface leading-relaxed">
           {data.primary_angle}
@@ -275,31 +259,14 @@ export function AngulosTab({ data, createdAt, sku }: AngulosTabProps) {
       {/* Alternative angles */}
       {data.alternative_angles?.length > 0 && (
         <div className="bg-surface-container border border-white/5 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <h3 className="text-sm font-semibold text-on-surface">Ângulos alternativos</h3>
-            <Link
-              href={`/?msg=@${sku} desenvolva o ângulo alternativo: "${data.alternative_angles[0]}"`}
-              className="flex items-center gap-1 text-[0.6875rem] text-on-surface-muted hover:text-brand transition-colors"
-            >
-              <Zap size={11} strokeWidth={1.5} />
-              Desenvolver via Jarvis
-              <ChevronRight size={10} strokeWidth={1.5} />
-            </Link>
           </div>
           <ul className="space-y-2">
             {data.alternative_angles.map((angle, i) => (
               <li key={i} className="flex items-start gap-2.5">
                 <span className="shrink-0 mt-1.5 w-1 h-1 rounded-full bg-on-surface-muted/30" />
-                <div className="flex-1 flex items-start justify-between gap-3">
-                  <p className="text-[0.8125rem] text-on-surface-variant">{angle}</p>
-                  <Link
-                    href={`/?msg=@${sku} crie hooks para o ângulo: "${angle}"`}
-                    className="shrink-0 text-[0.625rem] text-on-surface-muted hover:text-brand transition-colors flex items-center gap-0.5"
-                  >
-                    Hooks
-                    <ChevronRight size={9} strokeWidth={1.5} />
-                  </Link>
-                </div>
+                <p className="text-[0.8125rem] text-on-surface-variant">{angle}</p>
               </li>
             ))}
           </ul>

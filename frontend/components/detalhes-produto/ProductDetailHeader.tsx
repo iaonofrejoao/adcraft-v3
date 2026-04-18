@@ -287,14 +287,14 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
         {/* Action button */}
         <div className="flex items-center gap-3 shrink-0 pt-1">
           <Link
-            href={`/?msg=@${sku}`}
+            href="/demandas"
             className="px-4 py-2 rounded-lg text-sm font-bold text-on-primary
               bg-brand-gradient
               shadow-[0_12px_40px_-10px_rgba(249,115,22,0.3)]
               hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_12px_40px_-10px_rgba(249,115,22,0.3)]
               hover:scale-[1.02] active:scale-[0.98] transition-all duration-150"
           >
-            Abrir Jarvis
+            Ver demandas
           </Link>
         </div>
       </div>

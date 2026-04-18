@@ -74,7 +74,7 @@ export default function CopiesPage() {
       <ProductDetailHeader product={product} sku={sku!} />
 
       {/* Copies toolbar */}
-      <div className="shrink-0 px-8 py-3 bg-surface flex items-center gap-3 border-b border-outline-variant/10">
+      <div className="shrink-0 px-8 py-3 bg-surface-low flex items-center gap-3">
         {pipelines.length > 1 && (
           <Select value={activePipeline ?? ''} onValueChange={setActivePipeline}>
             <SelectTrigger className="h-9 w-64 text-xs bg-surface-container border-white/5 text-on-surface">

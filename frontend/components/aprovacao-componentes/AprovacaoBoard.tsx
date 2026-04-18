@@ -84,6 +84,7 @@ export function AprovacaoBoard({ sku, pipelineId, productId }: AprovacaoBoardPro
     isMaterializing,
     approveComponent,
     rejectComponent,
+    resetComponent,
     selectComponent,
     materializeCombinations,
     canMaterialize,
@@ -107,9 +108,9 @@ export function AprovacaoBoard({ sku, pipelineId, productId }: AprovacaoBoardPro
       />
 
       {/* 3-column grid — horizontal scroll via Radix ScrollArea */}
-      <ScrollAreaPrimitive.Root className="w-full" type="scroll">
+      <ScrollAreaPrimitive.Root className="w-full overflow-hidden" type="scroll">
         <ScrollAreaPrimitive.Viewport className="w-full">
-          <div className="flex gap-6 min-w-max pb-3">
+          <div className="flex gap-6 min-w-max pb-4">
             {COLUMNS.map(({ type, label, Icon, iconClass, iconBg }) => (
               <div key={type} className="w-[320px] shrink-0">
                 <ColunaComponentes
@@ -121,6 +122,7 @@ export function AprovacaoBoard({ sku, pipelineId, productId }: AprovacaoBoardPro
                   items={colItemsMap[type]}
                   onApprove={approveComponent}
                   onReject={rejectComponent}
+                  onReset={resetComponent}
                 />
               </div>
             ))}

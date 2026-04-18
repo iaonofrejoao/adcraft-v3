@@ -193,13 +193,13 @@ export function HistoricoTabEmpty({ sku }: { sku: string }) {
         </p>
       </div>
       <Link
-        href={`/?msg=@${sku}+/copy`}
+        href="/demandas"
         className="text-sm px-4 py-2 rounded font-medium text-on-primary
           bg-brand-gradient
           hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
           transition-shadow duration-150"
       >
-        Iniciar via chat
+        Ver demandas
       </Link>
     </div>
   )

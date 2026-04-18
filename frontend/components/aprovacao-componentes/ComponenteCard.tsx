@@ -80,10 +80,11 @@ interface ComponenteCardProps {
   columnLabel: string
   onApprove:   (id: string) => void
   onReject:    (id: string) => void
+  onReset:     (id: string) => void
 }
 
 export function ComponenteCard({
-  component: c, columnLabel, onApprove, onReject,
+  component: c, columnLabel, onApprove, onReject, onReset,
 }: ComponenteCardProps) {
   const [expanded, setExpanded] = useState(false)
 
@@ -168,16 +169,16 @@ export function ComponenteCard({
         </Button>
 
         <div className="flex items-center gap-1">
-          {/* Approve */}
+          {/* Approve / Unapprove toggle */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onApprove(c.id)}
-            title="Aprovar"
+            onClick={() => isApproved ? onReset(c.id) : onApprove(c.id)}
+            title={isApproved ? 'Remover aprovação' : 'Aprovar'}
             className={cn(
               'w-7 h-7 rounded transition-colors duration-150',
               isApproved
-                ? 'bg-status-done text-status-done-text hover:bg-status-done/80'
+                ? 'bg-status-done text-status-done-text hover:bg-status-done/60'
                 : 'text-on-surface-muted hover:bg-status-done/20 hover:text-status-done-text',
             )}
           >

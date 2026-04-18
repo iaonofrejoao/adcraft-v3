@@ -16,12 +16,13 @@ interface ColunaComponentesProps {
   items:            CopyComponent[]
   onApprove:        (id: string) => void
   onReject:         (id: string) => void
+  onReset:          (id: string) => void
   onGenerateMore?:  () => void
 }
 
 export function ColunaComponentes({
   label, Icon, iconClass, iconBg, items,
-  onApprove, onReject, onGenerateMore,
+  onApprove, onReject, onReset, onGenerateMore,
 }: ColunaComponentesProps) {
   const approvedCount = items.filter((c) => c.approval_status === 'approved').length
 
@@ -63,7 +64,7 @@ export function ColunaComponentes({
       </div>
 
       {/* Scrollable cards — each column scrolls independently */}
-      <ScrollArea className="h-[calc(100vh-320px)] min-h-[400px]">
+      <ScrollArea className="h-[calc(100vh-300px)] min-h-[380px] max-h-[720px]">
         <div className="space-y-3 pr-3 pb-4">
           {items.length === 0 ? (
             <div className="bg-surface-container/50 rounded-xl p-8 border border-dashed border-white/10
@@ -81,6 +82,7 @@ export function ColunaComponentes({
                 columnLabel={label}
                 onApprove={onApprove}
                 onReject={onReject}
+                onReset={onReset}
               />
             ))
           )}

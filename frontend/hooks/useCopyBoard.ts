@@ -42,6 +42,7 @@ export interface UseCopyBoardReturn {
   isMaterializing:        boolean
   approveComponent:       (id: string) => Promise<void>
   rejectComponent:        (id: string) => Promise<void>
+  resetComponent:         (id: string) => Promise<void>
   selectComponent:        (id: string, selected: boolean) => Promise<void>
   materializeCombinations: () => Promise<void>
   canMaterialize:         boolean
@@ -127,6 +128,26 @@ export function useCopyBoard(
     }
   }, [components])
 
+  // Reset — volta para pending (desfaz aprovação)
+  const resetComponent = useCallback(async (id: string) => {
+    const prev = components.find((c) => c.id === id)
+    setComponents((cs) =>
+      cs.map((c) => (c.id === id ? { ...c, approval_status: 'pending', approved_at: null } : c)),
+    )
+    try {
+      const res = await fetch(`/api/copy-components/${id}/reset`, { method: 'POST' })
+      if (res.ok) {
+        const updated = await res.json()
+        setComponents((cs) => cs.map((c) => (c.id === id ? { ...c, ...updated } : c)))
+      } else {
+        throw new Error(`reset ${res.status}`)
+      }
+    } catch (err) {
+      console.error('[useCopyBoard] resetComponent failed', err)
+      if (prev) setComponents((cs) => cs.map((c) => (c.id === id ? { ...c, ...prev } : c)))
+    }
+  }, [components])
+
   // Reject — update otimista, reverte em erro
   const rejectComponent = useCallback(async (id: string) => {
     const prev = components.find((c) => c.id === id)
@@ -207,6 +228,7 @@ export function useCopyBoard(
     isMaterializing,
     approveComponent,
     rejectComponent,
+    resetComponent,
     selectComponent,
     materializeCombinations,
     canMaterialize,

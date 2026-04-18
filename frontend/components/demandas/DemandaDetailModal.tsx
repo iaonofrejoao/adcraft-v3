@@ -90,6 +90,10 @@ function goalLabel(goal: string): string {
     angles_only:   'Geração de ângulos',
     copy_only:     'Geração de copy',
     creative_full: 'Criativo completo',
+    pesquisa:      'Pipeline Pesquisa',
+    criativo:      'Pipeline Criativo',
+    lancamento:    'Pipeline Lançamento',
+    full:          'Pipeline Completo',
   }
   return map[goal] ?? goal.replace(/_/g, ' ')
 }

@@ -16,12 +16,16 @@ import type { Pipeline } from '@/components/detalhes-produto'
 interface GoalCfg { Icon: LucideIcon; color: string; bg: string; label: string }
 
 const GOAL_MAP: Record<string, GoalCfg> = {
-  copy_only:        { Icon: FileText, color: 'text-brand',          bg: 'bg-brand-muted',          label: 'Copy' },
-  creative_full:    { Icon: FileText, color: 'text-brand',          bg: 'bg-brand-muted',          label: 'Creative Full' },
-  market_research:  { Icon: Search,   color: 'text-agent-market',    bg: 'bg-agent-market/10',      label: 'Mercado' },
-  avatar_research:  { Icon: Search,   color: 'text-agent-research',  bg: 'bg-brand-muted',          label: 'Avatar' },
-  angle_generation: { Icon: Layers,   color: 'text-agent-strategy',  bg: 'bg-agent-strategy/10',    label: 'Ângulos' },
-  video_prod:       { Icon: Film,     color: 'text-status-running-text', bg: 'bg-status-running',   label: 'Vídeo' },
+  copy_only:        { Icon: FileText, color: 'text-brand',              bg: 'bg-brand-muted',          label: 'Copy' },
+  creative_full:    { Icon: FileText, color: 'text-brand',              bg: 'bg-brand-muted',          label: 'Creative Full' },
+  market_research:  { Icon: Search,   color: 'text-agent-market',       bg: 'bg-agent-market/10',      label: 'Mercado' },
+  avatar_research:  { Icon: Search,   color: 'text-agent-research',     bg: 'bg-brand-muted',          label: 'Avatar' },
+  angle_generation: { Icon: Layers,   color: 'text-agent-strategy',     bg: 'bg-agent-strategy/10',    label: 'Ângulos' },
+  video_prod:       { Icon: Film,     color: 'text-status-running-text', bg: 'bg-status-running',      label: 'Vídeo' },
+  pesquisa:         { Icon: Search,   color: 'text-agent-market',       bg: 'bg-agent-market/10',      label: 'Pesquisa' },
+  criativo:         { Icon: Film,     color: 'text-brand',              bg: 'bg-brand-muted',          label: 'Criativo' },
+  lancamento:       { Icon: Layers,   color: 'text-agent-strategy',     bg: 'bg-agent-strategy/10',    label: 'Lançamento' },
+  full:             { Icon: FileText, color: 'text-status-done-text',   bg: 'bg-status-done',          label: 'Pipeline Completo' },
 }
 
 function goalCfg(goal: string): GoalCfg {
@@ -43,12 +47,16 @@ const STATUS_FILTERS = [
 ] as const
 
 const GOAL_FILTERS = [
-  { value: 'all',              label: 'Todos os goals'  },
-  { value: 'copy_only',        label: 'Copy'            },
-  { value: 'market_research',  label: 'Mercado'         },
-  { value: 'avatar_research',  label: 'Avatar'          },
-  { value: 'angle_generation', label: 'Ângulos'         },
-  { value: 'video_prod',       label: 'Vídeo'           },
+  { value: 'all',              label: 'Todos'         },
+  { value: 'pesquisa',         label: 'Pesquisa'      },
+  { value: 'criativo',         label: 'Criativo'      },
+  { value: 'lancamento',       label: 'Lançamento'    },
+  { value: 'full',             label: 'Completo'      },
+  { value: 'copy_only',        label: 'Copy'          },
+  { value: 'market_research',  label: 'Mercado'       },
+  { value: 'avatar_research',  label: 'Avatar'        },
+  { value: 'angle_generation', label: 'Ângulos'       },
+  { value: 'video_prod',       label: 'Vídeo'         },
 ] as const
 
 /* ── Export CSV ─────────────────────────────────────────────────────── */

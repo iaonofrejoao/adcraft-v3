@@ -88,22 +88,22 @@ Navegar no frontend e verificar cada sub-aba do produto:
 ## ETAPA 3 — Enriquecer skills skeleton (11 agentes)
 
 > Sem pressa — fazer um por vez conforme forem sendo usados. Prioridade pela ordem do pipeline.
-
+ok
 ### Ordem de prioridade:
 
-| Prioridade | Agente | Skill file | Fase |
-|-----------|--------|-----------|------|
-| 1 | benchmark-intelligence | `.claude/skills/agents/benchmark-intelligence.md` | Pesquisa |
-| 2 | campaign-strategy | `.claude/skills/agents/campaign-strategy.md` | Pesquisa |
-| 3 | script-writer | `.claude/skills/agents/script-writer.md` | Criativo |
-| 4 | character-generator | `.claude/skills/agents/character-generator.md` | Criativo |
-| 5 | keyframe-generator | `.claude/skills/agents/keyframe-generator.md` | Criativo |
-| 6 | creative-director | `.claude/skills/agents/creative-director.md` | Criativo |
-| 7 | utm-builder | `.claude/skills/agents/utm-builder.md` | Lançamento |
-| 8 | facebook-ads | `.claude/skills/agents/facebook-ads.md` | Lançamento |
-| 9 | google-ads | `.claude/skills/agents/google-ads.md` | Lançamento |
-| 10 | performance-analysis | `.claude/skills/agents/performance-analysis.md` | Lançamento |
-| 11 | scaling-strategy | `.claude/skills/agents/scaling-strategy.md` | Lançamento |
+| Prioridade | Agente                 | Skill file                                        | Fase       |
+| ---------- | ---------------------- | ------------------------------------------------- | ---------- |
+| 1          | benchmark-intelligence | `.claude/skills/agents/benchmark-intelligence.md` | Pesquisa   |
+| 2          | campaign-strategy      | `.claude/skills/agents/campaign-strategy.md`      | Pesquisa   |
+| 3          | script-writer          | `.claude/skills/agents/script-writer.md`          | Criativo   |
+| 4          | character-generator    | `.claude/skills/agents/character-generator.md`    | Criativo   |
+| 5          | keyframe-generator     | `.claude/skills/agents/keyframe-generator.md`     | Criativo   |
+| 6          | creative-director      | `.claude/skills/agents/creative-director.md`      | Criativo   |
+| 7          | utm-builder            | `.claude/skills/agents/utm-builder.md`            | Lançamento |
+| 8          | facebook-ads           | `.claude/skills/agents/facebook-ads.md`           | Lançamento |
+| 9          | google-ads             | `.claude/skills/agents/google-ads.md`             | Lançamento |
+| 10         | performance-analysis   | `.claude/skills/agents/performance-analysis.md`   | Lançamento |
+| 11         | scaling-strategy       | `.claude/skills/agents/scaling-strategy.md`       | Lançamento |
 
 ### Como enriquecer cada skill:
 **Como pedir:** `"Vamos enriquecer o skill do agente benchmark-intelligence. Ele precisa de: [descreva o que você quer que o agente faça, quais fontes pesquise, qual o critério de qualidade]"`
@@ -173,25 +173,23 @@ benchmark_intelligence: {
 
 ## ETAPA 7 — Migrar scripts para MCP (simplificação)
 
-> Opcional — os scripts ainda funcionam, mas com MCP ativo são redundantes para operações simples.
-
 ### O que pode ser aposentado com MCP ativo:
 
-| Script | Substituto via MCP |
-|--------|-------------------|
-| `scripts/pipeline/status.ts` | `SELECT * FROM tasks WHERE pipeline_id = 'UUID'` |
-| `scripts/artifact/get.ts` | `SELECT artifact_data FROM product_knowledge WHERE...` |
-| `scripts/pipeline/complete-task.ts` | `UPDATE tasks SET status = 'completed'...` |
-| `scripts/copy/update-compliance.ts` | `UPDATE copy_components SET compliance_status...` |
+| Script                              | Substituto via MCP                                     |
+| ----------------------------------- | ------------------------------------------------------ |
+| `scripts/pipeline/status.ts`        | `SELECT * FROM tasks WHERE pipeline_id = 'UUID'`       |
+| `scripts/artifact/get.ts`           | `SELECT artifact_data FROM product_knowledge WHERE...` |
+| `scripts/pipeline/complete-task.ts` | `UPDATE tasks SET status = 'completed'...`             |
+| `scripts/copy/update-compliance.ts` | `UPDATE copy_components SET compliance_status...`      |
 
 ### O que MANTER mesmo com MCP:
-| Script | Por quê manter |
-|--------|---------------|
-| `scripts/pipeline/create.ts` | Lógica complexa de DAG + criação de múltiplas tasks |
-| `scripts/artifact/save.ts` | Lógica de `superseded` + enfileiramento de embeddings |
-| `scripts/copy/save-components.ts` | Lógica de tagging canônico (SKU_v1_H1) |
-| `scripts/learning/extract.ts` | Chama learning-extractor com contexto correto |
-| `scripts/search/vector.ts` | Ainda precisa gerar embedding da query via Gemini |
+| Script                            | Por quê manter                                        |
+| --------------------------------- | ----------------------------------------------------- |
+| `scripts/pipeline/create.ts`      | Lógica complexa de DAG + criação de múltiplas tasks   |
+| `scripts/artifact/save.ts`        | Lógica de `superseded` + enfileiramento de embeddings |
+| `scripts/copy/save-components.ts` | Lógica de tagging canônico (SKU_v1_H1)                |
+| `scripts/learning/extract.ts`     | Chama learning-extractor com contexto correto         |
+| `scripts/search/vector.ts`        | Ainda precisa gerar embedding da query via Gemini     |
 
 ### Como pedir:
 `"Com o MCP Supabase conectado, podemos aposentar os scripts de leitura simples. Atualiza o _pipeline.md para refletir que status e leitura de artefatos agora usam MCP diretamente"`
@@ -200,13 +198,17 @@ benchmark_intelligence: {
 
 ## ETAPA 8 — Ajustes de frontend
 
-> Polimento visual — baixa prioridade.
+> Polimento visual
 
 ### 8.1 Sidebar — remover ou ajustar link do Jarvis
 **Como pedir:** `"A sidebar ainda tem link para o Jarvis (página /). Ou remove o link ou troca para mostrar algo diferente"`
 
 ### 8.2 Página /demandas — mostrar pipelines criados via Claude Code
 Verificar se os pipelines criados via `scripts/pipeline/create.ts` aparecem corretamente na tela `/demandas` com todos os status.
+
+### 8.3 Componentes ShadCn
+Validar cada componente de UX e UI do frontend para garantir que estão usando os componentes do ShadCn corretamente.
+Link do ShadCn: https://ui.shadcn.com/docs/components
 
 ---
 
@@ -240,30 +242,30 @@ Verificar que os agentes de pesquisa (market_research, avatar_research) estão r
 
 ## Resumo de status
 
-| Etapa | Descrição | Status |
-|-------|-----------|--------|
-| 0 | Validar MCP Supabase | ⬜ pendente |
-| 1 | Criar produto via MCP | ⬜ pendente |
-| 2 | Pipeline pesquisa completo | ⬜ pendente |
-| 3 | Enriquecer 11 skills skeleton | ⬜ pendente |
-| 4 | Atualizar agent-registry.ts | ⬜ pendente |
-| 5 | Pipeline criativo | ⬜ pendente |
-| 6 | Pipeline lançamento | ⬜ pendente |
-| 7 | Migrar scripts para MCP | ⬜ pendente |
-| 8 | Ajustes de frontend | ⬜ pendente |
-| 9 | niche_curator (decisão) | ⬜ pendente |
-| 10 | Memória vetorial end-to-end | ⬜ pendente |
+| Etapa | Descrição                     | Status     |
+| ----- | ----------------------------- | ---------- |
+| 0     | Validar MCP Supabase          | ✅ concluído |
+| 1     | Criar produto via MCP         | ✅ concluído (CitrusBurn PCFU) |
+| 2     | Pipeline pesquisa completo    | ✅ concluído (CitrusBurn — 14 artefatos) |
+| 3     | Enriquecer 11 skills skeleton | ✅ concluído (todos têm metodologia + QA) |
+| 4     | Atualizar agent-registry.ts   | ✅ concluído (11 agentes + GoalName expandido) |
+| 5     | Pipeline criativo             | ⬜ pendente |
+| 6     | Pipeline lançamento           | ⬜ pendente |
+| 7     | Migrar scripts para MCP       | ✅ concluído |
+| 8     | Ajustes de frontend           | 🔄 em andamento |
+| 9     | niche_curator (decisão)       | ⬜ pendente |
+| 10    | Memória vetorial end-to-end   | ⬜ pendente |
 
 ---
 
 ## Referências rápidas
 
-| O que | Onde |
-|-------|------|
+| O que                 | Onde                                   |
+| --------------------- | -------------------------------------- |
 | Pipeline DAG completo | `.claude/pipelines/full-pipeline.yaml` |
-| Guia de orquestração | `.claude/skills/agents/_pipeline.md` |
-| Skills dos agentes | `.claude/skills/agents/` |
-| Scripts DB bridge | `scripts/` |
-| Schema do banco | `frontend/lib/schema/index.ts` |
-| Registry de agentes | `frontend/lib/agent-registry.ts` |
-| Workers ativos | `workers/README-DEPRECATED.md` |
+| Guia de orquestração  | `.claude/skills/agents/_pipeline.md`   |
+| Skills dos agentes    | `.claude/skills/agents/`               |
+| Scripts DB bridge     | `scripts/`                             |
+| Schema do banco       | `frontend/lib/schema/index.ts`         |
+| Registry de agentes   | `frontend/lib/agent-registry.ts`       |
+| Workers ativos        | `workers/README-DEPRECATED.md`         |

@@ -37,8 +37,8 @@ export default function CampanhasPage() {
     <div className="flex flex-col h-full bg-surface overflow-y-auto">
       <ProductDetailHeader product={product} sku={sku!} />
 
-      <section className="flex-1 px-8 py-6 pb-10">
-        <CampanhasTab />
+      <section className="flex-1 px-8 py-6 pb-10 max-w-4xl w-full">
+        <CampanhasTab sku={sku!} />
       </section>
     </div>
   )

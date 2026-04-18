@@ -194,7 +194,7 @@ export function ComponenteCard({
   return (
     <>
       <div className={cn(
-        'bg-surface-container rounded-xl border transition-all duration-150 overflow-hidden',
+        'bg-surface-container rounded-xl border transition-all duration-150 overflow-hidden min-w-0 w-full',
         isApproved && 'border-status-done-text/25 bg-status-done/5',
         isRejected && 'border-status-failed-text/15 opacity-50',
         !isApproved && !isRejected && 'border-white/5 hover:border-white/10',
@@ -202,7 +202,7 @@ export function ComponenteCard({
         {/* Clickable content area → opens modal */}
         <button
           onClick={() => setModalOpen(true)}
-          className="w-full text-left px-3 pt-3 pb-2 group"
+          className="w-full min-w-0 text-left px-3 pt-3 pb-2 group"
         >
           {/* Top row: tag + badges */}
           <div className="flex items-start justify-between gap-2 mb-2">
@@ -217,7 +217,7 @@ export function ComponenteCard({
 
           {/* Content preview */}
           <p className={cn(
-            'text-[0.8125rem] leading-relaxed line-clamp-2 group-hover:text-on-surface transition-colors duration-150',
+            'text-[0.8125rem] leading-relaxed line-clamp-2 break-words overflow-hidden group-hover:text-on-surface transition-colors duration-150',
             isRejected ? 'text-on-surface-variant italic' : 'text-on-surface-variant',
           )}>
             {c.content ?? <span className="text-on-surface-muted">Sem conteúdo</span>}

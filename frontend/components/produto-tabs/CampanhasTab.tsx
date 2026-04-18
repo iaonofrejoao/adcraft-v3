@@ -75,16 +75,17 @@ const FUNNEL_LABEL: Record<string, string> = {
 }
 
 const FUNNEL_COLOR: Record<string, string> = {
-  awareness:     'text-[#60A5FA] bg-[#60A5FA]/10',
-  consideration: 'text-[#FCD34D] bg-[#FCD34D]/10',
-  conversion:    'text-[#4ADE80] bg-[#4ADE80]/10',
+  awareness:     'text-status-running-text bg-status-running',
+  consideration: 'text-status-paused-text  bg-status-paused',
+  conversion:    'text-status-done-text    bg-status-done',
 }
 
+// Platform colors são brand-specific e mantidos como arbitrários intencionalmente
 const PLATFORM_COLOR: Record<string, string> = {
   facebook: 'text-[#60A5FA] bg-[#3B82F6]/10',
-  google:   'text-[#F87171] bg-[#EF4444]/10',
+  google:   'text-status-failed-text bg-status-failed',
   tiktok:   'text-[#F472B6] bg-[#EC4899]/10',
-  youtube:  'text-[#F87171] bg-[#EF4444]/10',
+  youtube:  'text-status-failed-text bg-status-failed',
 }
 
 /* ── Sub-components ─────────────────────────────────────────────────── */
@@ -321,15 +322,15 @@ export function CampanhasTab({ sku }: CampanhasTabProps) {
 
       {/* ── Alertas ── */}
       {d.policy_warnings?.length > 0 && (
-        <div className="bg-[#F97316]/5 border border-[#F97316]/20 rounded-xl p-4">
+        <div className="bg-brand-muted border border-brand/20 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle size={14} strokeWidth={1.5} className="text-[#F97316] shrink-0" />
-            <span className="text-xs font-semibold text-[#F97316]">Alertas de política</span>
+            <AlertTriangle size={14} strokeWidth={1.5} className="text-brand shrink-0" />
+            <span className="text-xs font-semibold text-brand">Alertas de política</span>
           </div>
           <ul className="space-y-1">
             {d.policy_warnings.map((w, i) => (
               <li key={i} className="text-[0.75rem] text-on-surface-variant flex items-start gap-2">
-                <span className="text-[#F97316]/60 shrink-0 mt-0.5">•</span>{w}
+                <span className="text-brand/60 shrink-0 mt-0.5">•</span>{w}
               </li>
             ))}
           </ul>
@@ -337,15 +338,15 @@ export function CampanhasTab({ sku }: CampanhasTabProps) {
       )}
 
       {d.budget_warnings?.length > 0 && (
-        <div className="bg-[#FCD34D]/5 border border-[#FCD34D]/20 rounded-xl p-4">
+        <div className="bg-status-paused border border-status-paused-text/20 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle size={14} strokeWidth={1.5} className="text-[#FCD34D] shrink-0" />
-            <span className="text-xs font-semibold text-[#FCD34D]">Alertas de budget</span>
+            <AlertTriangle size={14} strokeWidth={1.5} className="text-status-paused-text shrink-0" />
+            <span className="text-xs font-semibold text-status-paused-text">Alertas de budget</span>
           </div>
           <ul className="space-y-1">
             {d.budget_warnings.map((w, i) => (
               <li key={i} className="text-[0.75rem] text-on-surface-variant flex items-start gap-2">
-                <span className="text-[#FCD34D]/60 shrink-0 mt-0.5">•</span>{w}
+                <span className="text-status-paused-text/60 shrink-0 mt-0.5">•</span>{w}
               </li>
             ))}
           </ul>

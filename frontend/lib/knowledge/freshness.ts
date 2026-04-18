@@ -8,6 +8,7 @@ import type { ArtifactType } from '../agent-registry';
 // dias antes do artifact ser considerado stale.
 // null = não-cacheável (e.g. copy_components) — sempre regera, nunca é "fresh".
 const FRESHNESS_DAYS: Record<ArtifactType, number | null> = {
+  // ── Legado ────────────────────────────────────────────────────────────────
   product:                       null,  // produto em si nunca tem TTL por regra
   avatar:                          60,  // perfis de avatar mudam lentamente
   market:                          30,  // mercado é mais dinâmico
@@ -16,6 +17,18 @@ const FRESHNESS_DAYS: Record<ArtifactType, number | null> = {
   compliance_results:            null,  // resultado de compliance não é reutilizado
   copy_combinations_selected:    null,  // combinações não são reaproveitadas
   video_assets:                  null,  // assets de vídeo nunca são reaproveitados
+  // ── Pipeline Ultron ───────────────────────────────────────────────────────
+  benchmark:                       30,  // benchmark competitivo — mesma janela do market
+  campaign_strategy:               30,  // estratégia atrelada ao benchmark e market
+  script:                        null,  // roteiro não é reutilizado entre pipelines
+  character:                       60,  // personagem muda lentamente com o avatar
+  keyframes:                     null,  // keyframes gerados por pipeline — não reutilizados
+  creative_brief:                null,  // aprovação criativa não é reutilizada
+  utms:                          null,  // UTMs gerados por campanha — não reutilizados
+  facebook_ads:                  null,  // estrutura de ads por lançamento
+  google_ads:                    null,  // estrutura de ads por lançamento
+  performance_report:            null,  // dados reais — sempre regera
+  scaling_plan:                  null,  // plano de escala — sempre regera com dados novos
 };
 
 /**

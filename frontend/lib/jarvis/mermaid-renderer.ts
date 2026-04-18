@@ -6,13 +6,26 @@ import { AgentName } from '../agent-registry';
 import { PlannedTask } from './dag-builder';
 
 const AGENT_LABELS: Record<AgentName, string> = {
-  avatar_research: 'Avatar',
-  market_research: 'Market',
-  angle_generator: 'Angles',
-  copy_hook_generator: 'Copy',
-  anvisa_compliance: 'Compliance',
-  video_maker: 'Video',
-  niche_curator: 'Niche Curator',
+  // Legado
+  avatar_research:      'Avatar',
+  market_research:      'Market',
+  angle_generator:      'Angles',
+  copy_hook_generator:  'Copy',
+  anvisa_compliance:    'Compliance',
+  video_maker:          'Video',
+  niche_curator:        'Niche Curator',
+  // Pipeline Ultron
+  benchmark_intelligence: 'Benchmark',
+  campaign_strategy:      'Campanha',
+  script_writer:          'Roteiro',
+  character_generator:    'Personagem',
+  keyframe_generator:     'Keyframes',
+  creative_director:      'Dir. Criativo',
+  utm_builder:            'UTMs',
+  facebook_ads:           'Facebook Ads',
+  google_ads:             'Google Ads',
+  performance_analysis:   'Performance',
+  scaling_strategy:       'Escala',
 };
 
 const COLOR_REUSED = '#1a5f3f';

@@ -23,7 +23,13 @@ Quando o usuário pedir "roda pipeline para o produto X":
 
 Quando o usuário fornecer um `pipeline_id`:
 
-1. Executar `npx tsx scripts/pipeline/status.ts --pipeline-id <uuid>`
+1. Consultar status via MCP Supabase diretamente:
+   ```sql
+   SELECT agent_name, status, retry_count, started_at, completed_at, error, id AS task_id
+   FROM tasks
+   WHERE pipeline_id = 'UUID'
+   ORDER BY created_at;
+   ```
 2. Identificar qual task tem status `pending` ou `running` (a última completada + a próxima)
 3. Continuar a partir da primeira task não `completed`
 
@@ -35,7 +41,7 @@ Quando o usuário fornecer um `pipeline_id`:
   - Output dos agentes anteriores (lido via `scripts/artifact/get.ts`)
   - `pipeline_id` e `task_id` para gravação
 - O subagente NÃO deve chamar APIs externas diretamente — usa WebSearch e WebFetch
-- O subagente grava o resultado via script bash antes de retornar
+- O subagente grava o resultado via `scripts/artifact/save.ts` (lógica de `superseded` + fila de embeddings — NÃO substituir por MCP direto)
 
 ## Checkpoint e tolerância a falhas
 
@@ -45,19 +51,35 @@ Quando o usuário fornecer um `pipeline_id`:
 
 ## Passagem de contexto entre agentes
 
-```bash
-# Ler artefato de agente anterior
-npx tsx scripts/artifact/get.ts --pipeline-id <uuid> --type <artifact_type>
+```sql
+-- Ler artefato de agente anterior (via MCP Supabase)
+SELECT pk.artifact_data
+FROM   product_knowledge pk
+JOIN   pipelines p ON p.product_id = pk.product_id
+WHERE  p.id             = 'PIPELINE_UUID'
+  AND  pk.artifact_type = 'ARTIFACT_TYPE'
+  AND  pk.status        = 'fresh'
+ORDER BY pk.created_at DESC
+LIMIT 1;
+```
 
-# Salvar artefato do agente atual
+```bash
+# Salvar artefato do agente atual (MANTER script — lógica de superseded + fila de embeddings)
 npx tsx scripts/artifact/save.ts \
   --pipeline-id <uuid> \
   --task-id <uuid> \
   --type <artifact_type> \
   --data '<json>'
+```
 
-# Marcar task como concluída
-npx tsx scripts/pipeline/complete-task.ts --task-id <uuid>
+```sql
+-- Marcar task como concluída (via MCP Supabase)
+-- Claude Code conhece o DAG via full-pipeline.yaml e controla a progressão diretamente.
+-- seedNextTasks era necessário apenas no modelo de workers autônomos (deprecado).
+UPDATE tasks
+SET    status       = 'completed',
+       completed_at = NOW()
+WHERE  id = 'TASK_UUID';
 ```
 
 ## Artifact types por agente

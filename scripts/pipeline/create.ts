@@ -104,7 +104,7 @@ async function main() {
       plan: { type: pipelineType, agents: agentIds } as any,
       status: 'pending',
       product_version: (product as any).version ?? 1,
-      budget_usd: 0,
+      budget_usd: 10, // budget padrão por pipeline — ajustável
     });
 
     // Cria tasks

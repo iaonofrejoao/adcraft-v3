@@ -19,6 +19,9 @@ Transformar o pacote completo (roteiro + keyframes + copy aprovada) em um storyb
 - Artefato `copy_components` (copywriting) — hooks (H), bodies (B), CTAs (C) da combinação selecionada
 - Artefato `creative_brief` (creative_director) — `top_combination` ou combinação do `approved_combinations`
 - Artefato `product` (vsl_analysis) — `product_name`, `main_promise`
+- `target_language` do produto (passado no bloco de mercado-alvo)
+
+**Regra de idioma:** Overlays de texto (CTAs, preço, garantia, legendas) devem estar em `target_language`. Subtítulos gerados a partir da narração devem respeitar o idioma do roteiro.
 
 ## Metodologia — ordem de execução
 

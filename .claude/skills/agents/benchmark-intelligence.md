@@ -14,6 +14,9 @@ Mapear o campo de batalha competitivo: quem está anunciando, o que está funcio
 - Artefato `market` (market_research) — `competition_level`, `ads_running_count`, `market_warnings`
 - Artefato `product` (vsl_analysis) — `product_name`, `niche`, `main_promise`, `ticket_price`, `affiliate_platform`
 - Learnings vetoriais do nicho (se disponíveis via `scripts/search/vector.ts`)
+- `target_country` e `target_language` do produto (passados no bloco de mercado-alvo)
+
+**Regra de mercado:** Analisar concorrentes que anunciam **no `target_country`** — filtrar Facebook Ad Library e Google Ads Transparency pelo país correto. CPMs de referência e benchmark de CTR variam significativamente por mercado (US ~$10-30 CPM vs BR ~R$8-25 CPM).
 
 ## Metodologia — ordem obrigatória de execução
 

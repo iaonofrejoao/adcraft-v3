@@ -16,6 +16,9 @@ Estruturar a campanha completa no Facebook Ads Manager, pronta para ser criada: 
 - Artefato `campaign_strategy` (campaign_strategy) — `recommended_daily_budget_brl`, `target_audiences`, `funnel_stages`, `kpis`
 - Artefato `creative_brief` (creative_director) — `top_combination`, `combinations_ranked`, `production_notes`
 - Artefato `copy_components` (copywriting) — hooks, bodies, CTAs aprovados (H1-H3, B1-B3, C1-C3)
+- `target_country` e `target_language` do produto (passados no bloco de mercado-alvo)
+
+**Regra de geo-targeting:** O campo `countries` em todos os ad sets deve conter `[target_country]` — nunca deixar em modo global por padrão. Se `target_country` ≠ `BR`, também ajustar o idioma do anúncio no Ads Manager para `target_language`.
 
 ## Convenção de nomenclatura (naming convention)
 

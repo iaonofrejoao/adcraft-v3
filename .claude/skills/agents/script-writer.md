@@ -15,6 +15,9 @@ Transformar o ângulo campeão e a estratégia de campanha em um roteiro de víd
 - Artefato `campaign_strategy` (campaign_strategy) — `primary_platform`, `campaign_objective`, `target_audiences`
 - Artefato `avatar` (avatar_research) — linguagem, dores, desejos, `verbatim_expressions`
 - Artefato `product` (vsl_analysis) — `product_name`, `main_promise`, `ticket_price`, `offer_structure.guarantee_days`, `offer_structure.bonuses`
+- `target_country` e `target_language` do produto (passados no bloco de mercado-alvo)
+
+**Regra de idioma:** O roteiro inteiro (narração, legendas, CTAs do vídeo) deve ser escrito em `target_language`. Referências culturais, unidades de medida, moeda e exemplos devem ser do `target_country`. Preços no roteiro são expressos na moeda do mercado-alvo.
 
 ## Metodologia — ordem de execução
 

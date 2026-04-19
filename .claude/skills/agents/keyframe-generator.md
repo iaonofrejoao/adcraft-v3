@@ -14,6 +14,9 @@ Traduzir cada cena do roteiro em um prompt visual preciso e pronto para envio ao
 - Artefato `script` (script_writer) — array de `scenes` com `narration`, `visual_direction`, `emotion_cue`, `duration_seconds`, `section`
 - Artefato `character` (character_generator) — `characters[primary_character_id]`: `physical_description`, `visual_anchors`, `image_prompt_en`, `video_prompt_en`, `style_reference`
 - Artefato `campaign_strategy` (campaign_strategy) — `primary_platform`, `format` (para definir aspect_ratio)
+- `target_country` do produto (passado no bloco de mercado-alvo)
+
+**Nota:** Os prompts para VEO 3 e Midjourney são sempre gerados em inglês (padrão dos modelos de IA). No entanto, os cenários, ambientes e referências visuais devem ser culturalmente coerentes com o `target_country` — ex: para US, ambientes norte-americanos; para BR, ambientes brasileiros.
 
 ## Metodologia — ordem de execução
 

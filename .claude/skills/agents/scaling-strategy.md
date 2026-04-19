@@ -15,6 +15,9 @@ Com base no diagnóstico do `performance_analysis`, definir o plano de escala pr
 - Artefato `campaign_strategy` (campaign_strategy) — `recommended_daily_budget_brl`, `kpis`, `target_audiences`, `launch_sequence`
 - Artefato `avatar` (avatar_research) — para expansão de públicos similares
 - Artefato `benchmark` (benchmark_intelligence) — `differentiation_opportunities` para novos ângulos criativos
+- `target_country` e `target_language` do produto (passados no bloco de mercado-alvo)
+
+**Regra de mercado:** Planos de escala (budgets, LAL audiences, expansão geográfica) devem ser calibrados para o `target_country`. Expansão geográfica dentro do mesmo país antes de internacionalizar. Budgets expressos na moeda do mercado-alvo.
 
 ## Metodologia — framework de decisão de escala
 

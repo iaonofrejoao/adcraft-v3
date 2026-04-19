@@ -33,11 +33,56 @@ Quando o usuário fornecer um `pipeline_id`:
 2. Identificar qual task tem status `pending` ou `running` (a última completada + a próxima)
 3. Continuar a partir da primeira task não `completed`
 
+## Contexto de mercado-alvo (target_country / target_language)
+
+Todo pipeline está vinculado a um produto que tem `target_country` e `target_language` definidos na tabela `products`. **Esses dois campos determinam o idioma, as referências culturais, as regulações e os benchmarks de todos os materiais produzidos.**
+
+### Como obter antes de spawnar agentes
+
+```sql
+SELECT target_country, target_language FROM products WHERE id = 'PRODUCT_UUID';
+```
+
+Exemplos comuns:
+
+| target_country | target_language | Mercado |
+|----------------|-----------------|---------|
+| `BR` | `pt-BR` | Brasil |
+| `US` | `en-US` | Estados Unidos |
+| `GB` | `en-GB` | Reino Unido |
+| `ES` | `es-ES` | Espanha |
+| `MX` | `es-MX` | México |
+
+### Regra obrigatória de passagem
+
+O prompt de **todo subagente** DEVE incluir o bloco abaixo (após o skill file e antes dos artefatos):
+
+```
+## Mercado-alvo do produto
+- target_country: <valor do banco>
+- target_language: <valor do banco>
+- Todos os materiais produzidos (copy, script, pesquisa, anúncios, criativos) devem ser gerados no idioma <target_language> e adaptados para o contexto cultural, regulatório e econômico do mercado <target_country>.
+```
+
+### Impacto por camada do pipeline
+
+| Camada | O que muda com target_country ≠ BR |
+|--------|-----------------------------------|
+| **Pesquisa** (market, avatar, benchmark) | Fontes de dados do país certo; benchmarks de CPM/CPC do mercado-alvo |
+| **Estratégia** (campaign_strategy) | Moeda nos KPIs (USD, EUR…); plataformas disponíveis no país; CPA target ajustado ao ticket em moeda local |
+| **Criativo** (copy, script, angles) | Idioma da copy; idioms e referências culturais locais; dores e linguagem do avatar do país |
+| **Compliance** (compliance_check) | Regulação do país: FTC (US), ASA (UK), CONAR (BR), etc. |
+| **Anúncios** (facebook_ads, google_ads) | Geo-targeting configurado para target_country; negative keywords no idioma certo; extensões adaptadas |
+| **Performance** (performance_analysis) | Benchmarks de referência do mercado-alvo (CPM US ≠ CPM BR) |
+
+---
+
 ## Regras de execução dos subagentes
 
 - Cada agente é executado via Agent tool (subagente)
 - O prompt do subagente DEVE incluir:
   - Conteúdo do skill file correspondente em `.claude/skills/agents/<agente>.md`
+  - Bloco de **Mercado-alvo do produto** (ver seção acima)
   - Output dos agentes anteriores (lido via `scripts/artifact/get.ts`)
   - `pipeline_id` e `task_id` para gravação
 - O subagente NÃO deve chamar APIs externas diretamente — usa WebSearch e WebFetch

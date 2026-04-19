@@ -14,6 +14,9 @@ Gerar a estrutura completa e padronizada de UTMs para rastreamento de cada varia
 - Artefato `campaign_strategy` (campaign_strategy) — `primary_platform`, `secondary_platforms`, `target_audiences`, `campaign_objective`
 - Artefato `creative_brief` (creative_director) — `top_combination`, `combinations_ranked` (tags aprovadas)
 - Artefato `product` (vsl_analysis) — `product_name`, `platform` (URL de destino)
+- `target_country` do produto (passado no bloco de mercado-alvo)
+
+**Nota:** Incluir `target_country` como parâmetro `utm_content` ou no `utm_campaign` quando o produto for multi-mercado, para diferenciar performance por país nas analytics.
 
 ## Convenção canônica de UTMs AdCraft
 

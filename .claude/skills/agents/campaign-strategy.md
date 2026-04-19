@@ -16,6 +16,16 @@ Traduzir toda a pesquisa em uma estratégia de campanha executável: onde anunci
 - Artefato `avatar` (avatar_research) — persona, dores, plataformas que usa, perfil demográfico
 - Artefato `angles` (angle_generator) — `primary_angle`, `angle_type`, `selected_hook_variant`
 - Artefato `benchmark` (benchmark_intelligence) — `differentiation_opportunities`, `dominant_player`, `market_maturity`
+- `target_country` e `target_language` do produto (passados no bloco de mercado-alvo)
+
+## Adaptação por mercado-alvo
+
+Quando `target_country` ≠ `BR`, ajustar obrigatoriamente:
+- **Moeda**: KPIs (`target_cpa`, `max_acceptable_cpa`, budgets) expressos em USD para US, EUR para zona do Euro, GBP para GB — nunca em BRL para mercados fora do Brasil
+- **Plataformas disponíveis**: TikTok ads disponível em US/EU; algumas plataformas têm restrições regionais
+- **Funil de pagamento**: Hotmart é menos conhecido fora do Brasil → mencionar alternativas (ClickBank, Stripe, PayPal) se aplicável
+- **Benchmarks de CPA/CPM**: CPM no US é 3-5× maior que no BR; ajustar targets de CPA para refletir a realidade do mercado
+- **Idioma dos materiais**: toda copy, naming de campanhas e configurações devem estar em `target_language`
 
 ## Metodologia — ordem obrigatória de execução
 

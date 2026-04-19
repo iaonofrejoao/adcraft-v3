@@ -14,6 +14,9 @@ Definir o personagem principal do criativo — o "rosto" do anúncio — com des
 - Artefato `avatar` (avatar_research) — `full_profile` (age_range, gender, location, income_level), `psychographic` (primary_pain, primary_desire), `verbatim_expressions`
 - Artefato `product` (vsl_analysis) — `niche`, `main_promise`, `affiliate_platform`
 - Artefato `angles` (angle_generator) — `angle_type`, `emotional_trigger` (se disponível)
+- `target_country` e `target_language` do produto (passados no bloco de mercado-alvo)
+
+**Regra de representação:** O personagem deve ser visualmente representativo do `target_country` — etnia, estilo de vida, ambiente e vestimenta típicos do mercado-alvo. Evitar personagens estereotipicamente brasileiros para produtos destinados ao mercado norte-americano ou europeu.
 
 ## Metodologia — ordem de execução
 

@@ -13,16 +13,31 @@ Identificar red flags nos componentes de copy antes do lançamento, evitando rep
 ## Contexto necessário
 - Todos os componentes de copy do pipeline (ler via `scripts/artifact/get.ts --type copy_components` ou diretamente da tabela `copy_components` pelo `pipeline_id`)
 - Artefato `product` para entender o nicho e verificar claims
+- `target_country` e `target_language` do produto (passados no bloco de mercado-alvo)
+
+## Regulação por mercado-alvo
+
+A regulação aplicável muda com `target_country`. Aplicar **sempre** a regulação do país de destino:
+
+| target_country | Órgão regulador | Pontos críticos |
+|----------------|-----------------|-----------------|
+| `BR` | ANVISA, CONAR, Procon | Claims de saúde proibidos sem comprovação; urgência fabricada proibida |
+| `US` | FTC (Federal Trade Commission) | Endossos devem ser reais; disclaimers obrigatórios em claims de resultado; "results not typical" |
+| `GB` | ASA (Advertising Standards Authority) | Advertising Codes CAP/BCAP; claims de saúde exigem evidência robusta |
+| `ES` / `MX` / outros | Regulação local equivalente | Verificar via WebSearch "advertising regulations [country] health products" |
+
+Quando `target_country` ≠ `BR`: substituir referências à ANVISA e CONAR pelo órgão regulador do país. Manter a lógica de checklist mas aplicar os critérios do mercado correto.
 
 ## Checklist de verificação
 
-1. **Claims irreais de saúde** — promessas de cura, reversão de doenças, resultados garantidos sem ressalva. ANVISA proíbe e Facebook reprova.
+1. **Claims irreais de saúde** — promessas de cura, reversão de doenças, resultados garantidos sem ressalva. Proibido em todos os mercados; regulação específica varia por `target_country`.
 2. **Urgência manipuladora** — contagens regressivas falsas, escassez fabricada, "Oferta expira em X horas" sem ser real.
-3. **Linguagem financeira fraudulenta** — "Ganhe R$X por dia sem fazer nada", esquemas de enriquecimento rápido.
+3. **Linguagem financeira fraudulenta** — "Ganhe $X por dia sem fazer nada", esquemas de enriquecimento rápido.
 4. **Termos sensíveis por nicho**:
-   - Saúde: "cura", "tratamento", "medicamento", "emagrecimento garantido"
-   - Finanças: "investimento", "retorno garantido"
+   - Saúde: "cura", "tratamento", "medicamento", "emagrecimento garantido" (BR) / "cures", "treats", "guaranteed weight loss" (US/GB)
+   - Finanças: "investimento", "retorno garantido" / "guaranteed return", "investment"
 5. **Linguagem sexualizada** — foco excessivo em partes do corpo
+6. **Disclaimers obrigatórios (US/GB)** — se `target_country` = US ou GB: verificar se claims de resultado têm disclaimer ("individual results may vary" ou equivalente)
 
 ## Sistema de prompt (base)
 

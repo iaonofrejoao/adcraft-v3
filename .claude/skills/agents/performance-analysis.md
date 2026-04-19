@@ -12,7 +12,7 @@ Analisar dados reais de performance das campanhas no ar, diagnosticar problemas 
 
 ## Contexto necessário
 - **Dados de performance** fornecidos pelo usuário (CSV ou relatório manual do Ads Manager / Google Ads)
-- Artefato `campaign_strategy` (campaign_strategy) — `kpis` com CPA target, ROAS target, CTR target
+- Artefato `campaign_strategy` (campaign_strategy) — `kpis` com `target_cpa_brl`, `max_acceptable_cpa_brl`, ROAS target, CTR target
 - Artefato `facebook_ads` e/ou `google_ads` — naming convention para cruzar com os dados
 - Artefato `creative_brief` (creative_director) — combinações lançadas para comparar performance por tag
 
@@ -37,8 +37,8 @@ Comparar `summary.average_cpa_brl` com `kpis.target_cpa_brl`:
 |----------|-------------------|
 | CPA ≤ target | `overperforming` |
 | CPA entre target e target × 1.3 | `on_track` |
-| CPA entre target × 1.3 e target × 2 | `underperforming` |
-| CPA > target × 2 OU ROAS < 1.0 | `critical` |
+| CPA entre target × 1.3 e max_acceptable_cpa_brl | `underperforming` |
+| CPA > max_acceptable_cpa_brl × 1.5 OU ROAS < 1.0 | `critical` |
 
 Calcular também:
 - `average_roas` = receita total / gasto total
@@ -96,7 +96,7 @@ Classificar cada ad set:
 | `winner` | CPA ≤ target E CTR ≥ target E ≥7 dias de dados |
 | `testing` | <7 dias OU <500 impressões — aguardar |
 | `underperforming` | CPA entre target × 1.3 e × 2 por ≥7 dias |
-| `pause` | CPA > target × 2 por ≥7 dias OU 0 conversões em 14 dias com gasto > CPA target |
+| `pause` | CPA > max_acceptable_cpa_brl × 1.5 por ≥7 dias OU 0 conversões em 14 dias com gasto > CPA target |
 
 ---
 
@@ -140,7 +140,7 @@ Sua missão é interpretar os dados de campanha fornecidos, diagnosticar o que e
 **REGRAS OBRIGATÓRIAS:**
 1. Nunca classificar criativo ou ad set como "loser" com menos de 7 dias de dados OU menos de 500 impressões. Usar `testing` nesses casos.
 2. Todas as recomendações devem citar a métrica específica que as motivou — sem recomendação vaga ("melhorar o criativo" não é acionável; "trocar hook pois hook_rate = 12% após 7 dias" é acionável).
-3. `overall_assessment` deve ser calculado pela comparação CPA real vs. `kpis.target_cpa_brl` do campaign_strategy — não por intuição.
+3. `overall_assessment` deve ser calculado pela comparação CPA real vs. `kpis.target_cpa_brl` e `kpis.max_acceptable_cpa_brl` do campaign_strategy — não por intuição. `critical` = CPA > `max_acceptable_cpa_brl` × 1.5, nunca target × 2.
 4. Se os dados fornecidos forem insuficientes (período <7 dias, <500 impressões por criativo), documentar em `data_quality_notes` e não emitir classificações definitivas.
 5. `next_steps` deve ser a lista de ações para o `scaling_strategy` executar — ordered por prioridade.
 6. Máximo 5 recomendações de prioridade `high`.

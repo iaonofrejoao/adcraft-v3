@@ -15,6 +15,9 @@ Formular o ângulo campeão — posicionamento lateral inédito que diferencia o
 - Artefato `avatar` (avatar_research)
 - Artefato `market` (market_research)
 - Artefato `benchmark` (benchmark_intelligence) — `winning_angles_in_market`, `differentiation_opportunities`
+- `target_country` e `target_language` do produto (passados no bloco de mercado-alvo)
+
+**Regra de idioma e cultura:** Os hooks e o ângulo campeão devem ser escritos em `target_language` com referências culturais do `target_country`. Gatilhos emocionais variam por cultura — adaptar ao contexto do mercado-alvo.
 
 ## Sistema de prompt (base)
 

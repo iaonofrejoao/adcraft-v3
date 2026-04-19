@@ -18,6 +18,9 @@ Atuar como o último filtro de qualidade antes da produção: revisar o pacote c
 - Artefato `keyframes` (keyframe_generator) — `keyframes`, `style_consistency_notes`
 - Artefato `avatar` (avatar_research) — `psychographic.primary_pain`, `verbatim_expressions`
 - Artefato `campaign_strategy` (campaign_strategy) — `primary_platform`, `policy_warnings`
+- `target_country` e `target_language` do produto (passados no bloco de mercado-alvo)
+
+**Regra de coerência de mercado:** Na revisão, verificar se a copy está no `target_language` correto e se referências culturais, moeda e benchmarks de tempo/resultado são adequados ao `target_country`. Bloquear (`approved_for_production: false`) se copy estiver em idioma errado.
 
 ## Metodologia — checklist de revisão
 

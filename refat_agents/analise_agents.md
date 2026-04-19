@@ -424,3 +424,35 @@
   ---
   Avaliação geral: O pipeline é conceitualmente excelente — a cadeia emotion_cue → character_anchor → creative_tag é particularmente
   sofisticada. Os bugs críticos são correções de texto nos skills, não redesigns. A maior fragilidade estrutural é o fluxo creative_director →   compliance_check → facebook_ads sem reconciliação explícita.
+
+
+  ficaram 3 pontos abertos:
+
+  ---
+  1. performance_analysis — não usa max_acceptable_cpa_brl
+
+  O plano previa atualizar a árvore de diagnóstico para usar o novo campo de teto, mas só adicionei o    
+  protocolo de invocação. Atualmente o agente só conhece target_cpa_brl — o critical continua hardcoded  
+  como CPA > target × 2, quando o correto seria CPA > max_acceptable_cpa_brl × 1.5.
+
+  2. google-ads — não tem a regra de precedência de approved_combinations
+
+  O facebook-ads recebeu a regra explícita de usar compliance_results.approved_combinations como fonte   
+  autoritativa. O google-ads ficou sem essa instrução — vai continuar inferindo aprovação da lista de    
+  issues.
+
+  3. niche_curator — não estava no plano mas continua sub-documentado
+
+  Ficou de fora intencionalmente porque a análise o classificou como menor prioridade. Ainda não tem CLI 
+  wrapper documentado nem protocolo de disparo.
+
+  ---
+  Quer que eu resolva os dois primeiros agora (são edições pequenas e diretas)? O terceiro,
+  niche_curator, vale uma conversa separada porque envolve entender como você quer disparar ele — cron,  
+  manual ou gatilho de pipeline.
+
+❯ um ponto que talvez interfira, eu não vou criar produtos, copys, criativos e etc apenas para o Brasil, 
+   vou vender para os estados unidos, europa, etc. Então é importante que eu possa definir para qual     
+  país vou anunciar no produto para que isso sirva de filtro para todos os materiais produzidos. Então   
+  por exemplo, se eu pedir pra você cadastrar um produto, eu preciso te falar qual país vou vender ele,  
+  para ai sim você configurar isso no banco de dados fazendo com que cada agente 

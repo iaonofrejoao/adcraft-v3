@@ -30,9 +30,50 @@ Antes de executar ou modificar qualquer agente de pipeline, leia:
 ### Fluxo de execução
 1. `npx tsx scripts/pipeline/create.ts --product-id <uuid> [--type full|pesquisa|criativo|lancamento]`
 2. Ler `.claude/pipelines/full-pipeline.yaml` para ordem e dependências
-3. Spawnar cada agente em sequência (Agent tool) com o skill correspondente
-4. Cada agente grava no banco via `scripts/artifact/save.ts`
-5. Ao final: `npx tsx scripts/learning/extract.ts --pipeline-id <uuid>`
+3. Buscar learnings vetoriais do nicho: `npx tsx scripts/search/vector.ts --query "<produto+nicho>" --niche-id <uuid> --limit 5`
+4. Spawnar cada agente em sequência (Agent tool) com o skill correspondente + bloco de mercado-alvo
+5. Cada agente grava no banco via `scripts/artifact/save.ts`
+6. Ao final: `npx tsx scripts/learning/extract.ts --pipeline-id <uuid>`
+
+### As 3 fases do pipeline
+
+**Fase 1 — Pesquisa (Agentes 1–6):** entender o produto e o mercado antes de criar qualquer material.
+```
+VSL Analysis → [Market Research ∥ Avatar Research] → Benchmark Intelligence → Angle Generator → Campaign Strategy
+```
+Os agentes de pesquisa rodam parcialmente em paralelo. O Angle Generator sintetiza tudo para formular o posicionamento diferenciado.
+
+**Fase 2 — Criativo (Agentes 7–12):** produzir o pacote completo de materiais.
+```
+[Script Writer ∥ Copywriting ∥ Character Generator] → Keyframe Generator → Video Maker → Creative Director
+```
+O Creative Director é o único filtro de qualidade criativa — aprova ou bloqueia o pacote antes de avançar.
+
+**Fase 3 — Lançamento (Agentes 13–18):** preparar e estruturar a campanha.
+```
+[Compliance Check ∥ UTM Builder] → [Facebook Ads ∥ Google Ads] → Performance Analysis → Scaling Strategy
+```
+Facebook Ads e Google Ads usam **exclusivamente** `compliance_results.approved_combinations` como fonte de copy.
+
+### Loops de revisão
+
+**Loop 1 — Creative Director bloqueia:** re-invoca o agente indicado (máximo 2× por pipeline). Se ainda bloqueado após 2 tentativas, escalar para o usuário.
+
+**Loop 2 — Compliance bloqueia top_combination:** Facebook/Google caem para próxima combinação aprovada. Se `approved_combinations` vazio, pipeline pausa aguardando instrução do usuário.
+
+**Loop 3 — Todos criativos são losers (hook_rate < 15% por 14 dias):** Scaling Strategy sinaliza; criar pipeline criativo filho com `--type criativo --parent-pipeline <id>`, reutilizando pesquisa do pipeline pai.
+
+### Multi-mercado — regra obrigatória
+
+Antes de spawnar **qualquer** subagente, injetar no prompt:
+```
+## Mercado-alvo do produto
+- target_country: <valor de products.target_country>
+- target_language: <valor de products.target_language>
+- Todos os materiais devem ser gerados em <target_language>,
+  adaptados para o contexto cultural, regulatório e econômico de <target_country>.
+```
+Obter os valores com: `SELECT target_country, target_language FROM products WHERE id = 'PRODUCT_UUID';`
 
 ### Scripts disponíveis
 | Script | Uso |

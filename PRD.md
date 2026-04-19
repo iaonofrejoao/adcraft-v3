@@ -1,525 +1,483 @@
-# AdCraft v2 — Product Requirements Document
+# AdCraft v2 — Product Requirements Document (Arquitetura Ultron)
 
-**Versão:** 2.0
-**Data:** Abril 2026
-**Status:** Aprovado para implementação
+**Versão:** 2.1 — Ultron / Claude Code
+**Atualizado:** Abril 2026
+**Legado:** Ver `PRD-jarvis-legacy.md` para arquitetura anterior (Jarvis + workers)
 
 ---
 
 ## 1. Executive Summary
 
-AdCraft v2 é uma plataforma de marketing autônomo controlada por linguagem natural. O usuário (CMO) conversa com **Jarvis**, um orquestrador de IA que interpreta pedidos, planeja dinamicamente quais agentes precisam rodar, executa o pipeline e apresenta resultados.
+AdCraft é uma plataforma de marketing com IA para criação de criativos e gestão de campanhas de tráfego pago. O usuário conversa com **Claude Code (Ultron)** — que atua como orquestrador central — e recebe como output um pacote completo de campanha: pesquisa de mercado e avatar, estratégia, copy, roteiro, criativos visuais, estrutura de anúncios para Meta e Google, e plano de escala.
 
-A v2 abandona o pipeline fixo do v1 em favor de **planejamento dinâmico via capability registry**. Cada pedido vira um DAG mínimo de tasks reaproveitando artifacts já gerados quando possível. O sistema aprende padrões por nicho e injeta esse aprendizado em todo produto novo do mesmo nicho.
+A arquitetura Ultron abandona o modelo de workers autônomos (Node.js polling) em favor de **Claude Code como motor de execução**. Cada agente é um skill file lido por um subagente Claude spawned on-demand. O estado vive no banco (Supabase). O orquestrador (Claude Code) lê o DAG, spawna agentes em sequência, gerencia loops de revisão e grava artefatos.
 
-**Escopo da v2:** pesquisa de avatar/mercado, geração de ângulos, geração de copy (3 hooks + 3 bodies + 3 CTAs com aprovação por componente), geração de vídeo via VEO 3.
-
-**Fora do escopo (v3):** integrações com Meta Ads, Google Ads, YouTube/Amazon scrapers, pipeline de campanha.
+**Diferencial arquitetural:** inteligência de execução fica no LLM (Claude), não no código. O pipeline é um DAG declarativo (`full-pipeline.yaml`). Cada agente é stateless — o contexto vem dos artefatos do banco.
 
 ---
 
-## 2. Product Overview
+## 2. O que o AdCraft faz
 
-### 2.1 O que o AdCraft v2 faz
+### Jornada do usuário
 
-- Recebe pedidos em linguagem natural via chat (Jarvis)
-- Planeja dinamicamente quais agentes rodar com base no goal e nos artifacts existentes do produto
-- Apresenta o plano como diagrama Mermaid pro usuário aprovar antes de executar
-- Executa pipeline reaproveitando avatar/market/angles já gerados (frescor configurável)
-- Gera 3 hooks + 3 bodies + 3 CTAs como componentes independentes
-- Permite aprovação por componente, não por copy completa
-- Materializa combinações N×M×K só com componentes aprovados
-- Gera vídeos VEO 3 apenas das combinações selecionadas pelo usuário
-- Aprende padrões por nicho via curadoria humana e injeta nos agentes
-- Rastreia tudo via tags determinísticas (SKU + versão + componentes)
+1. Usuário cadastra produto informando URL da VSL + `target_country` + `target_language`
+2. Usuário pede execução de pipeline no chat: `"Roda pipeline completo para o produto X (product_id: UUID)"`
+3. Claude Code lê o DAG, busca learnings vetoriais do nicho, spawna o Agente 1 (VSL Analysis)
+4. Cada agente grava seu artefato no banco; o próximo agente lê o artefato do anterior
+5. Ao final da Fase 1 (pesquisa), Claude Code reporta sumário e continua para Fase 2
+6. Loops de revisão são acionados automaticamente se Creative Director ou Compliance bloquearem
+7. Output final: estrutura de campanha completa salva no banco, visualizável no frontend
 
-### 2.2 Jornada do usuário
+### O que o sistema produz (por fase)
 
-1. Usuário cadastra produto (URL ou descrição) → sistema gera SKU de 4 letras + classifica nicho automaticamente
-2. Usuário pede algo no chat: "faz uma copy pra @ABCD" ou "quero entender o público desse novo produto"
-3. Jarvis classifica o goal, consulta `product_knowledge` e `niche_learnings`, monta plano
-4. Jarvis apresenta plano como Mermaid + lista textual + botões Aprovar/Ajustar/Cancelar
-5. Usuário aprova → workers executam tasks em ordem de dependência
-6. Quando atinge checkpoint (componentes de copy ou seleção de combinações), Jarvis pausa e notifica
-7. Usuário aprova componentes em `/products/[sku]/copies` (3 colunas: Hooks/Bodies/CTAs)
-8. Sistema materializa combinações; se goal for `creative_full`, Jarvis pergunta quais viram vídeo
-9. Vídeos prontos → usuário baixa em `/creatives` e usa onde quiser
+| Fase | Agentes | Output |
+|------|---------|--------|
+| Pesquisa | 1–6 | Análise do produto, mercado, avatar, benchmark, ângulo campeão, estratégia de campanha |
+| Criativo | 7–12 | Roteiro, copy (3H × 3B × 3CTA), personagem, keyframes, storyboard, brief criativo aprovado |
+| Lançamento | 13–18 | Copy auditada, UTMs rastreados, campanha Facebook, campanha Google, diagnóstico de performance, plano de escala |
 
-### 2.3 O que o AdCraft v2 NÃO faz
+### O que o sistema NÃO faz
 
-- Não sobe campanha em Meta/Google Ads (volta na v3)
-- Não scrapeia YouTube, Amazon, Mercado Livre, Facebook Ad Library
-- Não decide sozinho — sempre pede aprovação de plano e checkpoints
-- Não gera 27 vídeos automaticamente — usuário seleciona combinações
+- Não sobe campanha automaticamente em Meta/Google (estrutura é entregue para o usuário criar)
+- Não decide sem o usuário — loops de revisão escalam para aprovação humana após 2 tentativas
+- Não gera materiais em idioma/mercado diferente do `target_country` cadastrado no produto
 
 ---
 
-## 3. Technical Architecture
+## 3. Arquitetura de Execução
 
-### 3.1 Stack
-
-```
-Frontend:    Next.js 14 App Router · Tailwind · TypeScript · React
-Realtime:    SSE (chat Jarvis) + Supabase Realtime (status de tasks)
-LLM:         Google Gemini API
-             - gemini-2.5-pro (agentes criativos: avatar, market, angles, copy)
-             - gemini-2.5-flash (Jarvis, compliance, niche_curator, video_maker)
-Embeddings:  Gemini gemini-embedding-001 (768 dim)
-Video:       Google VEO 3 via Google AI Studio
-Database:    Supabase PostgreSQL 15 + pgvector
-ORM:         Drizzle
-Storage:     Cloudflare R2 (S3-compatible)
-Workers:     Node.js TypeScript · polling tasks a cada 5s
-Diagrams:    mermaid.js (renderização client-side do plano do Jarvis)
-Auth:        Nenhuma (v1.0 local, single-user)
-```
-
-### 3.2 Arquitetura de execução
+### Stack atual
 
 ```
-[Frontend Next.js]
-       ↓ SSE
-[/api/chat]  ←→  [Jarvis Service]
-                       ↓ tools
-                  [Planner] → consulta product_knowledge + niche_learnings
-                       ↓
-                  [DB Supabase] ← workers polling
-                                       ↓
-                                  [Worker Node.js]
-                                       ↓
-                                  [Agent Router]
-                                       ↓
-                                  [Gemini Client com cache]
-                                       ↓
-                                  escreve em pipeline.state
-                                       ↓
-                                  escreve em product_knowledge
-                                       ↓
-                                  enfileira embedding
+Frontend:    Next.js 14 App Router · Tailwind · TypeScript · Shadcn/ui
+Database:    Supabase PostgreSQL + pgvector
+ORM:         Drizzle (schema em frontend/lib/schema/index.ts)
+LLM:         Claude (Anthropic) via Claude Code — motor principal
+             Gemini — embeddings (gemini-embedding-001, 768 dim) + learning-extractor
+Orquestrador: Claude Code (Ultron) — substitui Jarvis e workers
+Workers ativos: gemini-embeddings.ts (batch embeddings) · learning-extractor.ts · learning-aggregator-cron.ts
+Workers deprecados: task-runner.ts · agents/*.ts · gemini-client.ts
 ```
 
-### 3.3 Pipeline de execução
+### Fluxo de execução
 
-Não existe sequência fixa. O Jarvis monta o DAG por demanda via capability registry. Cada task tem `depends_on uuid[]` que aponta pras tasks predecessoras. O worker só pega tasks cujas dependências estão `done`.
+```
+Usuário fala com Claude Code
+        ↓
+Claude Code lê full-pipeline.yaml (DAG)
+        ↓
+Busca learnings vetoriais do nicho (scripts/search/vector.ts)
+        ↓
+Spawna Agente 1 via Agent tool (subagente com skill file)
+        ↓
+Subagente executa, grava artefato via scripts/artifact/save.ts
+        ↓
+Claude Code lê próxima task do DAG, spawna Agente 2
+        ↓
+... repete até o Agente 18 ...
+        ↓
+scripts/learning/extract.ts — extrai learnings pós-pipeline
+```
+
+### Scripts de orquestração (DB bridge)
+
+| Script | Função |
+|--------|--------|
+| `scripts/pipeline/create.ts` | Cria pipeline + tasks no banco |
+| `scripts/pipeline/status.ts` | Consulta estado atual |
+| `scripts/pipeline/complete-task.ts` | Marca task como concluída |
+| `scripts/artifact/save.ts` | Salva artefato em product_knowledge (superseded + fila embeddings) |
+| `scripts/artifact/get.ts` | Lê artefato de um pipeline |
+| `scripts/copy/save-components.ts` | Salva hooks/bodies/CTAs em copy_components |
+| `scripts/copy/update-compliance.ts` | Atualiza compliance_status por tag |
+| `scripts/learning/extract.ts` | Extrai learnings pós-pipeline |
+| `scripts/search/vector.ts` | Busca semântica nos learnings do nicho |
 
 ---
 
-## 4. Agent System Design
+## 4. Sistema de 18 Agentes
 
-### 4.1 Capability Registry
+### Visão geral do pipeline
 
-Cada agente declara o que consome e o que produz. O planner usa isso pra resolver dependências.
+O pipeline é um DAG de 18 agentes em 3 fases sequenciais. Cada agente é stateless: recebe contexto via artefatos do banco e grava seu output como novo artefato. O orquestrador (Claude Code) controla o fluxo.
 
-```typescript
-// /workers/lib/agent-registry.ts
-export const AGENT_REGISTRY = {
-  avatar_research: {
-    requires: ['product'],
-    produces: ['avatar'],
-    cacheable: true,
-    freshness_days: 60,
-    model: 'gemini-2.5-pro',
-    max_input_tokens: 4000,
-  },
-  market_research: {
-    requires: ['product'],
-    produces: ['market'],
-    cacheable: true,
-    freshness_days: 30,
-    model: 'gemini-2.5-pro',
-    max_input_tokens: 4000,
-  },
-  angle_generator: {
-    requires: ['product', 'avatar', 'market'],
-    produces: ['angles'],
-    cacheable: true,
-    freshness_days: 30,
-    model: 'gemini-2.5-pro',
-    max_input_tokens: 8000,
-  },
-  copy_hook_generator: {
-    requires: ['product', 'avatar', 'angles'],
-    produces: ['copy_components'],
-    cacheable: false,
-    model: 'gemini-2.5-pro',
-    max_input_tokens: 10000,
-    modes: ['full', 'hooks_only', 'bodies_only', 'ctas_only'],
-  },
-  anvisa_compliance: {
-    requires: ['copy_components'],
-    produces: ['compliance_results'],
-    cacheable: false,
-    model: 'gemini-2.5-flash',
-    max_input_tokens: 6000,
-  },
-  video_maker: {
-    requires: ['copy_combinations_selected', 'product'],
-    produces: ['video_assets'],
-    cacheable: false,
-    model: 'gemini-2.5-flash',
-    max_input_tokens: 4000,
-  },
-};
 ```
-
-### 4.2 Goals Catalog
-
-5 goals fechados na v2. Jarvis classifica o pedido livre do usuário em um destes.
-
-| Goal | Deliverable | Agentes envolvidos | Checkpoints |
-|---|---|---|---|
-| `avatar_only` | avatar | avatar_research | nenhum |
-| `market_only` | market | market_research | nenhum |
-| `angles_only` | angles | avatar + market + angle_generator | nenhum |
-| `copy_only` | copy_components aprovados | angles + copy_hook_generator + anvisa_compliance | aprovação por componente |
-| `creative_full` | vídeos das combinações selecionadas | copy + video_maker | aprovação de componentes + seleção de combinações |
-
-### 4.3 Jarvis — Orquestrador
-
-**Modelo:** gemini-2.5-flash
-**Prompt:** `prompts/jarvis.md`
-
-**Intents** (classificados em `route.ts`):
-- `list_products` — perguntas sobre catálogo de produtos
-- `create_pipeline` — produto + goal identificados → monta plano
-- `approve_plan` — usuário confirma plano pendente (defensive lookup via messages)
-- `check_status` — consulta de pipeline em andamento
-- `general_question` — dúvidas operacionais + goal sem produto
-
-Aprovação de componentes e seleção de combinações ocorrem via UI (tela `/products/[sku]/copies`), não via intent do chat.
-
-**Tools:**
-- `resolve_product(query)` — busca produto por SKU/nome/menção
-- `get_product_knowledge(product_id)` — artifacts fresh do produto
-- `plan_pipeline(goal, product_id, force_refresh?)` — gera DAG via planner
-- `create_pipeline_from_plan(plan_id)` — persiste e enfileira tasks
-- `get_pipeline_status(pipeline_id)` — estado atual com progresso
-- `query_niche_learnings(niche_id, types, limit)` — consulta learnings
-- `list_recent_artifacts(limit)` — pra dropdown do `/`
-- `render_plan_card(plan_data)` — card visual com Mermaid
-- `render_approval_card(approval_type, payload)`
-
-### 4.4 Agentes (refatorados/reaproveitados)
-
-| Agente v2 | Origem | Mudança |
-|---|---|---|
-| `avatar_research` | `persona_builder.md` v1 | Nenhuma — reaproveita íntegro |
-| `market_research` | `market_researcher.md` v1 | Nenhuma — reaproveita íntegro |
-| `angle_generator` | `angle_strategist.md` v1 | Nenhuma — reaproveita íntegro |
-| `copy_hook_generator` | `copy_writer.md` v1 | Refatorado — output 3+3+3 + 4 modos de execução |
-| `anvisa_compliance` | `compliance_checker.md` v1 | Nenhuma — reaproveita íntegro |
-| `video_maker` | novo orquestrador | Novo — internamente usa lógica de `character_generator`, `keyframe_generator`, `video_generator` da v1 (arquivados, reaproveitados como sub-rotinas) |
-
-### 4.5 Jobs agendados
-
-`niche_curator` é um job agendado (cron diário às 4h), não um agente de pipeline. Ele consome sinais de aprovação/rejeição de componentes e produz `niche_learnings` consolidados. Não entra no `agent-registry` nem é orquestrado pelo planner. O cron (`workers/cron/niche-curator-cron.ts`) enfileira tasks com `pipeline_id = NULL`; o task-runner as executa normalmente via `callAgent`, garantindo logging em `llm_calls` (Regra 18).
-
----
-
-## 5. Shared State Schema
-
-`pipeline.state` é JSONB. Cada agente escreve apenas no seu campo. Merge JSONB obrigatório (`state || partial::jsonb`).
-
-```json
-{
-  "product": { "id", "sku", "name", "url", "niche_id", "version" },
-  "avatar": { ... },
-  "market": { ... },
-  "angles": [ { "id", "name", "rationale", "score" } ],
-  "copy_components": {
-    "hooks":  [ { "slot": 1, "tag": "ABCD_v1_H1", "content", "register" } ],
-    "bodies": [ { "slot": 1, "tag": "ABCD_v1_B1", "content", "structure" } ],
-    "ctas":   [ { "slot": 1, "tag": "ABCD_v1_C1", "content", "intensity" } ]
-  },
-  "compliance_results": { "by_component": { "ABCD_v1_H1": "approved", ... } },
-  "selected_combinations": [ "ABCD_v1_H1_B2_C1", ... ],
-  "video_assets": [ { "tag": "ABCD_v1_H1_B2_C1_V1", "url" } ]
-}
+PRODUTO (product_id + target_country + target_language)
+    ↓
+┌─────────────────────────────────┐
+│ FASE 1 — PESQUISA (Agentes 1–6) │
+└─────────────────────────────────┘
+    ↓
+┌──────────────────────────────────┐
+│ FASE 2 — CRIATIVO (Agentes 7–12) │
+└──────────────────────────────────┘
+    ↓
+┌──────────────────────────────────────┐
+│ FASE 3 — LANÇAMENTO (Agentes 13–18) │
+└──────────────────────────────────────┘
+    ↓
+CAMPANHA PRONTA
 ```
 
 ---
 
-## 6. Database Schema
+### Fase 1 — Pesquisa
 
-### Tabelas mantidas do v1 (não alterar — migrations 001-013 já aplicadas)
-`enums`, `users`, `user_credentials`, `niches`, `pattern_intelligence`, `products`, `templates`, `projects`, `executions`, `assets`, `campaigns`, `knowledge_notifications`. Algumas foram estendidas com colunas novas (ver abaixo).
+Objetivo: entender o produto e o mercado antes de criar qualquer material.
 
-### Novas tabelas v2 (em `/migrations/v2/` via Drizzle)
+```
+Agente 1 — VSL Analysis          → artifact: product
+"Extrai o DNA do produto da VSL"
+        ↓
+Agentes 2 e 3 (paralelos)
+Agente 2 — Market Research       → artifact: market
+"Avalia viabilidade de mercado"
+Agente 3 — Avatar Research       → artifact: avatar
+"Constrói perfil do comprador ideal"
+        ↓
+Agente 4 — Benchmark Intelligence → artifact: benchmark
+"Mapeia o que concorrentes estão fazendo"
+        ↓
+Agente 5 — Angle Generator        → artifact: angles
+"Formula o posicionamento diferenciado"
+        ↓
+Agente 6 — Campaign Strategy      → artifact: campaign_strategy
+"Define plataforma, budget, KPIs e sequência de lançamento"
+```
 
-**`pipelines`** — substitui o conceito de "execution" do v1
+**Dependências:**
+- VSL Analysis: entrada do pipeline, sem dependências
+- Market Research + Avatar Research: paralelos (dependem só do produto)
+- Benchmark Intelligence: depende de Market Research
+- Angle Generator: depende dos 4 anteriores
+- Campaign Strategy: depende dos 5 anteriores
+
+---
+
+### Fase 2 — Criativo
+
+Objetivo: produzir o pacote completo de materiais do anúncio.
+
+```
+Agentes 7, 8, 9 (paralelos)
+Agente 7  — Script Writer         → artifact: script
+"Roteiro do vídeo cena a cena"
+Agente 8  — Copywriting           → artifact: copy_components (tabela separada)
+"3 hooks × 3 bodies × 3 CTAs"
+Agente 9  — Character Generator   → artifact: character
+"Personagem visual do anúncio"
+        ↓
+Agente 10 — Keyframe Generator    → artifact: keyframes
+"Prompt VEO 3 por cena"
+        ↓
+Agente 11 — Video Maker           → artifact: video_assets
+"Storyboard final (cap: 5 por execução)"
+        ↓
+Agente 12 — Creative Director     → artifact: creative_brief
+"Avalia, ranqueia combinações, aprova ou bloqueia"
+```
+
+**Ponto crítico:** O Creative Director é o único filtro de qualidade criativa. Ele pontua cada combinação H×B×CTA de 0–100 e emite `approved_for_production: true/false`. Se bloquear, aciona o Loop 1.
+
+---
+
+### Fase 3 — Lançamento
+
+Objetivo: preparar e estruturar a campanha para veiculação.
+
+```
+Agentes 13 e 14 (paralelos)
+Agente 13 — Compliance Check      → artifact: compliance_results
+"Audita copy contra FTC/ASA/CONAR por target_country"
+Agente 14 — UTM Builder           → artifact: utms
+"Gera links rastreados por variante e plataforma"
+        ↓
+Agentes 15 e 16 (paralelos)
+Agente 15 — Facebook Ads          → artifact: facebook_ads
+"Estrutura campanha Meta completa"
+Agente 16 — Google Ads            → artifact: google_ads
+"Estrutura campanha Google Search/Display"
+        ↓
+Agente 17 — Performance Analysis  → artifact: performance_report
+"Analisa dados reais pós-veiculação"
+        ↓
+Agente 18 — Scaling Strategy      → artifact: scaling_plan
+"Plano de escala: pausar, aumentar, testar"
+```
+
+**Regra crítica:** Facebook Ads e Google Ads usam **exclusivamente** `compliance_results.approved_combinations` como fonte de copy — nunca inferem aprovação da lista de issues.
+
+---
+
+### Artifact types por agente
+
+| Agente | artifact_type | Tabela |
+|--------|--------------|--------|
+| vsl_analysis | `product` | product_knowledge |
+| market_research | `market` | product_knowledge |
+| avatar_research | `avatar` | product_knowledge |
+| benchmark_intelligence | `benchmark` | product_knowledge |
+| angle_generator | `angles` | product_knowledge |
+| campaign_strategy | `campaign_strategy` | product_knowledge |
+| script_writer | `script` | product_knowledge |
+| copywriting | `copy_components` | copy_components (especial) |
+| character_generator | `character` | product_knowledge |
+| keyframe_generator | `keyframes` | product_knowledge |
+| video_maker | `video_assets` | product_knowledge |
+| creative_director | `creative_brief` | product_knowledge |
+| compliance_check | `compliance_results` | copy_components (update) |
+| utm_builder | `utms` | product_knowledge |
+| facebook_ads | `facebook_ads` | product_knowledge |
+| google_ads | `google_ads` | product_knowledge |
+| performance_analysis | `performance_report` | product_knowledge |
+| scaling_strategy | `scaling_plan` | product_knowledge |
+
+---
+
+## 5. Loops de Revisão
+
+O pipeline tem 3 pontos de retorno controlados:
+
+### Loop 1 — Creative Director bloqueia
+
+```
+Creative Director: approved_for_production = false
+    ↓
+Identifica qual agente refazer (revision_requests[].agent)
+    ↓
+Re-invoca agente com mesmo pipeline_id + novo task_id
+    ↓
+Artefato anterior → status 'superseded'
+    ↓
+Creative Director reavalia
+    ↓
+Máximo 2 tentativas → se ainda bloqueado: escala para o usuário
+```
+
+### Loop 2 — Compliance bloqueia top_combination
+
+```
+compliance_results.approved_combinations avaliado
+    ↓
+Se approved_combinations NÃO está vazio:
+    Facebook Ads + Google Ads usam próxima combinação aprovada
+    Registram em setup_notes: "top_combination bloqueada por compliance"
+    ↓
+Se approved_combinations ESTÁ vazio:
+    Pipeline pausa
+    Reportar ao usuário: "Nenhuma combinação aprovada. Necessário refazer copywriting."
+    Aguardar instrução
+```
+
+### Loop 3 — Scaling: todos os criativos são losers
+
+```
+Performance Analysis: todos criativos com hook_rate < 15% por 14 dias
+    ↓
+Scaling Strategy sinaliza ausência de winner
+    ↓
+Criar pipeline criativo filho:
+npx tsx scripts/pipeline/create.ts \
+  --product-id <mesmo product_id> \
+  --type criativo \
+  --parent-pipeline <pipeline_id_original>
+    ↓
+Brief para Fase 2: usar angles.alternative_angles[0] do pipeline pai
+Reutilizar pesquisa (product, market, avatar, benchmark, angles)
+Ir direto para Fase 2 — não refazer pesquisa
+```
+
+---
+
+## 6. Multi-mercado — target_country como Filtro Transversal
+
+Cada produto tem `target_country` e `target_language` definidos no banco (`products.target_country`, `products.target_language`). Esses dois campos propagam comportamento diferente por toda a cadeia de agentes.
+
+### Como funciona a propagação
+
+Antes de spawnar qualquer subagente, Claude Code injeta obrigatoriamente:
+
+```
+## Mercado-alvo do produto
+- target_country: <valor>
+- target_language: <valor>
+- Todos os materiais devem ser gerados em <target_language>,
+  adaptados para o contexto cultural, regulatório e econômico de <target_country>.
+```
+
+### Impacto por camada
+
+| Camada | O que muda |
+|--------|-----------|
+| Pesquisa | Fontes corretas por país; benchmarks de CPM/CPC do mercado-alvo |
+| Estratégia | Moeda nos KPIs; plataformas disponíveis; CPA ajustado ao ticket local |
+| Criativo | Idioma da copy; idioms e referências culturais; preços em moeda local |
+| Compliance | FTC (US) · ASA (GB) · CONAR (BR) — regulação do país de destino |
+| Anúncios | Geo-targeting configurado; keywords e RSAs no idioma correto |
+| Performance | Benchmarks de referência do mercado-alvo |
+
+### Valores de referência
+
+| target_country | target_language | Mercado |
+|----------------|-----------------|---------|
+| `BR` | `pt-BR` | Brasil (padrão) |
+| `US` | `en-US` | Estados Unidos |
+| `GB` | `en-GB` | Reino Unido |
+| `ES` | `es-ES` | Espanha |
+| `MX` | `es-MX` | México |
+
+---
+
+## 7. Sistema de Memória Cumulativa
+
+### Product Knowledge
+
+Cada artefato gravado em `product_knowledge` tem `status: fresh` enquanto válido. Quando um agente é re-executado (ex: Loop 1), o artefato anterior vira `superseded` e um novo é gravado. O orquestrador sempre lê o artefato `fresh` mais recente por `artifact_type`.
+
+### Niche Learnings
+
+Após cada pipeline, `scripts/learning/extract.ts` extrai padrões que funcionaram (ou não) e os consolida em `niche_learnings` por `niche_id`. Tipos de learnings:
+
+`angle_winner` · `angle_loser` · `hook_pattern` · `creative_format` · `objection` · `language_pattern` · `avatar_insight` · `compliance_violation` · `performance_pattern`
+
+### Injeção nos agentes de pesquisa
+
+Antes de spawnar Market Research, Avatar Research e Benchmark Intelligence, o orquestrador executa busca vetorial:
+
+```bash
+npx tsx scripts/search/vector.ts --query "<produto + nicho>" --niche-id <uuid> --limit 5
+```
+
+Os top-5 learnings são injetados no prompt do subagente como contexto adicional — o sistema fica progressivamente mais inteligente por nicho.
+
+### Niche Curator (job avulso)
+
+Não é agente de pipeline — é executado sob demanda ou via cron. Consolida `execution_learnings` em `niche_learnings` com fórmula de reforço (occurrences × confidence). Usa `workers/cron/learning-aggregator-cron.ts`.
+
+---
+
+## 8. Schema do Banco (tabelas principais)
+
+Schema canônico em `frontend/lib/schema/index.ts` (fonte de verdade).
+
+### `products`
 ```sql
-id uuid pk, user_id uuid fk, product_id uuid fk, goal text not null,
-deliverable_agent text not null, plan jsonb not null, state jsonb default '{}',
-status text default 'pending', product_version int not null, force_refresh bool default false,
-budget_usd numeric(10,2), cost_so_far_usd numeric(10,4) default 0,
+id, name, platform, niche_id,
+target_country text default 'BR',   -- filtro de mercado
+target_language text default 'pt-BR',
+ticket_price, commission_percent,
+vsl_url, vsl_source, vsl_duration_seconds, vsl_file_size_bytes,
+viability_score, status, created_at, updated_at
+```
+
+### `pipelines`
+```sql
+id, product_id, type (full|pesquisa|criativo|lancamento),
+status (pending|running|completed|failed),
 created_at, updated_at, completed_at
 ```
 
-**`tasks`** — unidade de execução do worker
+### `tasks`
 ```sql
-id uuid pk, pipeline_id uuid fk, agent_name text not null, mode text,
-depends_on uuid[] default '{}', status text default 'pending',
-input_context jsonb, output jsonb, error text, retry_count int default 0,
-started_at, completed_at, created_at
+id, pipeline_id, agent_name, mode,
+depends_on uuid[],
+status (waiting|pending|running|completed|failed),
+retry_count, started_at, completed_at, error,
+confirmed_oversized bool  -- cap do video_maker
 ```
 
-**`approvals`**
+### `product_knowledge`
 ```sql
-id uuid pk, pipeline_id uuid fk, task_id uuid fk, approval_type text,
-payload jsonb, status text default 'pending', resolved_at, created_at
+id, product_id, pipeline_id, artifact_type, artifact_data jsonb,
+status (fresh|superseded),
+created_at, superseded_at, superseded_by
 ```
 
-**`copy_components`**
+### `copy_components`
 ```sql
-id uuid pk, pipeline_id uuid fk, product_id uuid fk, product_version int,
-component_type text, slot_number int, tag text unique not null, content text,
-angle_id uuid fk, rationale text, register text, structure text, intensity text,
-compliance_status text default 'pending', compliance_violations jsonb,
-approval_status text default 'pending', approved_at, created_at
+id, pipeline_id, product_id, component_type, slot_number,
+tag (unique), content,
+compliance_status (pending|approved|rejected),
+approval_status (pending|approved|rejected),
+created_at
 ```
 
-**`copy_combinations`**
+### `copy_combinations`
 ```sql
-id uuid pk, product_id uuid fk, pipeline_id uuid fk, tag text unique not null,
-hook_id uuid fk, body_id uuid fk, cta_id uuid fk, full_text text,
-selected_for_video bool default false, created_at
--- trigger: só permite INSERT se hook/body/cta tiverem approval_status='approved' e compliance_status='approved'
+id, product_id, pipeline_id, tag (unique),
+hook_id, body_id, cta_id,
+selected_for_video bool, created_at
 ```
 
-**`product_knowledge`**
+### `niche_learnings`
 ```sql
-id uuid pk, product_id uuid fk, product_version int, artifact_type text,
-artifact_data jsonb, source_pipeline_id uuid fk, source_task_id uuid fk,
-status text default 'fresh', created_at, superseded_at, superseded_by uuid fk
-```
-
-**`niche_learnings`**
-```sql
-id uuid pk, niche_id uuid fk, learning_type text, content text,
-evidence jsonb, confidence float, occurrences int default 1,
-status text default 'active', created_at, last_reinforced_at
-```
-
-**`embeddings`** (polimórfica)
-```sql
-id uuid pk, source_table text, source_id uuid,
-embedding vector(768), model text default 'gemini-embedding-001', created_at
--- create extension vector;
--- create index on embeddings using hnsw (embedding vector_cosine_ops);
--- create index on embeddings (source_table, source_id);
-```
-
-**`conversations`**
-```sql
-id uuid pk, user_id uuid fk, title text, created_at, last_message_at
-```
-
-**`messages`**
-```sql
-id uuid pk, conversation_id uuid fk, role text, content text,
-references jsonb, pipeline_id uuid fk, created_at
-```
-
-**`prompt_caches`**
-```sql
-id uuid pk, cache_key text unique, gemini_cache_name text, expires_at, created_at
-```
-
-**`llm_calls`** — observabilidade de custo
-```sql
-id uuid pk, agent_name text, pipeline_id uuid fk, product_id uuid fk, niche_id uuid fk,
-model text, input_tokens int, cached_input_tokens int, output_tokens int,
-cost_usd numeric(10,6), duration_ms int, created_at
-```
-
-### Colunas novas em tabelas existentes
-
-```sql
-alter table products add column sku char(4) unique;
-alter table products add column slug text;
--- trigger BEFORE INSERT que gera 4 letras [A-Z] aleatórias até achar livre
-
-alter table niches add column embedding_anchor text; -- texto representativo do nicho pra embedding
-```
-
-### Alterações aplicadas via migrations v2
-
-```sql
--- migration 0010: copy_components tem approval_status canônico
-alter table copy_components add column approval_status text default 'pending';
-alter table copy_components add column approved_at timestamptz;
-
--- migration 0011: messages.pipeline_id com FK para pipelines
-alter table messages add column pipeline_id uuid references pipelines(id);
-
--- migration 0012: products.platform agora é nullable
-alter table products alter column platform drop not null;
--- default anterior era 'hotmart'; agora NULL para plataformas não reconhecidas
+id, niche_id, learning_type, content, evidence jsonb,
+confidence float, occurrences int,
+status (active|archived), created_at, last_reinforced_at
 ```
 
 ---
 
-## 7. Memory & Knowledge System
+## 9. Convenção de Tags (Naming System)
 
-Camada de memória persistente que torna o sistema progressivamente mais inteligente.
+Determinístico, único, rastreável por toda a cadeia.
 
-### 7.1 Product Knowledge
-
-Toda escrita em `pipeline.state.{campo}` dispara escrita em `product_knowledge` na mesma transação. Quando o planner monta um DAG, consulta `product_knowledge` por produto e pula agentes cujos artifacts estão `fresh`. Frescor: avatar 60d, market 30d, angles 30d. Reformulação manual via `force_refresh: true` ignora cache, marca antigo como `superseded`, bumpa `product_version`.
-
-### 7.2 Niche Intelligence
-
-`niche_learnings` armazena padrões por nicho. Tipos:
-- `angle_winner` / `angle_loser`
-- `hook_pattern`
-- `creative_format`
-- `objection`
-- `language_pattern`
-- `avatar_insight`
-- `compliance_violation`
-
-**Geração de learnings:** quando usuário aprova/rejeita componentes em `/products/[sku]/copies`, sinais entram numa fila. O `niche_curator` (rodando via cron diário ou sob demanda) consolida em learnings. Confidence sobe com `occurrences`.
-
-**Injeção nos agentes:** o context builder, antes de chamar cada agente, faz query híbrida:
-```sql
-select content, confidence
-from niche_learnings nl
-join embeddings e on e.source_table='niche_learnings' and e.source_id=nl.id
-where nl.niche_id = $1 and nl.learning_type = any($2) and nl.status='active'
-order by nl.confidence desc, e.embedding <=> $product_embedding asc
-limit 15;
+```
+Produto:       CITX                            (SKU — 4 letras)
+Hook:          CITX_v1_H1
+Body:          CITX_v1_B2
+CTA:           CITX_v1_C1
+Combinação:    CITX_v1_H1_B2_C1               (tag canônica)
+Versão:        v{N} — bumpa quando artefatos de pesquisa são regenerados
 ```
 
-Top-K learnings são injetados no prompt do agente.
-
-### 7.3 Niche Classification
-
-Quando produto novo é cadastrado, sub-rotina `classifyNiche(productPage)` (não é agente — é função no código de cadastro):
-1. Lê página/URL via `web_search` ou fetch
-2. Gera embedding do conteúdo via Gemini
-3. Busca nichos existentes por similaridade vetorial (`embeddings` onde `source_table='niches'`)
-4. Se similaridade > 0.85 → atribui automaticamente
-5. Se < 0.85 → Jarvis pergunta no chat se cria nicho novo
+Tags são usadas para cruzar dados entre Ads Manager, banco e analytics.
 
 ---
 
-## 8. Reference Resolution (Menções @ e /)
+## 10. Frontend (Read-only)
 
-**`@`** abre dropdown de **entidades** (produtos por SKU/nome).
-**`/`** abre dropdown de **ações rápidas** (`/avatar`, `/mercado`, `/angulos`, `/copy`, `/video`).
-Fonte canônica: `frontend/lib/jarvis/goals.ts`.
+O frontend é **somente leitura** — não dispara LLM calls, não interage com agentes.
 
-Backend tem pre-processor que parseia menções antes de mandar pro Jarvis e resolve em contexto rico:
-```
-[USER_MESSAGE]: gera copy pra @ABCD
-[RESOLVED]:
-  - product: { id, sku=ABCD, name="Xpto Fórmula", niche="emagrecimento" }
-  - knowledge: avatar(v1, 5d), market(v1, 5d), angles(v1, 5d)
-```
+### Telas atuais
 
-Se usuário não usa `@` e diz "aquele produto", Jarvis usa histórico recente da conversa. Se ambíguo, pergunta com cards.
+| Rota | Status | Descrição |
+|------|--------|-----------|
+| `/demandas` | ✅ 80% | Lista + detalhe com timeline. Pendente: logs WebSocket realtime |
+| `/products` | ✅ 70% | Grid de produtos + 6 sub-abas no detalhe |
+| `/products/[sku]` | ✅ 70% | Overview, Copies, Criativos, Pipeline, Artefatos |
+| `/` | ✅ redirect | Redireciona para /demandas |
 
----
+### Regras absolutas de frontend
 
-## 9. Tagging Convention
-
-Determinístico, único, rastreável.
-
-```
-SKU:           ABCD                                  (4 letras geradas)
-Hook:          ABCD_v1_H1
-Body:          ABCD_v1_B2
-CTA:           ABCD_v1_C1
-Combinação:    ABCD_v1_H1_B2_C1
-Vídeo:         ABCD_v1_H1_B2_C1_V1
-```
-
-Versão `v{N}` reflete `product_version`. Bumpa quando `force_refresh` em avatar ou market. Coluna `tag` é `UNIQUE NOT NULL` em `copy_components`, `copy_combinations`, `assets` (vídeo).
+- NUNCA fazer fetch de LLM (Gemini, Anthropic) a partir do frontend
+- Lógica de dados sempre em hooks em `hooks/`
+- CSS sempre via Tailwind + tokens do design system (nunca `style={{}}` ou hex hardcoded)
+- Componentes Shadcn/ui em `components/ui/` — não modificar arquivos gerados
 
 ---
 
-## 10. Cost Optimization Strategy
+## 11. Estado das Fases V2
 
-Documentação completa em `skills/gemini-cost-optimization.md`. Resumo das 9 práticas:
-
-1. **Model routing por agente** — Flash pra Jarvis/compliance/curator; Pro pra agentes criativos
-2. **Token budget** — `max_input_tokens` declarado no registry; context builder trunca/resume
-3. **Prompt caching Gemini** — cache de system_prompt + niche_learnings por (agent × niche), expira em 1h
-4. **Reaproveitamento de artifacts** — frescor configurável em `product_knowledge`
-5. **Embeddings em batch** — agrupa a cada 30s, máximo 100 por chamada
-6. **Lazy embedding** — só gera embedding de learnings com `confidence >= 0.5`
-7. **Modo parcial em copy** — re-gerar só hooks/bodies/ctas sem refazer os outros
-8. **Logging em `llm_calls`** — toda chamada gravada com tokens e custo
-9. **Circuit breaker por pipeline** — `budget_usd` por pipeline; pausa se estourar
-
-**Defaults de budget:**
-- avatar_only: $0.30 · market_only: $0.30 · angles_only: $1.00 · copy_only: $2.00 · creative_full: $8.00
-
-**Hard limit de vídeo:** máximo 5 por execução de `video_maker` sem confirmação extra.
+| Fase | Status | Resumo |
+|------|--------|--------|
+| A — Migração Claude | ↩️ revertido | Provider padrão revertido para Gemini; Claude mantido como opção |
+| B — Jarvis tool use | ⏸️ pausado | Arquivos preservados. Motor migrado para Claude Code |
+| C — Tela Demandas | ✅ 80% | Pendente: logs WebSocket em tempo real |
+| D — Tela Produto | ✅ 70% | Pendente: diff de copy, score de viabilidade |
+| E — Memória cumulativa | ✅ 90% | Extrator + aggregator + busca vetorial funcionando |
+| F — Polish + testes | ⬜ 0% | FilterBar, keyboard shortcuts, Playwright E2E — não iniciado |
+| G — Ultron (Claude Code) | ✅ 100% | 18 agent skills + pipeline DAG + DB bridge scripts |
 
 ---
 
-## 11. API Endpoints
+## 12. Pendências e Decisões Abertas
 
-```
-POST   /api/chat                          → SSE endpoint do Jarvis
-GET    /api/products                      → lista
-POST   /api/products                      → cadastra (gera SKU + classifica nicho) — retorna 201
-GET    /api/products/[sku]                → detalhe do produto
-GET    /api/products/[sku]/copies         → componentes pra aprovar (por pipeline)
-POST   /api/products/[sku]/materialize-combinations
-POST   /api/copy-components/[id]/approve
-POST   /api/copy-components/[id]/reject
-GET    /api/copy-components              → lista componentes (novo — filtra por pipeline_id)
-GET    /api/copy-combinations            → lista combinações (novo — filtra por pipeline_id)
-GET    /api/pipelines                    → lista pipelines
-GET    /api/pipelines/[id]               → pipeline + tasks + approvals pendentes
-PATCH  /api/pipelines/[id]               → transiciona status (ex: plan_preview → pending)
-GET    /api/conversations                → lista conversas (paginado)
-POST   /api/conversations                → cria conversa
-GET    /api/conversations/[id]           → conversa + messages (com JOIN pipelines)
-PATCH  /api/conversations/[id]           → atualiza título
-DELETE /api/conversations/[id]           → remove conversa e messages
-GET    /api/tasks                        → lista tasks (filtra por pipeline_id)
-GET    /api/assets                       → lista assets de vídeo
-```
-
----
-
-## 12. UI Specifications
-
-### `/` — Chat Jarvis (tela principal)
-Sidebar 240px (Conversas recentes, Nova conversa, Produtos, Criativos, Demandas) + área de chat com SSE. Input com suporte a `@` (produtos) e `/` (ações). Cards inline: PlanPreviewCard (Mermaid), PipelineStatusCard, ApprovalCreativeCard, MetricsCard.
-
-### `/products`
-Grid de cards (SKU, nome, nicho, último pipeline, badge de versão).
-
-### `/products/[sku]`
-Detalhe do produto + tabs: Overview, Copies, Vídeos, Histórico de pipelines.
-
-### `/products/[sku]/copies`
-**Tela crítica.** 3 colunas (Hooks / Bodies / CTAs). Cada card: tag, conteúdo, rationale, badge de compliance, botões Aprovar/Rejeitar/Pedir refresh. Botão "Gerar combinações" libera quando ≥1 aprovado em cada coluna.
-
-### `/creatives`
-Grid de vídeos com filtros.
-
-### `/demandas`
-Kanban: Aguardando / Rodando / Aprovação Pendente / Concluído / Falhou. Realtime via Supabase.
-
----
-
-## 13. Non-Functional Requirements
-
-- **Local-only v1:** roda em localhost, sem auth, single-user
-- **Latência de chat:** primeira resposta SSE em < 2s
-- **Confiabilidade de workers:** retry com backoff exponencial, dead letter após 3 falhas
-- **Observabilidade:** todo `llm_call` logado com custo; view `cost_by_product` consultável pelo Jarvis
-- **Idempotência:** tasks têm chave única `(pipeline_id, agent_name, mode)` pra evitar duplicação
-
----
-
-## 14. Open Decisions
-
-- WhatsApp como canal alternativo de chat — adiado pra v3
-- Integrações Meta/Google Ads — adiado pra v3
-- Modelo alternativo de vídeo (Sora, Kling) — quando preço VEO 3 incomodar
+| Decisão | Contexto |
+|---------|---------|
+| Fórmula `overall_assessment` no Performance Analysis | `underperforming` começa em `target × 1.3` ou em `max_acceptable_cpa_brl`? Ranges podem se sobrepor |
+| Fallback quando `approved_combinations` vazio | Bloquear pipeline aguardando usuário, ou criar pipeline criativo filho automaticamente? |
+| `niche_curator` — gatilho de disparo | Cron automático, manual sob demanda, ou gatilho após N learnings validados? |
+| Multi-país por produto | Atualmente 1 produto = 1 `target_country`. Para múltiplos mercados, duplicar produto ou adicionar array? |
+| Integração Meta/Google Ads | Subir campanha automaticamente — adiado |
+| WhatsApp como canal de chat | Adiado |

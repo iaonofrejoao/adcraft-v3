@@ -30,14 +30,16 @@ Antes de escrever qualquer keyframe, fixar os parâmetros que se repetem em **to
 
 **Style suffix** (adicionar ao final de todos os prompts VEO 3):
 - `ugc` → `"UGC style, handheld camera, authentic, no filters, realistic"`
-- `testimonial` → `"testimonial style, direct to camera, natural lighting, authentic"`
+- `ugc_testimonial` → `"testimonial style, direct to camera, natural lighting, authentic, no filters"`
 - `cinematic` → `"cinematic, professional lighting, shallow depth of field, film grain"`
 - `lifestyle` → `"lifestyle photography style, bright and airy, natural colors"`
 
 **Character anchor string** — extrair do artefato `character.visual_anchors` e construir uma string fixa que vai em todos os prompts:
 ```
-"{age} {gender}, {ethnicity}, {hair}, wearing {clothing_color} {clothing_type}, {primary_setting}, {lighting}"
+"{age_appearance} {gender}, {ethnicity}, {hair}, wearing {clothing_color} {clothing_type}, {primary_setting}, {lighting}"
 ```
+Campos usados diretamente de `character.visual_anchors`: `clothing_color`, `clothing_type`, `primary_setting`, `lighting`.
+Campos usados de `character.physical_description`: `age_appearance`, `gender`, `ethnicity`, `hair`.
 Esta string é o `character_anchor` de cada keyframe — garante consistência visual do personagem.
 
 ### 2. Mapear `emotion_cue` → direção de câmera e expressão

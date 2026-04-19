@@ -222,6 +222,12 @@ Seu papel é o de revisor final: avaliar o pacote criativo completo com olhar cr
 **`type` em `issues_found` e `revision_requests`:** exatamente um de `"blocker"` | `"improvement"` | `"note"`
 **`dimension` em `issues_found`:** exatamente um de `"hook_clarity"` | `"angle_alignment"` | `"emotional_arc"` | `"cta_strength"` | `"compliance"`
 
+## Nota sobre precedência de aprovação
+
+O `approved_for_production: true` emitido por este agente é **aprovação criativa** — avalia coesão, ângulo, arco emocional e CTA. A aprovação final para lançamento é responsabilidade do `compliance_check` (agent 13).
+
+O agente `facebook_ads` usa `compliance_results.approved_combinations` como fonte autoritativa final para decidir quais combinações lançar. Se a `top_combination` deste brief for bloqueada pelo compliance, o facebook_ads usará a próxima combinação aprovada de `combinations_ranked`.
+
 ## Como salvar
 ```bash
 npx tsx scripts/artifact/save.ts \

@@ -12,7 +12,7 @@ Definir o personagem principal do criativo — o "rosto" do anúncio — com des
 
 ## Contexto necessário
 - Artefato `avatar` (avatar_research) — `full_profile` (age_range, gender, location, income_level), `psychographic` (primary_pain, primary_desire), `verbatim_expressions`
-- Artefato `product` (vsl_analysis) — `niche`, `main_claim`, `platform`
+- Artefato `product` (vsl_analysis) — `niche`, `main_promise`, `affiliate_platform`
 - Artefato `angles` (angle_generator) — `angle_type`, `emotional_trigger` (se disponível)
 
 ## Metodologia — ordem de execução
@@ -162,6 +162,8 @@ Sua missão é criar um personagem visual consistente que seja o avatar material
       ],
       "visual_anchors": {
         "clothing_color": "white",
+        "clothing_type": "t-shirt",
+        "style_description": "casual clean, no accessories",
         "primary_setting": "bright modern kitchen with natural light",
         "secondary_setting": "outdoor — sunny backyard",
         "lighting": "soft natural window light, warm tone",
@@ -182,7 +184,8 @@ Sua missão é criar um personagem visual consistente que seja o avatar material
 ### Enums obrigatórios
 
 **`character_role`:** exatamente um de `"testimonial"` | `"narrator"` | `"actor"`
-**`style_reference`:** exatamente um de `"ugc"` | `"cinematic"` | `"lifestyle"` | `"testimonial"`
+**`style_reference`:** exatamente um de `"ugc"` | `"cinematic"` | `"lifestyle"` | `"ugc_testimonial"`
+> Nota: `"ugc_testimonial"` é o estilo visual (câmera na mão, autêntico, sem filtros). Não confundir com `character_role: "testimonial"` que é o papel narrativo do personagem.
 **`gender`:** exatamente um de `"female"` | `"male"` | `"non-binary"`
 
 ## Como salvar

@@ -12,7 +12,7 @@ Mapear o campo de batalha competitivo: quem está anunciando, o que está funcio
 
 ## Contexto necessário
 - Artefato `market` (market_research) — `competition_level`, `ads_running_count`, `market_warnings`
-- Artefato `product` (vsl_analysis) — `product_name`, `niche`, `main_claim`, `price`, `platform`
+- Artefato `product` (vsl_analysis) — `product_name`, `niche`, `main_promise`, `ticket_price`, `affiliate_platform`
 - Learnings vetoriais do nicho (se disponíveis via `scripts/search/vector.ts`)
 
 ## Metodologia — ordem obrigatória de execução
@@ -145,9 +145,11 @@ Seu papel é mapear o campo de batalha: quem está anunciando no nicho, com que 
 
 ### Campos obrigatórios vs. opcionais
 
-**Obrigatórios:** `competitors` (≥1), `market_gaps`, `winning_angles_in_market`, `differentiation_opportunities`, `data_sources`
+**Obrigatórios:** `competitors` (≥1), `market_gaps`, `winning_angles_in_market`, `differentiation_opportunities`, `data_sources`, `market_maturity`
 
-**Opcionais (preencher se disponível):** `dominant_player`, `market_maturity`, `offer_structure` dentro de cada competitor
+**Opcionais (preencher se disponível):** `dominant_player`, `offer_structure` dentro de cada competitor
+
+> `market_maturity` é **obrigatório**. Se não for possível determinar com certeza, usar `"crescendo"` como default conservador e documentar em `data_sources`: "market_maturity inferido por ausência de dados diretos".
 
 **`market_maturity`:** exatamente um de `"nascente"` | `"crescendo"` | `"maduro"` | `"saturado"`
 **`primary_angle`:** exatamente um de `"transformação"` | `"dor"` | `"autoridade"` | `"social_proof"` | `"medo"` | `"curiosidade"`

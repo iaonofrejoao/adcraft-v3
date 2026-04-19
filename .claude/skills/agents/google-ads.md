@@ -15,7 +15,7 @@ Estruturar a campanha no Google Ads: definir tipo de campanha, grupos de anúnci
 - Artefato `utms` (utm_builder) — `full_url` rastreada para Google (`utm_medium: paid_search` ou `paid_video`)
 - Artefato `campaign_strategy` (campaign_strategy) — `recommended_daily_budget_brl`, `kpis`, `secondary_platforms`
 - Artefato `market` (market_research) — `trend_direction`, `competition_level`, nicho
-- Artefato `product` (vsl_analysis) — `product_name`, `niche`, `main_claim`
+- Artefato `product` (vsl_analysis) — `product_name`, `niche`, `main_promise`
 - Artefato `avatar` (avatar_research) — linguagem, como o avatar descreve o problema
 
 ## Metodologia — ordem de execução
@@ -107,7 +107,7 @@ Campanha: {SKU} | Search | Conv | {AAAAMM}
 - Nunca usar pontuação excessiva (!!!, ???) — reprovar na revisão
 - Não repetir palavra-chave em todas as headlines — Google penaliza
 - Headlines devem funcionar em qualquer combinação (o Google combina automaticamente)
-- Incluir pelo menos 1 headline com o benefício principal derivado de `product.main_claim`
+- Incluir pelo menos 1 headline com o benefício principal derivado de `product.main_promise`
 
 **Descriptions:**
 - Description 1: benefício principal + mecanismo (derivado do `angles.usp`)

@@ -55,9 +55,10 @@ phases:
       - id: angle_generator
         name: "Estratégia de Ângulos"
         skill: .claude/skills/agents/angle-generator.md
-        depends_on: [vsl_analysis, market_research, avatar_research]
+        depends_on: [vsl_analysis, market_research, avatar_research, benchmark_intelligence]
         produces: angles
         parallel_group: null
+        notes: "Requer benchmark para garantir que o ângulo gerado difere dos winning_angles_in_market dos concorrentes."
 
       - id: campaign_strategy
         name: "Estratégia de Campanha"
@@ -130,9 +131,10 @@ phases:
       - id: utm_builder
         name: "Estruturação de UTMs"
         skill: .claude/skills/agents/utm-builder.md
-        depends_on: [campaign_strategy]
+        depends_on: [campaign_strategy, creative_director]
         produces: utms
-        parallel_group: pre_launch
+        parallel_group: null
+        notes: "Depende de creative_director para ter as combination_tags aprovadas antes de gerar UTMs por criativo."
 
       - id: facebook_ads
         name: "Facebook Ads"

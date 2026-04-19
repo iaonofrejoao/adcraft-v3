@@ -69,7 +69,7 @@ Para anúncios sem variante específica (awareness/topo de funil):
 
 ### 1. Identificar o `base_url` de destino
 
-- Extrair do artefato `product.platform` ou `product.sales_page_url`
+- Extrair do artefato `product.vsl_url` (URL da página de vendas/VSL registrada no vsl_analysis)
 - Se for Hotmart/Monetizze: usar o link de afiliado limpo (sem UTMs embutidos)
 - Verificar se a URL já tem parâmetros (`?`) — se sim, usar `&` para adicionar UTMs, não `?`
 - **Nunca** encurtar a URL final (dificulta debugging de analytics)

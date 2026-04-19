@@ -56,6 +56,7 @@ Ler e estruturar o brief completo do produto a partir da VSL ou landing page de 
   "ticket_price": 0.0,
   "commission_percent": 0.0,
   "affiliate_platform": "...",
+  "niche": "...",
   "vsl_url": "...",
   "data_sources": ["..."]
 }
@@ -71,6 +72,7 @@ npx tsx scripts/artifact/save.ts \
 ```
 
 ## Critério de qualidade
+- `niche` deve ser específico e descritivo, ex: "emagrecimento feminino 40+", "renda extra online", "saúde masculina 50+"
 - `main_promise` deve ser específica, não genérica ("Emagrecer 8kg em 30 dias sem academia" ✓, "Emagrecer" ✗)
 - `pains_addressed` mínimo 3 itens
 - `data_sources` mínimo 1 URL real visitada

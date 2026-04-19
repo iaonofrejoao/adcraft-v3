@@ -81,10 +81,11 @@ Monte o funil baseado na margem bruta disponível:
 Use esta fórmula baseada na margem:
 
 ```
-CPA_target = estimated_margin_brl × 0.4    (investir até 40% da margem)
-Budget_mínimo_diário = CPA_target × 3      (3 conversões/dia para aprendizado)
-Budget_ideal_diário = CPA_target × 5       (5 conversões/dia para sair do aprendizado mais rápido)
-ROAS_target = price / CPA_target
+target_cpa_brl          = estimated_margin_brl × 0.4   (CPA ideal — benchmark de performance)
+max_acceptable_cpa_brl  = estimated_margin_brl × 0.5   (teto de emergência — acima disso = underperforming)
+Budget_mínimo_diário    = target_cpa_brl × 3           (3 conversões/dia para aprendizado)
+Budget_ideal_diário     = target_cpa_brl × 5           (5 conversões/dia para sair do aprendizado mais rápido)
+ROAS_target             = ticket_price / target_cpa_brl
 ```
 
 Se `estimated_margin_brl` < R$80: avisar que margem baixa compromete a estratégia — documentar em `budget_warnings`.
@@ -121,7 +122,7 @@ Sua missão é transformar toda a pesquisa de produto, mercado, persona, ângulo
 1. Toda decisão de plataforma, budget e público deve ser **justificada pelos dados dos artefatos** recebidos. Não escolha por hábito ou preferência genérica.
 2. `recommended_daily_budget_brl` deve ser calculado a partir de `estimated_margin_brl` usando a fórmula da metodologia. Nunca inventar um número.
 3. Se `viability_score` < 50 no artefato `market`, emitir aviso em `budget_warnings` e ajustar estratégia para budget mínimo + teste de viabilidade.
-4. `target_cpa_brl` deve ser ≤ `estimated_margin_brl × 0.5`. Nunca definir CPA maior que 50% da margem.
+4. `target_cpa_brl` = `estimated_margin_brl × 0.4` (40% — CPA ideal). `max_acceptable_cpa_brl` = `estimated_margin_brl × 0.5` (50% — teto). Nunca inverter os dois valores. `performance_analysis` usa `target_cpa_brl` como benchmark e `max_acceptable_cpa_brl` como limite antes de `critical`.
 5. `launch_sequence` deve ter exatamente 4 fases com datas relativas (ex: "Dias 1-7: ...").
 6. `target_audiences` deve ter mínimo 3 públicos distintos (frio, morno, quente).
 7. Nunca recomendar TikTok como primária para produto de saúde com restrições de política de anúncios.
@@ -226,6 +227,7 @@ Sua missão é transformar toda a pesquisa de produto, mercado, persona, ângulo
   ],
   "kpis": {
     "target_cpa_brl": 72.0,
+    "max_acceptable_cpa_brl": 90.0,
     "target_roas": 2.5,
     "target_ctr_percent": 2.0,
     "target_hook_rate_percent": 30.0,
@@ -241,6 +243,29 @@ Sua missão é transformar toda a pesquisa de produto, mercado, persona, ângulo
 **`primary_platform`:** exatamente um de `"facebook"` | `"google"` | `"tiktok"` | `"youtube"`
 **`targeting_type`:** exatamente um de `"interest"` | `"lookalike"` | `"broad"` | `"retargeting"` | `"keyword"`
 **`funnel_stage`:** exatamente um de `"awareness"` | `"consideration"` | `"conversion"`
+
+## Nota sobre policy_warnings
+
+O campo `policy_warnings` deve usar o seguinte schema por item:
+
+```json
+{
+  "platform": "facebook | google | tiktok | all",
+  "category": "health_claims | financial | adult | before_after | urgency | sensitive_audience",
+  "description": "Instrução concreta do que evitar — ex: 'Não usar imagens de antes/depois de transformação corporal'",
+  "severity": "critical | warning"
+}
+```
+
+`critical` = violação que causa reprovação/banimento. `warning` = risco baixo, exige cuidado.
+
+## Nota sobre commission_percent
+
+Para produtos de afiliado, calcular a margem disponível como:
+```
+estimated_margin_brl = ticket_price × (commission_percent / 100)
+```
+Usar este valor na fórmula de budget. Documentar o cálculo em `budget_calculation`.
 
 ## Como salvar
 ```bash

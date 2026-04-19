@@ -14,7 +14,7 @@ Transformar o ângulo campeão e a estratégia de campanha em um roteiro de víd
 - Artefato `angles` (angle_generator) — `primary_angle`, `usp`, `hook_text` do `selected_hook_variant`, `emotional_trigger`, `angle_type`
 - Artefato `campaign_strategy` (campaign_strategy) — `primary_platform`, `campaign_objective`, `target_audiences`
 - Artefato `avatar` (avatar_research) — linguagem, dores, desejos, `verbatim_expressions`
-- Artefato `product` (vsl_analysis) — `product_name`, `main_claim`, `price`, `guarantee`, `bonuses`
+- Artefato `product` (vsl_analysis) — `product_name`, `main_promise`, `ticket_price`, `offer_structure.guarantee_days`, `offer_structure.bonuses`
 
 ## Metodologia — ordem de execução
 

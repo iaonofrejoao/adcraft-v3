@@ -157,8 +157,26 @@ Sua missão é transformar o diagnóstico de performance em um plano de ação c
 **Todos os criativos com `status: loser` (sem winner):**
 - `scale_recommendation: maintain` com budget mínimo
 - Prioridade: criar novos criativos com ângulos diferentes antes de escalar
-- Recomendar retornar ao `script_writer` e `copywriting` com brief de novo ângulo
 - Documentar: "Sem creative winner — escala bloqueada até validar novo criativo"
+- Emitir `new_pipeline_instructions` no output com o seguinte protocolo:
+
+```
+Criar pipeline criativo filho:
+
+npx tsx scripts/pipeline/create.ts \
+  --product-id <mesmo product_id> \
+  --type criativo \
+  --parent-pipeline <pipeline_id_atual>
+
+Brief para script_writer e copywriting:
+- angle_type alternativo: usar angles.alternative_angles[0] do pipeline pai
+- Artefatos reutilizados do pipeline pai (não refazer pesquisa):
+    product, market, avatar, benchmark, angles
+- Justificativa obrigatória no script_rationale:
+    "Novo ângulo — ângulo [X] não converteu (hook_rate < 15% por 14 dias)"
+- Se alternative_angles estiver vazio: retornar ao angle_generator com instrução
+    "gerar 3 novos ângulos descartando [ângulo anterior]"
+```
 
 **Budget máximo atingido (limitação do anunciante):**
 - `scale_recommendation: horizontal` — não há mais vertical a fazer

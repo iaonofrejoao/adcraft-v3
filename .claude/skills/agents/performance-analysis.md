@@ -290,6 +290,48 @@ Sua missão é interpretar os dados de campanha fornecidos, diagnosticar o que e
 **`priority`:** `"high"` | `"medium"` | `"low"`
 **`level`:** `"account"` | `"campaign"` | `"ad_set"` | `"creative"`
 
+## Como invocar este agente
+
+Este agente é o único do pipeline que requer dados externos (não gerados por outros agentes). Ele pode ser invocado separadamente após o período de veiculação das campanhas.
+
+### Formato de dados aceitos
+
+**Opção A — CSV do Facebook Ads Manager:**
+Exportar relatório no Ads Manager com as seguintes colunas (exatamente com estes nomes):
+`Nome do anúncio`, `Valor usado (BRL)`, `Impressões`, `Cliques no link`, `Compras`, `CTR (todos)`, `CPM (custo por 1.000 impressões)`, `Frequência`, `Reproduções de vídeo de 3 segundos` (para vídeo).
+Período mínimo: 7 dias. Recomendado: 14 dias.
+
+**Opção B — Dados tabulados manualmente:**
+Para cada ad set e cada criativo (usando o naming convention AdCraft):
+```
+Nome: [naming convention exato — ex: CITX | Interest-Emagrecimento | ToFu]
+Período: DD/MM/AAAA a DD/MM/AAAA
+Gasto: R$XX
+Impressões: XX
+Cliques: XX
+Conversões (compras): XX
+CTR: X.X%
+CPM: R$XX
+Frequência: X.X
+Hook rate (vídeo 3s): XX% [se disponível]
+```
+
+### Como invocar
+
+```
+"Analisa performance do pipeline [pipeline_id] — dados abaixo:
+[colar dados no formato acima]"
+```
+
+O agente vai cruzar os dados fornecidos com os artefatos `campaign_strategy`, `facebook_ads`/`google_ads` e `creative_brief` já salvos no pipeline_id para contextualizar o diagnóstico.
+
+### Onde encontrar o pipeline_id
+
+Consultar via MCP Supabase:
+```sql
+SELECT id, product_id, status, created_at FROM pipelines ORDER BY created_at DESC LIMIT 10;
+```
+
 ## Como salvar
 ```bash
 npx tsx scripts/artifact/save.ts \

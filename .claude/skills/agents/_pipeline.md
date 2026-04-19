@@ -49,6 +49,61 @@ Quando o usuário fornecer um `pipeline_id`:
 - Se um subagente falhar, o pipeline NÃO para automaticamente — reportar ao usuário e aguardar decisão
 - O usuário pode pedir para retentar a task falha ou pular para a próxima
 
+## Loops de revisão
+
+### Loop 1 — creative_director bloqueia (approved_for_production: false)
+
+```
+1. Ler revision_requests[].agent — identifica qual agente refazer
+2. Re-invocar o agente indicado com MESMO pipeline_id e NOVO task_id
+3. Salvar novo artefato (scripts/artifact/save.ts — o anterior vira status 'superseded' automaticamente)
+4. Re-invocar creative_director com os artefatos atualizados
+5. Máximo 2 loops de revisão por pipeline
+   - Se ainda bloqueado após 2 tentativas: reportar ao usuário com o revision_requests detalhado
+```
+
+### Loop 2 — compliance_check bloqueia top_combination
+
+```
+1. Ler compliance_results.approved_combinations
+2. Se approved_combinations NÃO está vazio:
+   - Prosseguir com facebook_ads e google_ads usando approved_combinations (não top_combination)
+   - Registrar em setup_notes: "top_combination bloqueada por compliance — usando [próxima combinação]"
+3. Se approved_combinations ESTÁ vazio:
+   - Pausar pipeline
+   - Reportar ao usuário: "Nenhuma combinação aprovada pelo compliance. Necessário refazer copywriting."
+   - Aguardar instrução antes de continuar
+```
+
+### Precedência de aprovação
+
+| Situação | Fonte autoritativa |
+|---|---|
+| Quais combinações lançar | `compliance_results.approved_combinations` |
+| Qual combinação priorizar | `creative_brief.top_combination` (se estiver em approved_combinations) |
+| Fallback se top bloqueada | `creative_brief.combinations_ranked[1]` (segunda melhor que esteja aprovada) |
+
+> O `approved_for_production: true` do `creative_director` é aprovação criativa.
+> A aprovação de lançamento é `compliance_results.overall_approved`.
+> Os dois artefatos coexistem — `facebook_ads` sempre usa `compliance_results.approved_combinations`.
+
+### Loop 3 — scaling_strategy sem winner (todos losers)
+
+```
+Criar pipeline criativo filho para novo ângulo:
+
+npx tsx scripts/pipeline/create.ts \
+  --product-id <mesmo product_id> \
+  --type criativo \
+  --parent-pipeline <pipeline_id_original>
+
+Brief para script_writer e copywriting do novo pipeline:
+- angle_type: usar angles.alternative_angles[0] do pipeline pai
+- Artefatos reutilizados do pipeline pai: product, market, avatar, benchmark, angles
+- Não refazer pesquisa — ir direto para fase criativa
+- Registrar em script_rationale: "Novo ângulo — ângulo [X] não converteu (hook_rate < 15% por 14 dias)"
+```
+
 ## Passagem de contexto entre agentes
 
 ```sql

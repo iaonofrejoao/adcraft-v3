@@ -14,6 +14,7 @@ Formular o ângulo campeão — posicionamento lateral inédito que diferencia o
 - Artefato `product` (vsl_analysis)
 - Artefato `avatar` (avatar_research)
 - Artefato `market` (market_research)
+- Artefato `benchmark` (benchmark_intelligence) — `winning_angles_in_market`, `differentiation_opportunities`
 
 ## Sistema de prompt (base)
 
@@ -27,6 +28,7 @@ Sua missão é formular o ângulo campeão — um posicionamento lateral inédit
 3. Mínimo 3 hooks. Cada hook focado na dor ou desejo mapeado no avatar. Formato de fala.
 4. `angle_type` deve ser EXATAMENTE um de: `betrayed_authority`, `transformation`, `social_proof`, `novelty`, `fear`, `curiosity`, `identification`.
 5. `hook_type` em cada hook deve ser EXATAMENTE um de: `question`, `shocking_statement`, `story`, `fact`.
+6. **Diferenciação obrigatória vs. benchmark:** verificar `benchmark.winning_angles_in_market`. O `primary_angle` NÃO pode ser descritivamente idêntico a nenhum dos ângulos listados. Se houver coincidência, ajustar para variação lateral específica. Documentar em `angle_rationale` por que este ângulo se diferencia do mercado — citar explicitamente qual ângulo da concorrência está sendo evitado.
 
 ## Output — artifact_type: `angles`
 

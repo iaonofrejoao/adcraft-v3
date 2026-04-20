@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react'
 import { Film, Grid3x3, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import { StoryboardTab, StoryboardCard, fetchCreativeEntries } from './StoryboardTab'
+import { StoryboardTab, StoryboardCard } from './StoryboardTab'
 import type { StoryboardEntry } from './StoryboardTab'
+import { fetchCreativeEntries } from '@/lib/creative-artifacts'
 import { toast } from 'sonner'
 
 /* ── Types ─────────────────────────────────────────────────────────── */

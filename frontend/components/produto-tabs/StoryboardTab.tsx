@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Grid3x3, Clapperboard, Copy, Check, ChevronDown, ChevronUp, Video, Mic } from 'lucide-react'
+import { Grid3x3, Clapperboard, Copy, Check, ChevronDown, ChevronUp, Video, Mic, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -40,6 +40,18 @@ interface KeyframesData {
   style_consistency_notes?: string
 }
 
+interface ScriptData {
+  script_tag:             string
+  total_duration_seconds: number
+  format:                 string
+  platform:               string
+  framework_used:         string
+  narration_full:         string
+  cta_text:               string
+  verbatim_used?:         string
+  script_rationale?:      string
+}
+
 interface VideoAssetsData {
   storyboard_tag:          string
   combination_used:        string
@@ -69,6 +81,7 @@ interface ArtifactRow<T> {
 interface StoryboardEntry {
   combinationId:  string
   tag:            string
+  script:         ArtifactRow<ScriptData> | null
   keyframes:      ArtifactRow<KeyframesData> | null
   video:          ArtifactRow<VideoAssetsData> | null
 }
@@ -212,8 +225,10 @@ function SceneRow({ scene, index }: { scene: MergedScene; index: number }) {
 
 /* ── Storyboard card ────────────────────────────────────────────────── */
 function StoryboardCard({ entry }: { entry: StoryboardEntry }) {
-  const kfData = entry.keyframes?.artifact_data
-  const vData  = entry.video?.artifact_data
+  const scrData = entry.script?.artifact_data
+  const kfData  = entry.keyframes?.artifact_data
+  const vData   = entry.video?.artifact_data
+  const [scriptExpanded, setScriptExpanded] = useState(false)
 
   const storyboardTag = vData?.storyboard_tag ?? entry.tag
   const aspectRatio   = vData?.aspect_ratio ?? kfData?.aspect_ratio
@@ -304,6 +319,48 @@ function StoryboardCard({ entry }: { entry: StoryboardEntry }) {
         </div>
       )}
 
+      {/* Script metadata */}
+      {scrData && (
+        <div className="border-b border-white/5">
+          <button
+            onClick={() => setScriptExpanded(v => !v)}
+            className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-surface-high/30 transition-colors text-left"
+          >
+            <FileText size={11} strokeWidth={1.5} className="text-on-surface-muted shrink-0" />
+            <span className="text-[0.6875rem] text-on-surface-muted">
+              {scrData.framework_used ?? 'Roteiro'} · {scrData.total_duration_seconds}s
+            </span>
+            <span className="ml-auto">
+              {scriptExpanded
+                ? <ChevronUp size={11} strokeWidth={1.5} className="text-on-surface-muted" />
+                : <ChevronDown size={11} strokeWidth={1.5} className="text-on-surface-muted" />}
+            </span>
+          </button>
+          {scriptExpanded && (
+            <div className="px-4 pb-4 space-y-3">
+              {scrData.narration_full && (
+                <div>
+                  <p className="text-[0.5625rem] text-on-surface-muted uppercase tracking-widest mb-1">Narração completa</p>
+                  <p className="text-[0.75rem] text-on-surface-variant leading-relaxed italic">"{scrData.narration_full}"</p>
+                </div>
+              )}
+              {scrData.verbatim_used && (
+                <div>
+                  <p className="text-[0.5625rem] text-on-surface-muted uppercase tracking-widest mb-1">Verbatim do avatar</p>
+                  <p className="text-[0.75rem] text-on-surface-variant italic">"{scrData.verbatim_used}"</p>
+                </div>
+              )}
+              {scrData.script_rationale && (
+                <div>
+                  <p className="text-[0.5625rem] text-on-surface-muted uppercase tracking-widest mb-1">Racional</p>
+                  <p className="text-[0.75rem] text-on-surface-variant leading-relaxed">{scrData.script_rationale}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Audio config */}
       {audioConfig && (
         <div className="px-4 py-2.5 border-b border-white/5 flex flex-wrap gap-4">
@@ -362,27 +419,33 @@ export function StoryboardTab({ sku }: StoryboardTabProps) {
   useEffect(() => {
     if (!sku) return
     Promise.all([
+      fetch(`/api/products/${sku}/creative-artifacts?type=script`).then(r => r.json()),
       fetch(`/api/products/${sku}/creative-artifacts?type=keyframes`).then(r => r.json()),
       fetch(`/api/products/${sku}/creative-artifacts?type=video_assets`).then(r => r.json()),
     ])
-      .then(([kfRes, vRes]) => {
-        const kfRows: ArtifactRow<KeyframesData>[]       = kfRes.artifacts ?? []
-        const vRows:  ArtifactRow<VideoAssetsData>[]     = vRes.artifacts ?? []
+      .then(([scrRes, kfRes, vRes]) => {
+        const scrRows: ArtifactRow<ScriptData>[]     = scrRes.artifacts ?? []
+        const kfRows:  ArtifactRow<KeyframesData>[]  = kfRes.artifacts ?? []
+        const vRows:   ArtifactRow<VideoAssetsData>[] = vRes.artifacts ?? []
 
-        // Merge by copy_combination_id — one entry per combination
         const map = new Map<string, StoryboardEntry>()
+        const ensure = (cid: string, tag: string) => {
+          if (!map.has(cid)) map.set(cid, { combinationId: cid, tag, script: null, keyframes: null, video: null })
+        }
 
+        scrRows.forEach(row => {
+          const cid = row.copy_combination_id; if (!cid) return
+          ensure(cid, row.copy_combinations?.tag ?? cid)
+          map.get(cid)!.script = row
+        })
         kfRows.forEach(row => {
-          const cid = row.copy_combination_id
-          if (!cid) return
-          if (!map.has(cid)) map.set(cid, { combinationId: cid, tag: row.copy_combinations?.tag ?? cid, keyframes: null, video: null })
+          const cid = row.copy_combination_id; if (!cid) return
+          ensure(cid, row.copy_combinations?.tag ?? cid)
           map.get(cid)!.keyframes = row
         })
-
         vRows.forEach(row => {
-          const cid = row.copy_combination_id
-          if (!cid) return
-          if (!map.has(cid)) map.set(cid, { combinationId: cid, tag: row.copy_combinations?.tag ?? cid, keyframes: null, video: null })
+          const cid = row.copy_combination_id; if (!cid) return
+          ensure(cid, row.copy_combinations?.tag ?? cid)
           map.get(cid)!.video = row
         })
 

@@ -38,14 +38,16 @@ interface ProductDetailHeaderProps {
 }
 
 const TABS = [
-  { label: 'Mercado',   href: (sku: string) => `/products/${sku}/mercado`   },
-  { label: 'Personas',  href: (sku: string) => `/products/${sku}/personas`  },
-  { label: 'Ângulos',   href: (sku: string) => `/products/${sku}/angulos`   },
-  { label: 'Copy',      href: (sku: string) => `/products/${sku}/copies`    },
-  { label: 'Criativos', href: (sku: string) => `/products/${sku}/criativos` },
-  { label: 'Campanhas', href: (sku: string) => `/products/${sku}/campanhas` },
-  { label: 'VSL',       href: (sku: string) => `/products/${sku}/vsl`       },
-  { label: 'Histórico', href: (sku: string) => `/products/${sku}/historico` },
+  { label: 'Mercado',     href: (sku: string) => `/products/${sku}/mercado`     },
+  { label: 'Personas',    href: (sku: string) => `/products/${sku}/personas`    },
+  { label: 'Ângulos',     href: (sku: string) => `/products/${sku}/angulos`     },
+  { label: 'Copy',        href: (sku: string) => `/products/${sku}/copies`      },
+  { label: 'Personagens', href: (sku: string) => `/products/${sku}/personagens` },
+  { label: 'Storyboard',  href: (sku: string) => `/products/${sku}/storyboard`  },
+  { label: 'Vídeo',       href: (sku: string) => `/products/${sku}/video`       },
+  { label: 'Campanhas',   href: (sku: string) => `/products/${sku}/campanhas`   },
+  { label: 'VSL',         href: (sku: string) => `/products/${sku}/vsl`         },
+  { label: 'Histórico',   href: (sku: string) => `/products/${sku}/historico`   },
 ] as const
 
 function formatRelativeDate(iso: string): string {

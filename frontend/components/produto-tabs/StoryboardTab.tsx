@@ -77,14 +77,16 @@ interface ArtifactRow<T> {
   copy_combinations:   { tag: string } | null
 }
 
-/* Merged per combination */
-interface StoryboardEntry {
+/* Merged per combination — exported so VideoTab can reuse */
+export interface StoryboardEntry {
   combinationId:  string
   tag:            string
   script:         ArtifactRow<ScriptData> | null
   keyframes:      ArtifactRow<KeyframesData> | null
   video:          ArtifactRow<VideoAssetsData> | null
 }
+
+export type { ArtifactRow, KeyframesData, VideoAssetsData, ScriptData }
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
 const SECTION_COLOR: Record<string, string> = {
@@ -224,7 +226,7 @@ function SceneRow({ scene, index }: { scene: MergedScene; index: number }) {
 }
 
 /* ── Storyboard card ────────────────────────────────────────────────── */
-function StoryboardCard({ entry }: { entry: StoryboardEntry }) {
+export function StoryboardCard({ entry, onMakeVideo }: { entry: StoryboardEntry; onMakeVideo?: (id: string) => void }) {
   const scrData = entry.script?.artifact_data
   const kfData  = entry.keyframes?.artifact_data
   const vData   = entry.video?.artifact_data
@@ -266,7 +268,8 @@ function StoryboardCard({ entry }: { entry: StoryboardEntry }) {
   })()
 
   function handleMakeVideo() {
-    toast.info('Geração de vídeo via VEO 3 ainda não conectada — em breve.')
+    if (onMakeVideo) onMakeVideo(entry.combinationId)
+    else toast.info('Geração de vídeo via VEO 3 ainda não conectada — em breve.')
   }
 
   return (
@@ -407,53 +410,49 @@ export function StoryboardTabSkeleton() {
   )
 }
 
-/* ── Main ───────────────────────────────────────────────────────────── */
-export interface StoryboardTabProps {
-  sku: string
+/* ── Shared fetch helper ─────────────────────────────────────────────── */
+export async function fetchCreativeEntries(sku: string): Promise<StoryboardEntry[]> {
+  const [scrRes, kfRes, vRes] = await Promise.all([
+    fetch(`/api/products/${sku}/creative-artifacts?type=script`).then(r => r.json()),
+    fetch(`/api/products/${sku}/creative-artifacts?type=keyframes`).then(r => r.json()),
+    fetch(`/api/products/${sku}/creative-artifacts?type=video_assets`).then(r => r.json()),
+  ])
+  const scrRows: ArtifactRow<ScriptData>[]      = scrRes.artifacts ?? []
+  const kfRows:  ArtifactRow<KeyframesData>[]   = kfRes.artifacts ?? []
+  const vRows:   ArtifactRow<VideoAssetsData>[]  = vRes.artifacts ?? []
+
+  const map = new Map<string, StoryboardEntry>()
+  const ensure = (cid: string, tag: string) => {
+    if (!map.has(cid)) map.set(cid, { combinationId: cid, tag, script: null, keyframes: null, video: null })
+  }
+  scrRows.forEach(row => { const cid = row.copy_combination_id; if (!cid) return; ensure(cid, row.copy_combinations?.tag ?? cid); map.get(cid)!.script = row })
+  kfRows.forEach(row  => { const cid = row.copy_combination_id; if (!cid) return; ensure(cid, row.copy_combinations?.tag ?? cid); map.get(cid)!.keyframes = row })
+  vRows.forEach(row   => { const cid = row.copy_combination_id; if (!cid) return; ensure(cid, row.copy_combinations?.tag ?? cid); map.get(cid)!.video = row })
+  return Array.from(map.values())
 }
 
-export function StoryboardTab({ sku }: StoryboardTabProps) {
-  const [entries,  setEntries]  = useState<StoryboardEntry[]>([])
-  const [loading, setLoading] = useState(true)
+/* ── Main ───────────────────────────────────────────────────────────── */
+export interface StoryboardTabProps {
+  sku:          string
+  entries?:     StoryboardEntry[]   // If provided, skip internal fetch
+  loading?:     boolean
+  onMakeVideo?: (combinationId: string) => void
+}
+
+export function StoryboardTab({ sku, entries: externalEntries, loading: externalLoading, onMakeVideo }: StoryboardTabProps) {
+  const [internalEntries, setInternalEntries] = useState<StoryboardEntry[]>([])
+  const [internalLoading, setInternalLoading] = useState(externalEntries === undefined)
 
   useEffect(() => {
-    if (!sku) return
-    Promise.all([
-      fetch(`/api/products/${sku}/creative-artifacts?type=script`).then(r => r.json()),
-      fetch(`/api/products/${sku}/creative-artifacts?type=keyframes`).then(r => r.json()),
-      fetch(`/api/products/${sku}/creative-artifacts?type=video_assets`).then(r => r.json()),
-    ])
-      .then(([scrRes, kfRes, vRes]) => {
-        const scrRows: ArtifactRow<ScriptData>[]     = scrRes.artifacts ?? []
-        const kfRows:  ArtifactRow<KeyframesData>[]  = kfRes.artifacts ?? []
-        const vRows:   ArtifactRow<VideoAssetsData>[] = vRes.artifacts ?? []
+    if (externalEntries !== undefined || !sku) return
+    fetchCreativeEntries(sku)
+      .then(setInternalEntries)
+      .catch(() => setInternalEntries([]))
+      .finally(() => setInternalLoading(false))
+  }, [sku, externalEntries])
 
-        const map = new Map<string, StoryboardEntry>()
-        const ensure = (cid: string, tag: string) => {
-          if (!map.has(cid)) map.set(cid, { combinationId: cid, tag, script: null, keyframes: null, video: null })
-        }
-
-        scrRows.forEach(row => {
-          const cid = row.copy_combination_id; if (!cid) return
-          ensure(cid, row.copy_combinations?.tag ?? cid)
-          map.get(cid)!.script = row
-        })
-        kfRows.forEach(row => {
-          const cid = row.copy_combination_id; if (!cid) return
-          ensure(cid, row.copy_combinations?.tag ?? cid)
-          map.get(cid)!.keyframes = row
-        })
-        vRows.forEach(row => {
-          const cid = row.copy_combination_id; if (!cid) return
-          ensure(cid, row.copy_combinations?.tag ?? cid)
-          map.get(cid)!.video = row
-        })
-
-        setEntries(Array.from(map.values()))
-      })
-      .catch(() => setEntries([]))
-      .finally(() => setLoading(false))
-  }, [sku])
+  const entries = externalEntries ?? internalEntries
+  const loading = externalLoading ?? internalLoading
 
   if (loading) return <StoryboardTabSkeleton />
 
@@ -493,7 +492,9 @@ export function StoryboardTab({ sku }: StoryboardTabProps) {
           Clique em <span className="text-brand font-medium">Fazer Vídeo</span> para gerar o criativo final
         </p>
       </div>
-      {entries.map(entry => <StoryboardCard key={entry.combinationId} entry={entry} />)}
+      {entries.map(entry => (
+        <StoryboardCard key={entry.combinationId} entry={entry} onMakeVideo={onMakeVideo} />
+      ))}
     </div>
   )
 }

@@ -182,6 +182,36 @@ SET    status       = 'completed',
 WHERE  id = 'TASK_UUID';
 ```
 
+## Rastreamento de tokens (obrigatório após cada agente)
+
+Cada subagente retorna um bloco `<usage>` no resultado. Extrair `total_tokens` e registrar imediatamente:
+
+```bash
+npx tsx scripts/pipeline/record-tokens.ts \
+  --task-id <uuid-da-task> \
+  --total   <total_tokens do bloco <usage>> \
+  [--input  <input_tokens>]   # se disponível
+  [--output <output_tokens>]  # se disponível
+  [--model  claude-sonnet-4-6]  # padrão; usar claude-opus-4-7 se aplicável
+```
+
+**Modelos e preços** (USD / 1M tokens):
+
+| Modelo | Input | Output |
+|--------|-------|--------|
+| `claude-sonnet-4-6` | $3.00 | $15.00 |
+| `claude-opus-4-7` | $15.00 | $75.00 |
+| `claude-haiku-4-5` | $0.80 | $4.00 |
+
+Se apenas `total_tokens` for informado, o script estima custo com razão 80% input / 20% output.  
+O script atualiza a task e acumula `total_tokens` + `total_cost_usd` no pipeline automaticamente.
+
+**Consultar gasto acumulado do pipeline:**
+```bash
+npx tsx scripts/pipeline/status.ts --pipeline-id <uuid>
+# Exibe total_tokens e total_cost_usd agregados de todas as tasks concluídas
+```
+
 ## Artifact types por agente
 
 | Agente | artifact_type em product_knowledge |

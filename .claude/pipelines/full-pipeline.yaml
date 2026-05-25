@@ -69,51 +69,28 @@ phases:
 
   # ─── FASE 2: CRIATIVO ────────────────────────────────────────────────────────
   - name: criativo
-    description: Roteiro, copy e vídeo — produção dos materiais criativos
+    description: Copywriting — geração de componentes de copy para aprovação manual
     agents:
-
-      - id: script_writer
-        name: "Roteiro"
-        skill: .claude/skills/agents/script-writer.md
-        depends_on: [angle_generator, campaign_strategy]
-        produces: script
-        parallel_group: criativo_base
 
       - id: copywriting
         name: "Copywriting"
         skill: .claude/skills/agents/copywriting.md
         depends_on: [avatar_research, angle_generator, campaign_strategy]
         produces: copy_components
-        parallel_group: criativo_base
+        parallel_group: null
         save_script: scripts/copy/save-components.ts
-
-      - id: character_generator
-        name: "Geração de Personagem"
-        skill: .claude/skills/agents/character-generator.md
-        depends_on: [avatar_research]
-        produces: character
-        parallel_group: criativo_base
-
-      - id: keyframe_generator
-        name: "Keyframes"
-        skill: .claude/skills/agents/keyframe-generator.md
-        depends_on: [script_writer, character_generator]
-        produces: keyframes
-        parallel_group: null
-
-      - id: video_maker
-        name: "Vídeo por Cena"
-        skill: .claude/skills/agents/video-maker.md
-        depends_on: [script_writer, copywriting, keyframe_generator]
-        produces: video_assets
-        parallel_group: null
+        notes: "Após este agente, o pipeline pausa aguardando aprovação manual de hooks/bodies/CTAs
+          na tela /products/{sku}/copies. O usuário aprova componentes e dispara a geração
+          de scripts via POST /api/copy-combinations/{id}/generate-scripts."
 
       - id: creative_director
         name: "Creative Director"
         skill: .claude/skills/agents/creative-director.md
-        depends_on: [copywriting, video_maker]
+        depends_on: [copywriting]
         produces: creative_brief
         parallel_group: null
+        notes: "Avalia qualidade da copy e aprova pacote para lançamento. Script/keyframe/vídeo
+          são gerados por combinação via API trigger — ver scripts/creative/generate-scripts-for-combination.ts"
 
   # ─── FASE 3: LANÇAMENTO ──────────────────────────────────────────────────────
   - name: lancamento
@@ -123,7 +100,7 @@ phases:
       - id: compliance_check
         name: "Compliance Check"
         skill: .claude/skills/agents/compliance-check.md
-        depends_on: [copywriting, creative_director]
+        depends_on: [creative_director]
         produces: compliance_results
         parallel_group: pre_launch
         save_script: scripts/copy/update-compliance.ts
@@ -134,7 +111,6 @@ phases:
         depends_on: [campaign_strategy, creative_director]
         produces: utms
         parallel_group: null
-        notes: "Depende de creative_director para ter as combination_tags aprovadas antes de gerar UTMs por criativo."
 
       - id: facebook_ads
         name: "Facebook Ads"

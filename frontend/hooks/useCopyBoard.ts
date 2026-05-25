@@ -29,6 +29,7 @@ export interface CopyCombination {
   cta_id:             string
   full_text:          string | null
   selected_for_video: boolean
+  script_status:      'pending' | 'queued' | 'generating' | 'ready' | 'error'
   created_at:         string
 }
 
@@ -46,6 +47,7 @@ export interface UseCopyBoardReturn {
   resetComponent:         (id: string) => Promise<void>
   selectComponent:        (id: string, selected: boolean) => Promise<void>
   materializeCombinations: () => Promise<void>
+  generateScripts:        (combinationId: string) => Promise<void>
   canMaterialize:         boolean
 }
 
@@ -176,12 +178,12 @@ export function useCopyBoard(
       cs.map((c) => (c.id === id ? { ...c, selected_for_video: selected } : c)),
     )
     try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from('copy_combinations')
-        .update({ selected_for_video: selected })
-        .eq('id', id)
-      if (error) throw error
+      const res = await fetch(`/api/copy-combinations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selected_for_video: selected }),
+      })
+      if (!res.ok) throw new Error(`PATCH copy-combinations ${res.status}`)
     } catch (err) {
       console.error('[useCopyBoard] selectComponent failed', err)
       if (prev)
@@ -190,6 +192,65 @@ export function useCopyBoard(
         )
     }
   }, [combinations])
+
+  // Polling: atualiza script_status das combinações em 'generating'
+  useEffect(() => {
+    const generating = combinations.filter((c) => c.script_status === 'queued' || c.script_status === 'generating')
+    if (generating.length === 0) return
+
+    const interval = setInterval(async () => {
+      try {
+        const results = await Promise.all(
+          generating.map((c) =>
+            fetch(`/api/copy-combinations/${c.id}/scripts`)
+              .then((r) => r.json())
+              .catch(() => null),
+          ),
+        )
+        results.forEach((res) => {
+          if (!res) return
+          const { combination_id, script_status } = res
+          if (script_status && script_status !== 'generating') {
+            setCombinations((prev) =>
+              prev.map((c) =>
+                c.id === combination_id ? { ...c, script_status } : c,
+              ),
+            )
+          }
+        })
+      } catch (err) {
+        console.error('[useCopyBoard] polling error', err)
+      }
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [combinations])
+
+  // Gerar scripts para uma combinação específica
+  const generateScripts = useCallback(async (combinationId: string) => {
+    setCombinations((prev) =>
+      prev.map((c) =>
+        c.id === combinationId ? { ...c, script_status: 'generating' } : c,
+      ),
+    )
+    try {
+      const res = await fetch(`/api/copy-combinations/${combinationId}/generate-scripts`, {
+        method: 'POST',
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error ?? res.statusText)
+      }
+    } catch (err) {
+      console.error('[useCopyBoard] generateScripts failed', err)
+      setCombinations((prev) =>
+        prev.map((c) =>
+          c.id === combinationId ? { ...c, script_status: 'error' } : c,
+        ),
+      )
+      toast.error('Erro ao disparar geração de scripts')
+    }
+  }, [])
 
   // Materializar combinações
   const materializeCombinations = useCallback(async () => {
@@ -237,6 +298,7 @@ export function useCopyBoard(
     resetComponent,
     selectComponent,
     materializeCombinations,
+    generateScripts,
     canMaterialize,
   }
 }

@@ -10,7 +10,7 @@
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { parseArgs } from 'node:util';
-import { extractLearningsAsync } from '../../workers/agents/learning-extractor';
+import { extractLearningsAsync } from '../../workers/lib/learning-extractor';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 

@@ -90,7 +90,7 @@ function ComponenteModal({
               {c.tag}
             </span>
             <div className="flex items-center gap-1.5">
-              {c.structure && <StructureBadge value={c.structure} />}
+              {c.structure && c.structure.length <= 20 && <StructureBadge value={c.structure} />}
               <ComplianceBadge status={c.compliance_status} />
             </div>
           </div>
@@ -109,6 +109,18 @@ function ComponenteModal({
           )}>
             {c.content ?? <span className="text-on-surface-muted">Sem conteúdo</span>}
           </p>
+
+          {/* Versão curta (body_short) — só mostra quando structure é texto longo */}
+          {c.structure && c.structure.length > 20 && (
+            <div className="bg-surface-high/60 rounded-lg px-4 py-3 border border-white/5">
+              <p className="text-[0.6875rem] font-semibold text-on-surface-muted uppercase tracking-wider mb-1">
+                Versão curta
+              </p>
+              <p className="text-[0.8125rem] text-on-surface-variant leading-relaxed">
+                {c.structure}
+              </p>
+            </div>
+          )}
 
           {/* Rationale */}
           {c.rationale && (
@@ -213,7 +225,7 @@ export function ComponenteCard({
               {c.tag}
             </span>
             <div className="flex items-center gap-1 shrink-0">
-              {c.structure && <StructureBadge value={c.structure} />}
+              {c.structure && c.structure.length <= 20 && <StructureBadge value={c.structure} />}
               <ComplianceBadge status={c.compliance_status} />
             </div>
           </div>

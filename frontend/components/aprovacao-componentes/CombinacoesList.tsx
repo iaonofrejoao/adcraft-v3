@@ -1,11 +1,11 @@
 'use client'
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Video } from 'lucide-react'
+import { ChevronDown, ChevronUp, Video, Clapperboard, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import type { CopyCombination } from '@/hooks/useCopyBoard'
 
-/* ── Video toggle — no Switch in ui/, Tailwind-only implementation ── */
+/* ── Video toggle ────────────────────────────────────────────────────── */
 function VideoToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
@@ -27,14 +27,53 @@ function VideoToggle({ checked, onChange }: { checked: boolean; onChange: (v: bo
   )
 }
 
-/* ── Combination row ─────────────────────────────────────────────── */
-interface CombinationRowProps {
-  combination:   CopyCombination
-  onToggleVideo: (selected: boolean) => void
+/* ── Script status badge ─────────────────────────────────────────────── */
+function ScriptStatusBadge({ status }: { status: CopyCombination['script_status'] }) {
+  if (!status || status === 'pending') return null
+
+  const map = {
+    queued: {
+      icon: <Loader2 size={10} strokeWidth={1.5} className="animate-spin" />,
+      label: 'na fila',
+      cls: 'text-on-surface-muted bg-surface-highest',
+    },
+    generating: {
+      icon: <Loader2 size={10} strokeWidth={1.5} className="animate-spin" />,
+      label: 'gerando…',
+      cls: 'text-status-running-text bg-status-running',
+    },
+    ready: {
+      icon: <CheckCircle2 size={10} strokeWidth={1.5} />,
+      label: 'pronto',
+      cls: 'text-status-done-text bg-status-done',
+    },
+    error: {
+      icon: <AlertCircle size={10} strokeWidth={1.5} />,
+      label: 'erro',
+      cls: 'text-status-failed-text bg-status-failed',
+    },
+  } as const
+
+  const { icon, label, cls } = map[status as keyof typeof map]
+
+  return (
+    <span className={cn('flex items-center gap-1 text-[0.625rem] font-mono px-1.5 py-0.5 rounded', cls)}>
+      {icon} {label}
+    </span>
+  )
 }
 
-function CombinationRow({ combination: c, onToggleVideo }: CombinationRowProps) {
+/* ── Combination row ─────────────────────────────────────────────────── */
+interface CombinationRowProps {
+  combination:     CopyCombination
+  onToggleVideo:   (selected: boolean) => void
+  onGenerateScript: () => void
+}
+
+function CombinationRow({ combination: c, onToggleVideo, onGenerateScript }: CombinationRowProps) {
   const [expanded, setExpanded] = useState(false)
+  const scriptStatus = c.script_status ?? 'pending'
+  const isGenerating = scriptStatus === 'generating' || scriptStatus === 'queued'
 
   return (
     <div className={cn(
@@ -59,10 +98,32 @@ function CombinationRow({ combination: c, onToggleVideo }: CombinationRowProps) 
           {expanded ? 'ocultar' : 'ver texto'}
         </Button>
 
-        <div className="ml-auto flex items-center gap-2">
-          <Video size={12} strokeWidth={1.5} className="text-on-surface-muted" />
-          <span className="text-[0.625rem] text-on-surface-muted">Gerar vídeo</span>
-          <VideoToggle checked={c.selected_for_video} onChange={onToggleVideo} />
+        <ScriptStatusBadge status={c.script_status} />
+
+        <div className="ml-auto flex items-center gap-3">
+          {/* Gerar script button */}
+          {(scriptStatus === 'pending' || scriptStatus === 'error') && (
+            <button
+              onClick={onGenerateScript}
+              disabled={isGenerating}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-medium',
+                'bg-surface-high border border-white/5 text-on-surface-variant',
+                'hover:bg-surface-highest hover:text-on-surface transition-all duration-150',
+                'disabled:opacity-40 disabled:pointer-events-none',
+              )}
+            >
+              <Clapperboard size={11} strokeWidth={1.5} />
+              {scriptStatus === 'error' ? 'Tentar novamente' : 'Gerar script'}
+            </button>
+          )}
+
+          {/* Video toggle */}
+          <div className="flex items-center gap-2">
+            <Video size={12} strokeWidth={1.5} className="text-on-surface-muted" />
+            <span className="text-[0.625rem] text-on-surface-muted">Gerar vídeo</span>
+            <VideoToggle checked={c.selected_for_video} onChange={onToggleVideo} />
+          </div>
         </div>
       </div>
 
@@ -76,16 +137,20 @@ function CombinationRow({ combination: c, onToggleVideo }: CombinationRowProps) 
   )
 }
 
-/* ── Combinations list section ───────────────────────────────────── */
+/* ── Combinations list ───────────────────────────────────────────────── */
 interface CombinacoesListProps {
-  combinations:  CopyCombination[]
-  onToggleVideo: (id: string, selected: boolean) => void
+  combinations:    CopyCombination[]
+  onToggleVideo:   (id: string, selected: boolean) => void
+  onGenerateScript: (id: string) => void
 }
 
-export function CombinacoesList({ combinations, onToggleVideo }: CombinacoesListProps) {
+export function CombinacoesList({ combinations, onToggleVideo, onGenerateScript }: CombinacoesListProps) {
   if (combinations.length === 0) return null
 
-  const selectedCount = combinations.filter((c) => c.selected_for_video).length
+  const selectedCount   = combinations.filter((c) => c.selected_for_video).length
+  const readyCount      = combinations.filter((c) => c.script_status === 'ready').length
+  const queuedCount     = combinations.filter((c) => c.script_status === 'queued').length
+  const generatingCount = combinations.filter((c) => c.script_status === 'generating').length
 
   return (
     <div className="mt-8">
@@ -96,9 +161,24 @@ export function CombinacoesList({ combinations, onToggleVideo }: CombinacoesList
             ({combinations.length})
           </span>
         </h3>
-        <span className="text-[0.6875rem] font-mono text-on-surface-muted">
-          {selectedCount} selecionada{selectedCount !== 1 ? 's' : ''} para vídeo
-        </span>
+        <div className="flex items-center gap-3 text-[0.6875rem] font-mono text-on-surface-muted">
+          {readyCount > 0 && (
+            <span className="text-status-done-text">{readyCount} script{readyCount !== 1 ? 's' : ''} prontos</span>
+          )}
+          {queuedCount > 0 && (
+            <span className="text-on-surface-muted flex items-center gap-1">
+              <Loader2 size={10} className="animate-spin" />
+              {queuedCount} na fila — rode no Claude Code
+            </span>
+          )}
+          {generatingCount > 0 && (
+            <span className="text-status-running-text flex items-center gap-1">
+              <Loader2 size={10} className="animate-spin" />
+              {generatingCount} gerando…
+            </span>
+          )}
+          <span>{selectedCount} selecionada{selectedCount !== 1 ? 's' : ''} para vídeo</span>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -107,6 +187,7 @@ export function CombinacoesList({ combinations, onToggleVideo }: CombinacoesList
             key={combo.id}
             combination={combo}
             onToggleVideo={(selected) => onToggleVideo(combo.id, selected)}
+            onGenerateScript={() => onGenerateScript(combo.id)}
           />
         ))}
       </div>

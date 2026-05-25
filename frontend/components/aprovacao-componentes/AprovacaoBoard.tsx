@@ -175,6 +175,7 @@ export function AprovacaoBoard({ sku, pipelineId, productId }: AprovacaoBoardPro
     resetComponent,
     selectComponent,
     materializeCombinations,
+    generateScripts,
     canMaterialize,
   } = useCopyBoard(sku, pipelineId, productId)
 
@@ -243,6 +244,7 @@ export function AprovacaoBoard({ sku, pipelineId, productId }: AprovacaoBoardPro
           <CombinacoesList
             combinations={combinations}
             onToggleVideo={selectComponent}
+            onGenerateScript={generateScripts}
           />
         )
       )}

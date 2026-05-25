@@ -7,7 +7,8 @@
  *     --pipeline-id <uuid> \
  *     --task-id <uuid> \
  *     --type <artifact_type> \
- *     --data '<json>'
+ *     --data '<json>' \
+ *     [--combination-id <uuid>]   # para artefatos criativos por combinação
  *
  * Output (stdout): artifact_id (UUID)
  */
@@ -27,17 +28,19 @@ async function main() {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
-      'pipeline-id': { type: 'string' },
-      'task-id':     { type: 'string' },
-      'type':        { type: 'string' },
-      'data':        { type: 'string' },
+      'pipeline-id':    { type: 'string' },
+      'task-id':        { type: 'string' },
+      'type':           { type: 'string' },
+      'data':           { type: 'string' },
+      'combination-id': { type: 'string' },
     },
   });
 
-  const pipelineId = values['pipeline-id'];
-  const taskId     = values['task-id'];
-  const type       = values['type'] as ArtifactType;
-  const dataStr    = values['data'];
+  const pipelineId    = values['pipeline-id'];
+  const taskId        = values['task-id'];
+  const type          = values['type'] as ArtifactType;
+  const dataStr       = values['data'];
+  const combinationId = values['combination-id'];
 
   if (!pipelineId || !taskId || !type || !dataStr) {
     console.error('Erro: --pipeline-id, --task-id, --type e --data são obrigatórios');
@@ -60,12 +63,13 @@ async function main() {
   }
 
   const artifactId = await saveArtifact({
-    product_id:        pipeline.product_id as string,
-    product_version:   pipeline.product_version,
-    artifact_type:     type,
-    artifact_data:     artifactData,
-    source_pipeline_id: pipelineId,
-    source_task_id:    taskId,
+    product_id:          pipeline.product_id as string,
+    product_version:     pipeline.product_version,
+    artifact_type:       type,
+    artifact_data:       artifactData,
+    source_pipeline_id:  pipelineId,
+    source_task_id:      taskId,
+    ...(combinationId ? { copy_combination_id: combinationId } : {}),
   });
 
   console.log(artifactId);

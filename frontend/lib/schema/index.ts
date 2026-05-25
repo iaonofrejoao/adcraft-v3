@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, varchar, jsonb, integer, boolean, numeric, timestamp, bigint, customType } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, varchar, jsonb, integer, boolean, numeric, timestamp, bigint, customType, uniqueIndex } from "drizzle-orm/pg-core";
 
 const vector = customType<{ data: number[]; driverData: string }>({
   dataType() {
@@ -22,6 +22,8 @@ export const pipelines = pgTable("pipelines", {
   force_refresh: boolean("force_refresh").default(false),
   budget_usd: numeric("budget_usd", { precision: 10, scale: 2 }),
   cost_so_far_usd: numeric("cost_so_far_usd", { precision: 10, scale: 4 }).default('0'),
+  total_tokens:   integer("total_tokens").default(0),
+  total_cost_usd: numeric("total_cost_usd", { precision: 10, scale: 4 }).default('0'),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
   completed_at: timestamp("completed_at"),
@@ -73,7 +75,12 @@ export const tasks = pgTable("tasks", {
   started_at: timestamp("started_at"),
   completed_at: timestamp("completed_at"),
   created_at: timestamp("created_at").defaultNow(),
-  confirmed_oversized: boolean("confirmed_oversized").default(false), // usuário confirmou execução acima do cap econômico (video_maker)
+  confirmed_oversized: boolean("confirmed_oversized").default(false),
+  input_tokens:  integer("input_tokens"),
+  output_tokens: integer("output_tokens"),
+  total_tokens:  integer("total_tokens"),
+  cost_usd:      numeric("cost_usd", { precision: 10, scale: 6 }),
+  model_used:    text("model_used"),
 });
 
 export const approvals = pgTable("approvals", {
@@ -94,7 +101,7 @@ export const copyComponents = pgTable("copy_components", {
   product_version: integer("product_version"),
   component_type: text("component_type"),
   slot_number: integer("slot_number"),
-  tag: text("tag").notNull().unique(),
+  tag: text("tag").notNull(),
   content: text("content"),
   angle_id: uuid("angle_id"),
   rationale: text("rationale"),
@@ -108,7 +115,9 @@ export const copyComponents = pgTable("copy_components", {
   rejected_at: timestamp("rejected_at"),
   rejection_reason: text("rejection_reason"),
   created_at: timestamp("created_at").defaultNow(),
-});
+}, (t) => [
+  uniqueIndex("copy_components_tag_pipeline_unique").on(t.tag, t.pipeline_id),
+]);
 
 export const copyCombinations = pgTable("copy_combinations", {
   id: uuid("id").primaryKey(),
@@ -120,6 +129,7 @@ export const copyCombinations = pgTable("copy_combinations", {
   cta_id: uuid("cta_id"),
   full_text: text("full_text"),
   selected_for_video: boolean("selected_for_video").default(false),
+  script_status: text("script_status").default('pending'), // pending | queued | generating | ready | error
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -131,6 +141,7 @@ export const productKnowledge = pgTable("product_knowledge", {
   artifact_data: jsonb("artifact_data"),
   source_pipeline_id: uuid("source_pipeline_id"),
   source_task_id: uuid("source_task_id"),
+  copy_combination_id: uuid("copy_combination_id"),
   status: text("status").default('fresh'),
   created_at: timestamp("created_at").defaultNow(),
   superseded_at: timestamp("superseded_at"),

@@ -67,12 +67,19 @@ async function main() {
     process.exit(1);
   }
 
-  // Busca o produto para obter version, niche_id e budget
+  // Busca o produto
   const [product] = await db.select().from(products).where(eq(products.id, productId as any));
   if (!product) {
     console.error(`Erro: produto ${productId} não encontrado`);
     process.exit(1);
   }
+
+  // Auto-incrementa product_version baseado no maior existente para este produto
+  const [versionRow] = await db
+    .select({ max: sql<number>`COALESCE(MAX(product_version), 0)` })
+    .from(pipelines)
+    .where(eq(pipelines.product_id, productId as any));
+  const nextVersion = (versionRow?.max ?? 0) + 1;
 
   // Determina quais agentes incluir
   let agentIds: string[];
@@ -103,7 +110,7 @@ async function main() {
       deliverable_agent: agentIds[agentIds.length - 1],
       plan: { type: pipelineType, agents: agentIds } as any,
       status: 'pending',
-      product_version: (product as any).version ?? 1,
+      product_version: nextVersion,
       budget_usd: 10, // budget padrão por pipeline — ajustável
     });
 

@@ -1,18 +1,16 @@
-# CLAUDE.md — AdCraft v2
+# CLAUDE.md — AdCraft v3
 
 ## Visão geral
 AdCraft é uma plataforma de marketing com IA para criação de criativos e gestão de campanhas.
 Stack: Next.js 14 App Router, Tailwind, TypeScript, Shadcn/ui, Supabase, Drizzle, workers Node.js.
 
 ## Contexto de desenvolvimento
-- **Diretório:** `C:\dev\AdCraft v2`
-- **GitHub:** https://github.com/iaonofrejoao/adcraft-v2 (privado)
+- **Diretório:** `C:\dev\AdCraft v3`
 - **Ritual de commit:** `git push` obrigatório após todo commit
 
 ## Skills obrigatórios
 Antes de criar ou editar qualquer componente de UI, leia:
 - `.claude/skills/dev/frontend-adcraft.md`   → design system Kinetic Console
-- `.claude/skills/dev/stitch-to-adcraft.md`  → conversão de layouts Stitch
 - `.claude/skills/dev/ux-ui-adcraft.md`      → auditoria UX, polish, checklist de estados
 
 Antes de executar ou modificar qualquer agente de pipeline, leia:
@@ -43,11 +41,27 @@ VSL Analysis → [Market Research ∥ Avatar Research] → Benchmark Intelligenc
 ```
 Os agentes de pesquisa rodam parcialmente em paralelo. O Angle Generator sintetiza tudo para formular o posicionamento diferenciado.
 
-**Fase 2 — Criativo (Agentes 7–12):** produzir o pacote completo de materiais.
+**Fase 2 — Criativo:** o pipeline gera apenas a copy (Copywriting → Creative Director).
+O usuário aprova hooks/bodies/CTAs na tela `/products/{sku}/copies` e clica "Gerar script" por combinação.
+Isso enfileira cada combinação (`script_status: queued`) — **não chama IA**. Para executar:
+
 ```
-[Script Writer ∥ Copywriting ∥ Character Generator] → Keyframe Generator → Video Maker → Creative Director
+"Processa scripts na fila para o produto X (product_id: UUID)"
 ```
-O Creative Director é o único filtro de qualidade criativa — aprova ou bloqueia o pacote antes de avançar.
+
+Fluxo de execução da fila:
+1. `npx tsx scripts/creative/generate-scripts-for-combination.ts --product-id <uuid>` → exibe contexto
+2. Para cada combinação: spawnar agentes em sequência com Agent tool:
+   - `.claude/skills/agents/script-writer.md` → salvar artefato `script` com `copy_combination_id`
+   - `.claude/skills/agents/character-generator.md` → salvar artefato `character`
+   - `.claude/skills/agents/keyframe-generator.md` → salvar artefato `keyframes`
+   - `.claude/skills/agents/video-maker.md` → salvar artefato `video_assets` (sem geração de vídeo real)
+3. Marcar `script_status = 'ready'` via SQL após cada combinação concluída
+
+Salvar artefatos com `copy_combination_id` obrigatório:
+```bash
+npx tsx scripts/artifact/save.ts --pipeline-id <uuid> --type script --combination-id <uuid> --data '<json>'
+```
 
 **Fase 3 — Lançamento (Agentes 13–18):** preparar e estruturar a campanha.
 ```
@@ -98,35 +112,30 @@ Cada agente tem seu skill em `.claude/skills/agents/<agente>.md` com:
 ### Workers — status atual
 | Processo | Status | Como executar |
 |----------|--------|--------------|
-| `task-runner.ts` | ❌ DESCOMISSIONADO | Não executar |
-| `workers/agents/*.ts` | ❌ DESCOMISSIONADOS | Substituídos pelos skills |
-| `gemini-client.ts` | ❌ NÃO INVOCAR | Não mais usado |
-| `lib/embeddings/gemini-embeddings.ts` | ✅ ATIVO | `npx tsx workers/lib/embeddings/gemini-embeddings.ts` |
-| `agents/learning-extractor.ts` | ✅ ATIVO | Via `scripts/learning/extract.ts` |
-| `cron/learning-aggregator-cron.ts` | ✅ ATIVO | Cron job externo |
+| `workers/lib/embeddings/gemini-embeddings.ts` | ✅ ATIVO | `npx tsx workers/lib/embeddings/gemini-embeddings.ts` |
+| `workers/lib/learning-extractor.ts` | ✅ ATIVO | Via `scripts/learning/extract.ts` |
+| `workers/cron/learning-aggregator-cron.ts` | ✅ ATIVO | Cron job externo |
 
 ## Estrutura do projeto
-- `frontend/`                → Next.js 14 App Router (visualização read-only)
-- `workers/`                 → DEPRECATED (ver workers/README-DEPRECATED.md). Manter embeddings + learning-extractor.
-- `workers/cron/`            → jobs periódicos (learning-aggregator-cron.ts) — ainda ativo
-- `db/`                      → migrations SQL Supabase (V2 em migrations/v2/)
-- `stitch/[tela]/`           → exports do Google Stitch (html, DESIGN.md, png)
-- `.claude/skills/dev/`      → skills de desenvolvimento (frontend, DB, deploy, etc.)
+- `frontend/`                → Next.js 14 App Router
+- `workers/lib/`             → helpers ativos: db, knowledge, tagging, embeddings, learning-extractor, llm
+- `workers/cron/`            → jobs periódicos (learning-aggregator-cron.ts)
+- `db/`                      → SQL customizações Supabase
+- `migrations/`              → SQL migrations (v1 + v2)
+- `.claude/skills/dev/`      → skills de desenvolvimento (frontend, UX, DB, deploy)
 - `.claude/skills/agents/`   → skills de execução dos 18 agentes
 - `.claude/pipelines/`       → definição do pipeline (DAG, dependências, ordem)
 - `scripts/`                 → DB bridge scripts para orquestração Claude Code
 
-## Estado das Fases V2 (última atualização: 2026-04-18)
+## Estado das Fases (última atualização: 2026-05-24)
 
 | Fase | Status | Resumo |
 |------|--------|--------|
-| A — Migração Claude | ↩️ revertido | Provider padrão revertido para Gemini; Claude mantido como opção |
-| B — Jarvis tool use | ⏸️ pausado | Arquivos preservados. Jarvis desativado — motor migrado para Claude Code |
-| C — Tela Demandas | ✅ 80% | Lista + detalhe com timeline. Pendente: logs WebSocket em tempo real |
-| D — Tela Produto | ✅ 70% | 6 sub-abas funcionais. Pendente: diff de copy, score de viabilidade |
-| E — Memória cumulativa | ✅ 90% | Extrator + aggregator + busca vetorial via scripts/search/vector.ts |
-| F — Polish + testes | ⬜ 0% | FilterBar, keyboard shortcuts, Playwright E2E, docs — não iniciado |
-| G — Ultron (Claude Code) | ✅ 100% | 18 agent skills + pipeline DAG + DB bridge scripts implementados |
+| Tela Demandas | ✅ 80% | Lista + detalhe com timeline. Pendente: logs WebSocket em tempo real |
+| Tela Produto | ✅ 70% | 6 sub-abas funcionais. Pendente: diff de copy, score de viabilidade |
+| Memória cumulativa | ✅ 90% | Extrator + aggregator + busca vetorial via scripts/search/vector.ts |
+| Pipeline (Ultron) | ✅ 100% | 18 agent skills + pipeline DAG + DB bridge scripts implementados |
+| Polish + testes | ⬜ 0% | FilterBar, keyboard shortcuts, Playwright E2E — não iniciado |
 
 ## Arquivos canônicos de referência
 
@@ -138,8 +147,8 @@ Cada agente tem seu skill em `.claude/skills/agents/<agente>.md` com:
 | `.claude/skills/agents/_pipeline.md` | Guia de orquestração — ler antes de executar qualquer pipeline |
 | `frontend/app/globals.css` | CSS vars (design tokens Kinetic Console) |
 | `frontend/tailwind.config.ts` | Mapeamento CSS vars → classes Tailwind |
-| `workers/agents/learning-extractor.ts` | Extrator de learnings pós-pipeline (Fase E) — ainda ativo |
-| `workers/cron/learning-aggregator-cron.ts` | Aggregator diário de patterns (Fase E) — ainda ativo |
+| `workers/lib/learning-extractor.ts` | Extrator de learnings pós-pipeline — ainda ativo |
+| `workers/cron/learning-aggregator-cron.ts` | Aggregator diário de patterns — ainda ativo |
 | `workers/lib/embeddings/gemini-embeddings.ts` | Batch worker de embeddings — ainda ativo |
 | `workers/lib/knowledge.ts` | saveArtifact, saveCopyComponents — reutilizado pelos scripts |
 | `workers/lib/tagging.ts` | Sistema canônico de tags (SKU_v1_H1) — reutilizado pelos scripts |

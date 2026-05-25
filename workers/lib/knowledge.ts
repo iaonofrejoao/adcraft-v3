@@ -19,20 +19,36 @@ export async function saveArtifact(params: {
     artifact_data: Record<string, unknown>;
     source_pipeline_id: string | null;
     source_task_id: string;
+    copy_combination_id?: string;
 }) {
     const artifactId = randomUUID();
 
     await db.transaction(async (tx) => {
         // 1. Marca versões anteriores do mesmo artifact_type como 'superseded'
-        await tx.execute(sql`
+        // Se for artefato por combinação, só supersede a mesma combinação
+        if (params.copy_combination_id) {
+            await tx.execute(sql`
       UPDATE product_knowledge
-      SET status = 'superseded', 
+      SET status = 'superseded',
           superseded_at = NOW(),
           superseded_by = ${artifactId}
       WHERE product_id = ${params.product_id}
         AND artifact_type = ${params.artifact_type}
+        AND copy_combination_id = ${params.copy_combination_id}
         AND status = 'fresh'
     `);
+        } else {
+            await tx.execute(sql`
+      UPDATE product_knowledge
+      SET status = 'superseded',
+          superseded_at = NOW(),
+          superseded_by = ${artifactId}
+      WHERE product_id = ${params.product_id}
+        AND artifact_type = ${params.artifact_type}
+        AND copy_combination_id IS NULL
+        AND status = 'fresh'
+    `);
+        }
 
         // 2. Insere o novo artifact
         await tx.insert(productKnowledge).values({
@@ -43,6 +59,7 @@ export async function saveArtifact(params: {
             artifact_data: params.artifact_data,
             source_pipeline_id: params.source_pipeline_id as any,
             source_task_id: params.source_task_id as any,
+            copy_combination_id: (params.copy_combination_id ?? null) as any,
             status: 'fresh',
         });
 

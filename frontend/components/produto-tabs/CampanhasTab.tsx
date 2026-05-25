@@ -35,13 +35,22 @@ function toSecondaryPlatformKey(p: SecondaryPlatform): string {
   return typeof p === 'string' ? p : p.platform
 }
 
+function toWarningText(w: string | { category?: string; platform?: string; severity?: string; description?: string }): string {
+  if (typeof w === 'string') return w
+  const parts = []
+  if (w.severity) parts.push(`[${w.severity.toUpperCase()}]`)
+  if (w.category) parts.push(w.category)
+  if (w.description) parts.push(w.description)
+  return parts.join(' — ')
+}
+
 interface CampaignStrategyData {
   campaign_objective:         string
   primary_platform:           string
   platform_rationale:         string
   secondary_platforms:        SecondaryPlatform[]
-  policy_warnings:            string[]
-  budget_warnings:            string[]
+  policy_warnings:            (string | { category?: string; platform?: string; severity?: string; description?: string })[]
+  budget_warnings:            (string | { description?: string })[]
   target_audiences:           TargetAudience[]
   funnel_stages:              Record<string, FunnelStage>
   recommended_daily_budget_brl: number
@@ -330,7 +339,7 @@ export function CampanhasTab({ sku }: CampanhasTabProps) {
           <ul className="space-y-1">
             {d.policy_warnings.map((w, i) => (
               <li key={i} className="text-[0.75rem] text-on-surface-variant flex items-start gap-2">
-                <span className="text-brand/60 shrink-0 mt-0.5">•</span>{w}
+                <span className="text-brand/60 shrink-0 mt-0.5">•</span>{toWarningText(w)}
               </li>
             ))}
           </ul>
@@ -346,7 +355,7 @@ export function CampanhasTab({ sku }: CampanhasTabProps) {
           <ul className="space-y-1">
             {d.budget_warnings.map((w, i) => (
               <li key={i} className="text-[0.75rem] text-on-surface-variant flex items-start gap-2">
-                <span className="text-status-paused-text/60 shrink-0 mt-0.5">•</span>{w}
+                <span className="text-status-paused-text/60 shrink-0 mt-0.5">•</span>{toWarningText(w)}
               </li>
             ))}
           </ul>

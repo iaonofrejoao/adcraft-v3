@@ -1,1 +1,0 @@
-Este diretório contém o backend Python da v1 do AdCraft, mantido apenas como referência para portar trechos quando necessário. Não está em uso ativo. A v2 roda em workers/ + app/ (Next.js + Node.js). Consulte MIGRATION_GUIDE.md para saber o que ainda vale portar.

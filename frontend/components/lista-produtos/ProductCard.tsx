@@ -176,7 +176,7 @@ export function ProductCard({ product: p }: ProductCardProps) {
       >
         {/* ── Thumbnail quadrado ────────────────────────────────────────── */}
         <div className={cn(
-          'relative aspect-square bg-gradient-to-br flex items-center justify-center shrink-0 select-none overflow-hidden',
+          'relative h-[200px] bg-gradient-to-br flex items-center justify-center shrink-0 select-none overflow-hidden',
           gradient
         )}>
           {p.logo_url && !imgError ? (

@@ -18,7 +18,7 @@ export function ProductGrid({ products, isLoading, onAddProduct }: ProductGridPr
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="bg-surface-container border border-white/5 rounded-xl overflow-hidden flex flex-col">
             {/* Thumbnail skeleton */}
-            <Skeleton className="aspect-square w-full rounded-none bg-surface-high" />
+            <Skeleton className="h-[200px] w-full rounded-none bg-surface-high" />
             {/* Body skeleton */}
             <div className="p-3.5 flex flex-col gap-2.5">
               <div className="space-y-1.5">

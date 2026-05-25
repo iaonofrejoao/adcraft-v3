@@ -163,6 +163,14 @@ export async function POST(req: Request) {
     console.error('[products POST] niche classification failed:', err)
   );
 
+  // 6. Extração de logo (best-effort, não bloqueia resposta)
+  //    Só busca se o usuário não forneceu logo_url no cadastro
+  if (!input.logo_url) {
+    fetchLogoAsync(product.id, input.product_url, supabase).catch((err) =>
+      console.error('[products POST] logo fetch failed:', err)
+    );
+  }
+
   return NextResponse.json(product, { status: 201 });
 }
 
@@ -289,4 +297,80 @@ async function fallbackNicheByKeyword(
       .update({ niche_id: bestNicheId })
       .eq('id', productId);
   }
+}
+
+// ── Extração automática de logo ────────────────────────────────────────────────
+// Ordem de prioridade: og:image → twitter:image → apple-touch-icon → favicon .png
+
+const LOGO_FETCH_TIMEOUT = 12_000;
+const LOGO_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+
+function resolveImageUrl(raw: string, base: string): string | null {
+  if (!raw) return null;
+  try { return new URL(raw.trim(), base).href; } catch { return null; }
+}
+
+function extractBestImage(html: string, pageUrl: string): string | null {
+  const og =
+    html.match(/property=["']og:image["'][^>]*content=["']([^"']+)["']/i)?.[1] ??
+    html.match(/content=["']([^"']+)["'][^>]*property=["']og:image["']/i)?.[1];
+  if (og) return resolveImageUrl(og, pageUrl);
+
+  const tw =
+    html.match(/name=["']twitter:image(?::src)?["'][^>]*content=["']([^"']+)["']/i)?.[1] ??
+    html.match(/content=["']([^"']+)["'][^>]*name=["']twitter:image(?::src)?["']/i)?.[1];
+  if (tw) return resolveImageUrl(tw, pageUrl);
+
+  const apple = html.match(/<link[^>]+rel=["']apple-touch-icon["'][^>]+href=["']([^"']+)["']/i)?.[1];
+  if (apple) return resolveImageUrl(apple, pageUrl);
+
+  const png =
+    html.match(/<link[^>]+href=["']([^"']+\.png[^"']*)["'][^>]*rel=["'][^"']*icon[^"']*["']/i)?.[1] ??
+    html.match(/<link[^>]*rel=["'][^"']*icon[^"']*["'][^>]*href=["']([^"']+\.png[^"']*)["']/i)?.[1];
+  if (png) return resolveImageUrl(png, pageUrl);
+
+  return null;
+}
+
+async function fetchHtml(url: string): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LOGO_FETCH_TIMEOUT);
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': LOGO_UA, 'Accept': 'text/html,application/xhtml+xml' },
+      signal: controller.signal,
+      redirect: 'follow',
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    clearTimeout(timer);
+    return null;
+  }
+}
+
+async function fetchLogoAsync(
+  productId: string,
+  productUrl: string,
+  supabase: ReturnType<typeof getServiceClient>
+): Promise<void> {
+  // Tentativa 1: URL original
+  let html = await fetchHtml(productUrl);
+  let logoUrl = html ? extractBestImage(html, productUrl) : null;
+
+  // Tentativa 2: raiz do domínio (útil quando product_url é /text.html, /vsl, etc.)
+  if (!logoUrl) {
+    try {
+      const rootUrl = new URL(productUrl).origin + '/';
+      if (rootUrl !== productUrl && rootUrl !== productUrl + '/') {
+        html = await fetchHtml(rootUrl);
+        logoUrl = html ? extractBestImage(html, rootUrl) : null;
+      }
+    } catch { /* URL inválida */ }
+  }
+
+  if (!logoUrl) return;
+  await supabase.from('products').update({ logo_url: logoUrl }).eq('id', productId);
+  console.log(`[products POST] logo found: ${logoUrl}`);
 }

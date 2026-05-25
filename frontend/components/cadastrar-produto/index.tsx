@@ -60,6 +60,7 @@ export function CadastrarProdutoModal({
   const [url, setUrl] = useState("")
   const [name, setName] = useState("")
   const [platform, setPlatform] = useState("")
+  const [logoUrl, setLogoUrl] = useState("")
   const [extracted, setExtracted] = useState<ExtractedProduct | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -95,6 +96,7 @@ export function CadastrarProdutoModal({
           name: name.trim(),
           product_url: url.trim(),
           platform: platform || undefined,
+          logo_url: logoUrl.trim() || undefined,
           commission_percent: PRODUCT_DEFAULTS.commissionPercent,
           ticket_price: PRODUCT_DEFAULTS.ticketPrice,
         }),
@@ -122,6 +124,7 @@ export function CadastrarProdutoModal({
     setUrl("")
     setName("")
     setPlatform("")
+    setLogoUrl("")
     setExtracted(null)
     setSubmitError(null)
   }
@@ -200,6 +203,8 @@ export function CadastrarProdutoModal({
                 extracted={extracted}
                 platform={platform}
                 onPlatformChange={setPlatform}
+                logoUrl={logoUrl}
+                onLogoUrlChange={setLogoUrl}
               />
             </TabsContent>
             <TabsContent value="manual" className="px-8 py-6 mt-0">
@@ -256,6 +261,8 @@ interface UrlTabContentProps {
   extracted: ExtractedProduct | null
   platform: string
   onPlatformChange: (value: string) => void
+  logoUrl: string
+  onLogoUrlChange: (value: string) => void
 }
 
 function UrlTabContent({
@@ -267,6 +274,8 @@ function UrlTabContent({
   extracted,
   platform,
   onPlatformChange,
+  logoUrl,
+  onLogoUrlChange,
 }: UrlTabContentProps) {
   return (
     <>
@@ -309,6 +318,24 @@ function UrlTabContent({
           placeholder="Ex: CitrusBurn"
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
+          className={cn(
+            "h-10 bg-surface-low border-outline-variant/20",
+            "text-on-surface placeholder:text-on-surface-muted",
+            "focus-visible:border-brand focus-visible:ring-brand/20",
+          )}
+        />
+      </div>
+
+      {/* Logo / imagem do produto */}
+      <div className="space-y-2">
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+          URL do Logo <span className="normal-case text-on-surface-muted font-normal">(opcional)</span>
+        </label>
+        <Input
+          type="url"
+          placeholder="https://..."
+          value={logoUrl}
+          onChange={(e) => onLogoUrlChange(e.target.value)}
           className={cn(
             "h-10 bg-surface-low border-outline-variant/20",
             "text-on-surface placeholder:text-on-surface-muted",

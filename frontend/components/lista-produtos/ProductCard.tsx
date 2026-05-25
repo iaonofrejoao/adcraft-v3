@@ -141,6 +141,7 @@ interface ProductCardProps {
 export function ProductCard({ product: p }: ProductCardProps) {
   const router  = useRouter()
   const [summary, setSummary] = useState<ProductSummary | null>(null)
+  const [imgError, setImgError] = useState(false)
 
   useEffect(() => {
     fetch(`/api/products/${p.sku}/summary`)
@@ -175,12 +176,27 @@ export function ProductCard({ product: p }: ProductCardProps) {
       >
         {/* ── Thumbnail ─────────────────────────────────────────────────── */}
         <div className={cn(
-          'relative h-20 bg-gradient-to-br flex items-center justify-center shrink-0 select-none',
+          'relative h-20 bg-gradient-to-br flex items-center justify-center shrink-0 select-none overflow-hidden',
           gradient
         )}>
-          <span className={cn('font-mono text-[2.25rem] font-black tracking-tight', accent)}>
-            {initials}
-          </span>
+          {p.logo_url && !imgError ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={p.logo_url}
+              alt={p.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <span className={cn('font-mono text-[2.25rem] font-black tracking-tight', accent)}>
+              {initials}
+            </span>
+          )}
+
+          {/* Gradient overlay — só quando há imagem, para legibilidade dos badges */}
+          {p.logo_url && !imgError && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+          )}
 
           {/* Platform badge */}
           {platformLabel && (

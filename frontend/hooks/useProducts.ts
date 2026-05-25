@@ -6,6 +6,7 @@ export interface Product {
   name: string
   sku: string
   platform: string
+  logo_url?: string | null
   status: string
   target_country: string
   target_language: string

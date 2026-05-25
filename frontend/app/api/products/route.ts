@@ -29,14 +29,14 @@ export async function GET(req: Request) {
 
     const withStatus = await supabase
       .from('products')
-      .select('id, name, sku, platform, target_country, target_language, ticket_price, commission_percent, status, created_at, niches(name)')
+      .select('id, name, sku, platform, logo_url, target_country, target_language, ticket_price, commission_percent, status, created_at, niches(name)')
       .order('created_at', { ascending: false });
 
     if (withStatus.error) {
       // Coluna 'status' provavelmente não existe — fallback sem ela
       const fallback = await supabase
         .from('products')
-        .select('id, name, sku, platform, target_country, target_language, ticket_price, commission_percent, created_at, niches(name)')
+        .select('id, name, sku, platform, logo_url, target_country, target_language, ticket_price, commission_percent, created_at, niches(name)')
         .order('created_at', { ascending: false });
       if (fallback.error) throw fallback.error;
       data = (fallback.data ?? []) as Record<string, unknown>[];
@@ -94,6 +94,7 @@ const CreateProductSchema = z.object({
   platform:           z.enum(['hotmart', 'clickbank', 'monetizze', 'eduzz']).optional(),
   product_url:        z.string().url(),
   affiliate_link:     z.string().url().optional(),
+  logo_url:           z.string().url().nullable().optional(),
   commission_percent: z.number().min(0).max(100),
   ticket_price:       z.number().positive(),
   target_country:     z.string().max(10).default('BR'),
@@ -139,6 +140,7 @@ export async function POST(req: Request) {
       platform,
       product_url:        input.product_url,
       affiliate_link:     affiliateLink,
+      logo_url:           input.logo_url ?? null,
       commission_percent: input.commission_percent,
       ticket_price:       input.ticket_price,
       target_country:     input.target_country,
@@ -164,6 +166,32 @@ export async function POST(req: Request) {
   return NextResponse.json(product, { status: 201 });
 }
 
+// ── Embedding via Gemini REST API (sem importar workers) ─────────────────────
+
+const GEMINI_EMBED_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents';
+
+async function generateEmbedding(text: string): Promise<number[]> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new Error('GEMINI_API_KEY não definida');
+
+  const res = await fetch(`${GEMINI_EMBED_URL}?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      requests: [{ model: 'models/gemini-embedding-001', content: { parts: [{ text }] }, outputDimensionality: 768 }],
+    }),
+  });
+
+  if (!res.ok) throw new Error(`Gemini embedding error ${res.status}: ${await res.text()}`);
+  const data = await res.json() as { embeddings?: Array<{ values?: number[] }> };
+  return data.embeddings?.[0]?.values ?? [];
+}
+
+function embeddingToSql(values: number[]): string {
+  return `[${values.join(',')}]`;
+}
+
 // ── Classificação de nicho (async, não-bloqueante) ────────────────────────────
 
 async function classifyNicheAsync(
@@ -172,13 +200,9 @@ async function classifyNicheAsync(
   productUrl: string,
   supabase: ReturnType<typeof getServiceClient>
 ): Promise<void> {
-  // Import dinâmico evita que workers/lib/db.ts inicialize conexão pg no top-level
-  // (o que causaria 500 durante o carregamento do módulo pelo Next.js)
-  const { generateSingleEmbedding, embeddingToSql } = await import('../../../../workers/lib/embeddings/gemini-embeddings');
-
   // 3. Gera embedding do produto (nome + URL como âncora semântica)
   const embeddingText = `${name} ${productUrl}`;
-  const embeddingValues = await generateSingleEmbedding(embeddingText, 'products', productId);
+  const embeddingValues = await generateEmbedding(embeddingText);
 
   // 4. Chama RPC find_nearest_niche (cosine similarity via pgvector)
   const { data: nicheMatch } = await supabase.rpc('find_nearest_niche', {

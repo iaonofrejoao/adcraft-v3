@@ -174,9 +174,9 @@ export function ProductCard({ product: p }: ProductCardProps) {
           'transition-all duration-150 cursor-pointer flex flex-col group'
         )}
       >
-        {/* ── Thumbnail ─────────────────────────────────────────────────── */}
+        {/* ── Thumbnail quadrado ────────────────────────────────────────── */}
         <div className={cn(
-          'relative h-20 bg-gradient-to-br flex items-center justify-center shrink-0 select-none overflow-hidden',
+          'relative aspect-square bg-gradient-to-br flex items-center justify-center shrink-0 select-none overflow-hidden',
           gradient
         )}>
           {p.logo_url && !imgError ? (
@@ -184,24 +184,22 @@ export function ProductCard({ product: p }: ProductCardProps) {
             <img
               src={p.logo_url}
               alt={p.name}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="w-full h-full object-contain p-5"
               onError={() => setImgError(true)}
             />
           ) : (
-            <span className={cn('font-mono text-[2.25rem] font-black tracking-tight', accent)}>
+            <span className={cn('font-mono text-[3.5rem] font-black tracking-tight leading-none', accent)}>
               {initials}
             </span>
           )}
 
-          {/* Gradient overlay — só quando há imagem, para legibilidade dos badges */}
-          {p.logo_url && !imgError && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
-          )}
+          {/* Sombra inferior para legibilidade dos badges */}
+          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
 
           {/* Platform badge */}
           {platformLabel && (
             <span className={cn(
-              'absolute top-2.5 right-2.5 px-2 py-[3px] rounded text-[10px] font-mono font-bold tracking-wide border',
+              'absolute top-2 right-2 px-1.5 py-[3px] rounded text-[9px] font-mono font-bold tracking-wide border',
               pill
             )}>
               {platformLabel}
@@ -210,72 +208,66 @@ export function ProductCard({ product: p }: ProductCardProps) {
 
           {/* Inactive badge */}
           {p.status !== 'active' && (
-            <span className="absolute top-2.5 left-2.5 px-2 py-[3px] rounded text-[10px] font-mono font-bold tracking-wide bg-[rgba(161,161,170,0.15)] text-[#A1A1AA] border border-[#A1A1AA]/20">
+            <span className="absolute top-2 left-2 px-1.5 py-[3px] rounded text-[9px] font-mono font-bold tracking-wide bg-[rgba(161,161,170,0.15)] text-[#A1A1AA] border border-[#A1A1AA]/20">
               Inativo
             </span>
           )}
 
           {/* Arrow hint on hover */}
-          <div className="absolute bottom-2 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
             <ArrowRight size={13} strokeWidth={2} className={accent} />
           </div>
         </div>
 
         {/* ── Body ──────────────────────────────────────────────────────── */}
-        <div className="flex flex-col gap-2.5 p-3.5 flex-1">
+        <div className="flex flex-col gap-2 p-3 flex-1">
 
           {/* Name + niche + country */}
           <div>
-            <h3 className="text-[0.875rem] font-semibold text-on-surface leading-snug truncate">
+            <h3 className="text-[0.8125rem] font-semibold text-on-surface leading-snug line-clamp-2">
               {p.name}
             </h3>
-            <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+            <div className="flex items-center gap-1 mt-0.5 min-w-0">
+              <span className="text-[0.5625rem] text-on-surface-muted shrink-0">{flag}</span>
               {p.niche?.name && (
-                <span className="font-mono text-[0.625rem] text-on-surface-muted truncate">
-                  {p.niche.name}
-                </span>
-              )}
-              {p.niche?.name && (
-                <span className="text-on-surface-muted/30 text-[0.5rem] shrink-0">•</span>
-              )}
-              <span className="text-[0.625rem] text-on-surface-muted shrink-0">{flag}</span>
-              {!p.niche?.name && (
-                <span className="font-mono text-[0.625rem] text-on-surface-muted/50 truncate">
-                  {p.sku}
-                </span>
+                <>
+                  <span className="text-on-surface-muted/30 text-[0.5rem] shrink-0">·</span>
+                  <span className="font-mono text-[0.5625rem] text-on-surface-muted truncate">
+                    {p.niche.name}
+                  </span>
+                </>
               )}
             </div>
           </div>
 
           {/* Price + commission */}
-          <div className="flex items-center gap-3">
-            {p.ticket_price && (
-              <span className="font-mono text-[0.8125rem] font-bold text-on-surface">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            {p.ticket_price ? (
+              <span className="font-mono text-[0.75rem] font-bold text-on-surface">
                 {formatCurrency(p.ticket_price, p.target_country)}
               </span>
+            ) : (
+              <span className="font-mono text-[0.625rem] text-on-surface-muted/40">Preço não definido</span>
             )}
             {commission > 0 && (
-              <span className="font-mono text-[0.6875rem] text-on-surface-muted">
-                {commission.toFixed(0)}% comissão
+              <span className="font-mono text-[0.625rem] text-on-surface-muted">
+                {commission.toFixed(0)}%
               </span>
-            )}
-            {!p.ticket_price && commission === 0 && (
-              <span className="font-mono text-[0.6875rem] text-on-surface-muted/40">Preço não definido</span>
             )}
           </div>
 
           {/* Viability score bar */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[0.5625rem] font-mono tracking-[0.08em] uppercase text-on-surface-muted/60">
+              <span className="text-[0.5rem] font-mono tracking-[0.08em] uppercase text-on-surface-muted/60">
                 Viabilidade
               </span>
               {score != null ? (
-                <span className={cn('text-[0.6875rem] font-bold font-mono', scoreTextColor(score))}>
+                <span className={cn('text-[0.625rem] font-bold font-mono', scoreTextColor(score))}>
                   {score.toFixed(1)}<span className="text-on-surface-muted/50 font-normal">/10</span>
                 </span>
               ) : (
-                <span className="text-[0.625rem] font-mono text-on-surface-muted/30">—</span>
+                <span className="text-[0.5625rem] font-mono text-on-surface-muted/30">—</span>
               )}
             </div>
             <div className="h-[3px] rounded-full bg-surface-highest overflow-hidden">
@@ -289,49 +281,25 @@ export function ProductCard({ product: p }: ProductCardProps) {
           </div>
 
           {/* Status icons */}
-          <div className="flex items-center gap-3.5">
-            <StatusIcon
-              icon={Search}
-              label="Estudo de mercado"
-              active={summary?.has_market_study ?? false}
-            />
-            <StatusIcon
-              icon={User}
-              label="Personas/Avatar"
-              active={(summary?.personas_count ?? 0) > 0}
-              count={summary?.personas_count}
-            />
-            <StatusIcon
-              icon={Pencil}
-              label="Copies geradas"
-              active={(summary?.copies_count ?? 0) > 0}
-              count={summary?.copies_count}
-            />
-            <StatusIcon
-              icon={Film}
-              label="Criativos"
-              active={(summary?.creatives_count ?? 0) > 0}
-              count={summary?.creatives_count}
-            />
-            <StatusIcon
-              icon={Megaphone}
-              label="Campanhas ativas"
-              active={(summary?.active_campaigns_count ?? 0) > 0}
-              count={summary?.active_campaigns_count}
-            />
+          <div className="flex items-center gap-2.5">
+            <StatusIcon icon={Search}    label="Estudo de mercado" active={summary?.has_market_study ?? false} />
+            <StatusIcon icon={User}      label="Personas/Avatar"   active={(summary?.personas_count ?? 0) > 0}       count={summary?.personas_count} />
+            <StatusIcon icon={Pencil}    label="Copies geradas"    active={(summary?.copies_count ?? 0) > 0}          count={summary?.copies_count} />
+            <StatusIcon icon={Film}      label="Criativos"         active={(summary?.creatives_count ?? 0) > 0}       count={summary?.creatives_count} />
+            <StatusIcon icon={Megaphone} label="Campanhas ativas"  active={(summary?.active_campaigns_count ?? 0) > 0} count={summary?.active_campaigns_count} />
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-2 border-t border-white/5 mt-auto">
-            <span className="font-mono text-[0.5625rem] text-on-surface-muted/40">
+          <div className="flex items-center justify-between pt-1.5 border-t border-white/5 mt-auto">
+            <span className="font-mono text-[0.5rem] text-on-surface-muted/40 truncate">
               {summary?.updated_at
-                ? `atualizado ${formatRelative(summary.updated_at)}`
+                ? formatRelative(summary.updated_at)
                 : p.created_at
-                  ? `criado ${formatRelative(p.created_at)}`
-                  : '\u00a0'
+                  ? formatRelative(p.created_at)
+                  : ' '
               }
             </span>
-            <span className={cn('font-mono text-[0.5625rem] font-bold tracking-[0.04em]', accent)}>
+            <span className={cn('font-mono text-[0.5rem] font-bold tracking-[0.04em] shrink-0', accent)}>
               {p.sku}
             </span>
           </div>

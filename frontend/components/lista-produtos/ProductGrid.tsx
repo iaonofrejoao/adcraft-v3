@@ -14,11 +14,11 @@ interface ProductGridProps {
 export function ProductGrid({ products, isLoading, onAddProduct }: ProductGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from({ length: 6 }).map((_, i) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="bg-surface-container border border-white/5 rounded-xl overflow-hidden flex flex-col">
             {/* Thumbnail skeleton */}
-            <Skeleton className="h-20 w-full rounded-none bg-surface-high" />
+            <Skeleton className="aspect-square w-full rounded-none bg-surface-high" />
             {/* Body skeleton */}
             <div className="p-3.5 flex flex-col gap-2.5">
               <div className="space-y-1.5">
@@ -69,7 +69,7 @@ export function ProductGrid({ products, isLoading, onAddProduct }: ProductGridPr
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
       {products.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}

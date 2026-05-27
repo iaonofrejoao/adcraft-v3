@@ -1,19 +1,21 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Film, Grid3x3, ChevronDown, ChevronUp } from 'lucide-react'
+import { Film, Grid3x3, ChevronDown, ChevronUp, Video } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StoryboardTab, StoryboardCard } from './StoryboardTab'
 import type { StoryboardEntry } from './StoryboardTab'
+import { TikTokUGCTab } from './TikTokUGCTab'
 import { fetchCreativeEntries } from '@/lib/creative-artifacts'
 import { toast } from 'sonner'
 
 /* ── Types ─────────────────────────────────────────────────────────── */
-type SubTab = 'storyboard' | 'criativos'
+type SubTab = 'storyboard' | 'criativos' | 'tiktok'
 
 const SUB_TABS: { id: SubTab; label: string; icon: React.ReactNode }[] = [
-  { id: 'storyboard', label: 'Storyboard', icon: <Grid3x3 size={13} strokeWidth={1.5} /> },
-  { id: 'criativos',  label: 'Criativos',  icon: <Film     size={13} strokeWidth={1.5} /> },
+  { id: 'storyboard', label: 'Storyboard',  icon: <Grid3x3 size={13} strokeWidth={1.5} /> },
+  { id: 'criativos',  label: 'Criativos',   icon: <Film    size={13} strokeWidth={1.5} /> },
+  { id: 'tiktok',     label: 'TikTok UGC',  icon: <Video   size={13} strokeWidth={1.5} /> },
 ]
 
 /* ── Criativo card (video gerado + storyboard colapsável) ───────────── */
@@ -185,6 +187,9 @@ export function VideoTab({ sku }: VideoTabProps) {
           </div>
         )
       )}
+
+      {/* TikTok UGC panel — coleta e aprovação de UGC */}
+      {active === 'tiktok' && <TikTokUGCTab sku={sku} />}
     </div>
   )
 }

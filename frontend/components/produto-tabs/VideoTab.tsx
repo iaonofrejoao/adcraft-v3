@@ -7,7 +7,7 @@ import { StoryboardTab, StoryboardCard } from './StoryboardTab'
 import type { StoryboardEntry } from './StoryboardTab'
 import { TikTokUGCTab } from './TikTokUGCTab'
 import { fetchCreativeEntries } from '@/lib/creative-artifacts'
-import { toast } from 'sonner'
+import { useFinalVideos } from '@/hooks/useFinalVideos'
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 type SubTab = 'storyboard' | 'criativos' | 'tiktok'
@@ -97,6 +97,8 @@ export function VideoTab({ sku }: VideoTabProps) {
   const [entries,  setEntries]  = useState<StoryboardEntry[]>([])
   const [loading,  setLoading]  = useState(true)
 
+  const { queueVideo, usedTikTokIds } = useFinalVideos(sku)
+
   useEffect(() => {
     if (!sku) return
     fetchCreativeEntries(sku)
@@ -110,8 +112,7 @@ export function VideoTab({ sku }: VideoTabProps) {
   const done    = entries.filter(e =>  !!(e.video?.artifact_data as any)?.video_url)
 
   function handleMakeVideo(combinationId: string) {
-    toast.info('Geração de vídeo via VEO 3 ainda não conectada — em breve.')
-    // When connected: call API, move entry from pending → done
+    queueVideo(combinationId)
   }
 
   if (loading) return <VideoTabSkeleton />
@@ -189,7 +190,7 @@ export function VideoTab({ sku }: VideoTabProps) {
       )}
 
       {/* TikTok UGC panel — coleta e aprovação de UGC */}
-      {active === 'tiktok' && <TikTokUGCTab sku={sku} />}
+      {active === 'tiktok' && <TikTokUGCTab sku={sku} inUseIds={usedTikTokIds} />}
     </div>
   )
 }

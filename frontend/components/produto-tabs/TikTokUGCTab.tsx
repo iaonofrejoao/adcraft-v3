@@ -233,10 +233,11 @@ export function TikTokUGCTabSkeleton() {
 // ── Main ───────────────────────────────────────────────────────────────────────
 
 export interface TikTokUGCTabProps {
-  sku: string
+  sku:        string
+  inUseIds?:  Set<string>
 }
 
-export function TikTokUGCTab({ sku }: TikTokUGCTabProps) {
+export function TikTokUGCTab({ sku, inUseIds }: TikTokUGCTabProps) {
   const { videos, isLoading, filter, setFilter, approve, reject, reset, refresh, counts } =
     useTikTokVideos(sku)
 
@@ -320,6 +321,7 @@ export function TikTokUGCTab({ sku }: TikTokUGCTabProps) {
               onApprove={approve}
               onReject={reject}
               onReset={reset}
+              inUse={inUseIds?.has(video.id)}
             />
           ))}
         </div>

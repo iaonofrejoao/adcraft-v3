@@ -2,10 +2,11 @@
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronRight, Pencil, Loader2, Globe } from 'lucide-react'
+import { ChevronRight, Pencil, Loader2, Globe, Link2, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
+import { PersonaStatusBadge } from './PersonaStatusBadge'
 import type { Product } from './types'
 
 // ── Country / Language mapping ────────────────────────────────────────────────
@@ -26,10 +27,52 @@ const COUNTRIES = [
   { code: 'IT', flag: '🇮🇹', label: 'Itália',         language: 'it-IT' },
 ] as const
 
-type CountryCode = typeof COUNTRIES[number]['code']
-
 function getCountry(code: string) {
   return COUNTRIES.find((c) => c.code === code) ?? COUNTRIES[0]
+}
+
+function ProductUrl({ label, url }: { label: string; url: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    await navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  let displayUrl = url
+  try {
+    const parsed = new URL(url)
+    const path = parsed.pathname !== '/' ? parsed.pathname.slice(0, 24) + (parsed.pathname.length > 24 ? '…' : '') : ''
+    displayUrl = parsed.hostname + path
+  } catch {}
+
+  return (
+    <div className="flex items-center gap-1 group/url">
+      <Link2 size={11} strokeWidth={1.5} className="text-on-surface-muted/50 shrink-0" />
+      <span className="text-[0.6875rem] text-on-surface-variant/50 select-none">{label}</span>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-mono text-[0.6875rem] text-on-surface-variant/60 hover:text-brand transition-colors duration-150 truncate max-w-[200px]"
+        title={url}
+      >
+        {displayUrl}
+      </a>
+      <button
+        onClick={handleCopy}
+        className="opacity-0 group-hover/url:opacity-100 transition-opacity duration-150 ml-0.5"
+        title="Copiar URL"
+      >
+        {copied
+          ? <Check size={11} strokeWidth={1.5} className="text-status-done-text" />
+          : <Copy size={11} strokeWidth={1.5} className="text-on-surface-muted/60 hover:text-on-surface" />
+        }
+      </button>
+    </div>
+  )
 }
 
 interface ProductDetailHeaderProps {
@@ -282,6 +325,27 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
                 <Loader2 size={11} strokeWidth={1.5} className="text-brand animate-spin shrink-0" />
               )}
             </div>
+          </div>
+
+          {/* URLs row */}
+          {(product.product_url || product.affiliate_link) && (
+            <div className="flex items-center gap-3 mt-1.5">
+              {product.product_url && (
+                <ProductUrl label="Produto" url={product.product_url} />
+              )}
+              {product.affiliate_link && product.affiliate_link !== product.product_url && (
+                <>
+                  <span className="w-1 h-1 bg-white/20 rounded-full shrink-0" />
+                  <ProductUrl label="Afiliado" url={product.affiliate_link} />
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Persona row */}
+          <div className="flex items-center gap-2 mt-2">
+            <span className="w-1 h-1 bg-white/10 rounded-full shrink-0 hidden sm:block" />
+            <PersonaStatusBadge sku={sku} />
           </div>
         </div>
 

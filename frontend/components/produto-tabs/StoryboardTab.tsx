@@ -41,6 +41,12 @@ interface KeyframesData {
   style_consistency_notes?: string
 }
 
+interface ScriptScene {
+  scene_number:    number
+  section:         string
+  duration_seconds?: number
+}
+
 interface ScriptData {
   script_tag:             string
   total_duration_seconds: number
@@ -51,6 +57,7 @@ interface ScriptData {
   cta_text:               string
   verbatim_used?:         string
   script_rationale?:      string
+  scenes?:                ScriptScene[]
 }
 
 interface VideoAssetsData {
@@ -240,30 +247,33 @@ export function StoryboardCard({ entry, onMakeVideo }: { entry: StoryboardEntry;
   const audioConfig   = vData?.audio_config
   const warnings      = vData?.production_warnings?.filter(Boolean)
 
-  // Build merged scenes
+  // Build merged scenes — script.scenes is the source of truth for `section`
+  // because keyframe/video agents may incorrectly copy a single section to all scenes
   const mergedScenes: MergedScene[] = (() => {
-    const kfScenes = kfData?.keyframes ?? []
-    const vScenes  = vData?.scenes ?? []
-    const count = Math.max(kfScenes.length, vScenes.length)
+    const scrScenes = scrData?.scenes ?? []
+    const kfScenes  = kfData?.keyframes ?? []
+    const vScenes   = vData?.scenes ?? []
+    const count = Math.max(scrScenes.length, kfScenes.length, vScenes.length)
     if (count === 0) return []
 
     return Array.from({ length: count }, (_, i) => {
+      const sc = scrScenes[i]
       const kf = kfScenes[i]
       const vs = vScenes[i]
       return {
-        scene_number:        kf?.scene_number ?? vs?.scene_number ?? (i + 1),
-        section:             kf?.section ?? vs?.section ?? 'hook',
-        duration_seconds:    kf?.duration_seconds ?? vs?.duration_seconds ?? 0,
-        subtitle_text:       vs?.subtitle_text,
-        overlay_text:        vs?.overlay_text,
-        visual_notes:        vs?.visual_notes,
-        audio_cue:           vs?.audio_cue,
-        veo3_prompt_en:      kf?.veo3_prompt_en ?? vs?.veo3_prompt_en ?? '',
+        scene_number:         kf?.scene_number ?? vs?.scene_number ?? (i + 1),
+        section:              sc?.section ?? kf?.section ?? vs?.section ?? 'hook',
+        duration_seconds:     kf?.duration_seconds ?? vs?.duration_seconds ?? 0,
+        subtitle_text:        vs?.subtitle_text,
+        overlay_text:         vs?.overlay_text,
+        visual_notes:         vs?.visual_notes,
+        audio_cue:            vs?.audio_cue,
+        veo3_prompt_en:       kf?.veo3_prompt_en ?? vs?.veo3_prompt_en ?? '',
         midjourney_prompt_en: kf?.midjourney_prompt_en,
-        camera_angle:        kf?.camera_angle ?? 'medium',
-        camera_movement:     kf?.camera_movement ?? 'static',
-        mood:                kf?.mood ?? '',
-        overlay_suggestion:  kf?.overlay_suggestion,
+        camera_angle:         kf?.camera_angle ?? 'medium',
+        camera_movement:      kf?.camera_movement ?? 'static',
+        mood:                 kf?.mood ?? '',
+        overlay_suggestion:   kf?.overlay_suggestion,
       }
     })
   })()

@@ -1,9 +1,11 @@
 'use client'
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Video, Clapperboard, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronDown, ChevronUp, Video, Clapperboard, Loader2, CheckCircle2, AlertCircle, Play, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import type { CopyCombination } from '@/hooks/useCopyBoard'
+import { isVideoActive, STATUS_LABEL, type FinalVideo } from '@/hooks/useFinalVideos'
 
 /* ── Video toggle ────────────────────────────────────────────────────── */
 function VideoToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -63,14 +65,109 @@ function ScriptStatusBadge({ status }: { status: CopyCombination['script_status'
   )
 }
 
-/* ── Combination row ─────────────────────────────────────────────────── */
-interface CombinationRowProps {
-  combination:     CopyCombination
-  onToggleVideo:   (selected: boolean) => void
-  onGenerateScript: () => void
+/* ── Gerar Vídeo button ──────────────────────────────────────────────── */
+interface GerarVideoButtonProps {
+  sku:          string
+  finalVideo?:  FinalVideo | null
+  personaReady: boolean
+  onQueue:      () => void
+  disabled?:    boolean
 }
 
-function CombinationRow({ combination: c, onToggleVideo, onGenerateScript }: CombinationRowProps) {
+function GerarVideoButton({ sku, finalVideo, personaReady, onQueue, disabled }: GerarVideoButtonProps) {
+  const [loading, setLoading] = useState(false)
+
+  if (!finalVideo) {
+    const noPersona = !personaReady
+    return (
+      <button
+        onClick={async () => {
+          if (noPersona || disabled) return
+          setLoading(true)
+          try { await Promise.resolve(onQueue()) } finally { setLoading(false) }
+        }}
+        disabled={noPersona || disabled || loading}
+        title={noPersona ? 'Configure a persona do produto antes de gerar vídeos' : undefined}
+        className={cn(
+          'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-medium',
+          'transition-all duration-150',
+          noPersona || disabled
+            ? 'bg-surface-high border border-white/5 text-on-surface-muted opacity-40 cursor-not-allowed'
+            : 'bg-gradient-to-br from-[#F28705] to-[#FFB690] text-[#131314] hover:opacity-90',
+        )}
+      >
+        {loading
+          ? <Loader2 size={11} strokeWidth={1.5} className="animate-spin" />
+          : <Video size={11} strokeWidth={1.5} />}
+        Gerar Vídeo
+      </button>
+    )
+  }
+
+  if (finalVideo.status === 'queued') {
+    return (
+      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-medium bg-surface-high border border-white/5 text-on-surface-muted">
+        <Loader2 size={10} strokeWidth={1.5} />
+        Na fila
+      </span>
+    )
+  }
+
+  if (isVideoActive(finalVideo.status)) {
+    return (
+      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-medium bg-status-running text-status-running-text">
+        <span className="w-1.5 h-1.5 rounded-full bg-status-running-text animate-pulse" />
+        {STATUS_LABEL[finalVideo.status]}…
+      </span>
+    )
+  }
+
+  if (finalVideo.status === 'ready') {
+    return (
+      <Link
+        href={`/products/${sku}/criativos`}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-medium bg-status-done text-status-done-text hover:opacity-90 transition-opacity duration-150"
+      >
+        <Play size={10} strokeWidth={1.5} fill="currentColor" />
+        Ver vídeo
+        <ExternalLink size={9} strokeWidth={1.5} />
+      </Link>
+    )
+  }
+
+  if (finalVideo.status === 'failed') {
+    return (
+      <button
+        onClick={async () => {
+          setLoading(true)
+          try { await Promise.resolve(onQueue()) } finally { setLoading(false) }
+        }}
+        disabled={loading}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6875rem] font-medium bg-status-paused text-status-paused-text hover:opacity-90 transition-all duration-150 disabled:opacity-40"
+      >
+        {loading
+          ? <Loader2 size={10} strokeWidth={1.5} className="animate-spin" />
+          : <AlertCircle size={10} strokeWidth={1.5} />}
+        Tentar novamente
+      </button>
+    )
+  }
+
+  return null
+}
+
+/* ── Combination row ─────────────────────────────────────────────────── */
+interface CombinationRowProps {
+  combination:      CopyCombination
+  onToggleVideo:    (selected: boolean) => void
+  onGenerateScript: () => void
+  sku:              string
+  finalVideo?:      FinalVideo | null
+  personaReady:     boolean
+  onQueueVideo:     () => void
+}
+
+function CombinationRow({ combination: c, onToggleVideo, onGenerateScript, sku, finalVideo, personaReady, onQueueVideo }: CombinationRowProps) {
   const [expanded, setExpanded] = useState(false)
   const scriptStatus = c.script_status ?? 'pending'
   const isGenerating = scriptStatus === 'generating' || scriptStatus === 'queued'
@@ -100,7 +197,7 @@ function CombinationRow({ combination: c, onToggleVideo, onGenerateScript }: Com
 
         <ScriptStatusBadge status={c.script_status} />
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2.5">
           {/* Gerar script button */}
           {(scriptStatus === 'pending' || scriptStatus === 'error') && (
             <button
@@ -118,12 +215,14 @@ function CombinationRow({ combination: c, onToggleVideo, onGenerateScript }: Com
             </button>
           )}
 
-          {/* Video toggle */}
-          <div className="flex items-center gap-2">
-            <Video size={12} strokeWidth={1.5} className="text-on-surface-muted" />
-            <span className="text-[0.625rem] text-on-surface-muted">Gerar vídeo</span>
-            <VideoToggle checked={c.selected_for_video} onChange={onToggleVideo} />
-          </div>
+          {/* Gerar Vídeo */}
+          <GerarVideoButton
+            sku={sku}
+            finalVideo={finalVideo}
+            personaReady={personaReady}
+            onQueue={onQueueVideo}
+            disabled={scriptStatus !== 'ready'}
+          />
         </div>
       </div>
 
@@ -139,12 +238,24 @@ function CombinationRow({ combination: c, onToggleVideo, onGenerateScript }: Com
 
 /* ── Combinations list ───────────────────────────────────────────────── */
 interface CombinacoesListProps {
-  combinations:    CopyCombination[]
-  onToggleVideo:   (id: string, selected: boolean) => void
-  onGenerateScript: (id: string) => void
+  combinations:        CopyCombination[]
+  onToggleVideo:       (id: string, selected: boolean) => void
+  onGenerateScript:    (id: string) => void
+  sku?:                string
+  videosByCombination?: Record<string, FinalVideo>
+  personaReady?:       boolean
+  onQueueVideo?:       (combinationId: string) => Promise<void>
 }
 
-export function CombinacoesList({ combinations, onToggleVideo, onGenerateScript }: CombinacoesListProps) {
+export function CombinacoesList({
+  combinations,
+  onToggleVideo,
+  onGenerateScript,
+  sku = '',
+  videosByCombination = {},
+  personaReady = false,
+  onQueueVideo,
+}: CombinacoesListProps) {
   if (combinations.length === 0) return null
 
   const selectedCount   = combinations.filter((c) => c.selected_for_video).length
@@ -188,6 +299,10 @@ export function CombinacoesList({ combinations, onToggleVideo, onGenerateScript 
             combination={combo}
             onToggleVideo={(selected) => onToggleVideo(combo.id, selected)}
             onGenerateScript={() => onGenerateScript(combo.id)}
+            sku={sku}
+            finalVideo={videosByCombination[combo.id] ?? null}
+            personaReady={personaReady}
+            onQueueVideo={() => onQueueVideo?.(combo.id) ?? Promise.resolve()}
           />
         ))}
       </div>

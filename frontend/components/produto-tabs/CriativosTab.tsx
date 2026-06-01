@@ -1,352 +1,295 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { Film, FileText, Grid3x3, Loader2, Copy, Check } from 'lucide-react'
+import { useState } from 'react'
+import {
+  Film, Download, Play, Loader2, AlertCircle,
+  Wifi, Clock, RefreshCw,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { Pipeline } from '@/components/detalhes-produto'
+import { Button } from '@/components/ui/button'
+import {
+  useFinalVideos,
+  isVideoActive,
+  STATUS_PROGRESS,
+  STATUS_LABEL,
+  type FinalVideo,
+  type FinalVideoStatus,
+} from '@/hooks/useFinalVideos'
 
-/* ── Types ─────────────────────────────────────────────────────────── */
-interface ScriptScene {
-  scene_number:     number
-  section:          string
-  duration_seconds: number
-  narration:        string
-  visual_direction: string
-  emotion_cue:      string
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export interface CriativosTabProps {
+  sku:       string
+  productId: string
 }
 
-interface ScriptData {
-  script_tag:           string
-  total_duration_seconds: number
-  format:               string
-  platform:             string
-  framework_used:       string
-  narration_full:       string
-  scenes:               ScriptScene[]
-  cta_text:             string
-  verbatim_used:        string
-  script_rationale:     string
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function formatDuration(s: number | null): string {
+  if (s == null) return '—'
+  return `${Math.round(s)}s`
 }
 
-interface Keyframe {
-  scene_number:      number
-  section:           string
-  duration_seconds:  number
-  veo3_prompt_en:    string
-  midjourney_prompt_en: string
-  camera_angle:      string
-  camera_movement:   string
-  lighting:          string
-  mood:              string
-  overlay_suggestion?: string | null
-  compliance_note?:  string | null
-}
-
-interface KeyframesData {
-  aspect_ratio:            string
-  character_anchor:        string
-  style_suffix:            string
-  keyframes:               Keyframe[]
-  style_consistency_notes?: string
-}
-
-interface KnowledgeRow<T = unknown> {
-  id:                 string
-  artifact_type:      string
-  artifact_data:      T
-  status:             string
-  source_pipeline_id: string
-  created_at:         string
-}
-
-/* ── Helpers ────────────────────────────────────────────────────────── */
-const SECTION_COLOR: Record<string, string> = {
-  hook:         'text-brand               bg-brand-muted',
-  problem:      'text-status-failed-text  bg-status-failed',
-  agitation:    'text-brand               bg-brand-muted',
-  mechanism:    'text-status-running-text bg-status-running',
-  proof:        'text-status-done-text    bg-status-done',
-  offer:        'text-accent-violet       bg-accent-violet/10',
-  cta:          'text-status-paused-text  bg-status-paused',
-}
-
-/* ── Copy-to-clipboard button ───────────────────────────────────────── */
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-
-  function handleCopy() {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+function ProgressBar({ status, step }: { status: FinalVideoStatus; step: string | null }) {
+  const pct   = STATUS_PROGRESS[status]
+  const label = step ?? STATUS_LABEL[status]
 
   return (
-    <button
-      onClick={handleCopy}
-      className="flex items-center gap-1 text-[0.625rem] text-on-surface-muted hover:text-on-surface transition-colors duration-150"
-    >
-      {copied ? (
-        <><Check size={10} strokeWidth={1.5} className="text-status-done-text" /> copiado</>
-      ) : (
-        <><Copy size={10} strokeWidth={1.5} /> copiar</>
-      )}
-    </button>
+    <div className="mt-3 space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[0.6875rem] text-on-surface-variant truncate">{label}</span>
+        <span className="text-[0.6875rem] font-mono text-brand shrink-0">{pct}%</span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-surface-highest overflow-hidden">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-[#F28705] to-[#FFB690] transition-all duration-700"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
   )
 }
 
-/* ── Script section ─────────────────────────────────────────────────── */
-function ScriptCard({ row }: { row: KnowledgeRow<ScriptData> }) {
-  const d = row.artifact_data
-  const [expanded, setExpanded] = useState(false)
+// ── Queue row (fila + gerando) ────────────────────────────────────────────────
+
+function QueueRow({ video }: { video: FinalVideo }) {
+  const isActive  = isVideoActive(video.status)
+  const isQueued  = video.status === 'queued'
+  const isFailed  = video.status === 'failed'
 
   return (
-    <div className="bg-surface-container border border-white/5 rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between gap-3 p-4 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <FileText size={15} strokeWidth={1.5} className="text-brand" />
-          <span className="text-sm font-semibold text-on-surface font-mono">{d.script_tag}</span>
-          <span className="text-[0.625rem] bg-surface-high text-on-surface-muted px-1.5 py-0.5 rounded font-mono">
-            {d.format}
-          </span>
-          <span className="text-[0.625rem] bg-surface-high text-on-surface-muted px-1.5 py-0.5 rounded font-mono">
-            {d.framework_used}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[0.6875rem] font-mono text-on-surface-muted">
-            {d.total_duration_seconds}s · {d.scenes?.length ?? 0} cenas
-          </span>
-          <button
-            onClick={() => setExpanded(v => !v)}
-            className="text-[0.6875rem] text-brand hover:underline"
-          >
-            {expanded ? 'Recolher' : 'Ver cenas'}
-          </button>
-        </div>
-      </div>
+    <div className={cn(
+      'rounded-xl border px-4 py-3 transition-colors duration-150',
+      isFailed  ? 'bg-surface-container border-status-failed-text/20' :
+      isActive  ? 'bg-surface-container border-brand/20'              :
+                  'bg-surface-container border-white/5',
+    )}>
+      <div className="flex items-center justify-between gap-3">
+        {/* Combo tag derivado do ID */}
+        <span className="font-mono text-[0.6875rem] text-on-surface-muted truncate max-w-[240px]">
+          {video.copy_combination_id.slice(0, 8)}…
+        </span>
 
-      {/* Narration full */}
-      <div className="p-4">
-        <p className="text-[0.75rem] text-on-surface-variant leading-relaxed italic">
-          "{d.narration_full}"
-        </p>
-        {d.cta_text && (
-          <p className="mt-2 text-[0.6875rem] font-semibold text-status-paused-text">
-            CTA: {d.cta_text}
-          </p>
+        {/* Status badge */}
+        {isQueued && (
+          <span className="flex items-center gap-1.5 text-[0.6875rem] text-on-surface-muted bg-surface-highest px-2 py-0.5 rounded-full shrink-0">
+            <Clock size={10} strokeWidth={1.5} />
+            Na fila
+          </span>
+        )}
+        {isActive && (
+          <span className="flex items-center gap-1.5 text-[0.6875rem] text-status-running-text bg-status-running px-2 py-0.5 rounded-full shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-status-running-text animate-pulse" />
+            Gerando
+          </span>
+        )}
+        {isFailed && (
+          <span className="flex items-center gap-1.5 text-[0.6875rem] text-status-failed-text bg-status-failed px-2 py-0.5 rounded-full shrink-0">
+            <AlertCircle size={10} strokeWidth={1.5} />
+            Falhou
+          </span>
         )}
       </div>
 
-      {/* Scenes detail */}
-      {expanded && d.scenes?.length > 0 && (
-        <div className="border-t border-white/5">
-          {d.scenes.map((scene) => (
-            <div key={scene.scene_number} className="p-4 border-b border-white/5 last:border-0">
-              <div className="flex items-center gap-2 mb-2">
-                <span className={cn(
-                  'text-[0.625rem] font-mono font-bold px-1.5 py-0.5 rounded',
-                  SECTION_COLOR[scene.section] ?? 'text-on-surface-variant bg-surface-high'
-                )}>
-                  {scene.section}
-                </span>
-                <span className="text-[0.6875rem] font-mono text-on-surface-muted">
-                  Cena {scene.scene_number} · {scene.duration_seconds}s · {scene.emotion_cue}
-                </span>
-              </div>
-              <p className="text-[0.8125rem] text-on-surface mb-2 leading-relaxed">
-                {scene.narration}
-              </p>
-              <p className="text-[0.6875rem] text-on-surface-muted/70 italic leading-relaxed">
-                Visual: {scene.visual_direction}
-              </p>
-            </div>
-          ))}
-        </div>
+      {/* Progress bar para vídeos ativos */}
+      {isActive && (
+        <ProgressBar status={video.status} step={video.progress_step} />
+      )}
+
+      {/* Mensagem de erro */}
+      {isFailed && video.error_message && (
+        <p className="mt-2 text-[0.625rem] text-status-failed-text/80 font-mono leading-relaxed">
+          {video.error_message}
+        </p>
       )}
     </div>
   )
 }
 
-/* ── Keyframes section ──────────────────────────────────────────────── */
-function KeyframesCard({ row }: { row: KnowledgeRow<KeyframesData> }) {
-  const d = row.artifact_data
-  const [expanded, setExpanded] = useState(false)
+// ── Video card (prontos) ──────────────────────────────────────────────────────
+
+function VideoCard({ video }: { video: FinalVideo }) {
+  const [playing, setPlaying] = useState(false)
 
   return (
-    <div className="bg-surface-container border border-white/5 rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between gap-3 p-4 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <Grid3x3 size={15} strokeWidth={1.5} className="text-status-running-text" />
-          <span className="text-sm font-semibold text-on-surface">Keyframes</span>
-          <span className="text-[0.625rem] bg-surface-high text-on-surface-muted px-1.5 py-0.5 rounded font-mono">
-            {d.aspect_ratio}
-          </span>
-          <span className="text-[0.625rem] bg-surface-high text-on-surface-muted px-1.5 py-0.5 rounded font-mono">
-            {d.keyframes?.length ?? 0} cenas
-          </span>
-        </div>
-        <button
-          onClick={() => setExpanded(v => !v)}
-          className="text-[0.6875rem] text-brand hover:underline"
-        >
-          {expanded ? 'Recolher' : 'Ver prompts'}
-        </button>
-      </div>
+    <div className="bg-surface-container border border-white/5 rounded-xl overflow-hidden group">
+      {/* Player / Thumbnail */}
+      <div className="relative aspect-[9/16] bg-surface-high overflow-hidden">
+        {playing && video.video_url ? (
+          <video
+            src={video.video_url}
+            controls
+            autoPlay
+            className="absolute inset-0 w-full h-full object-cover"
+            onEnded={() => setPlaying(false)}
+          />
+        ) : (
+          <>
+            {video.thumbnail_url ? (
+              <img
+                src={video.thumbnail_url}
+                alt="Thumbnail"
+                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Film size={32} strokeWidth={1.5} className="text-on-surface-muted" />
+              </div>
+            )}
 
-      {/* Character anchor */}
-      <div className="p-4 border-b border-white/5">
-        <p className="text-[0.625rem] text-on-surface-muted uppercase tracking-widest mb-1">
-          Character anchor
-        </p>
-        <p className="text-[0.75rem] text-on-surface-variant font-mono leading-relaxed">
-          {d.character_anchor}
-        </p>
-      </div>
-
-      {/* Keyframes list */}
-      {expanded && d.keyframes?.length > 0 && (
-        <div className="divide-y divide-white/5">
-          {d.keyframes.map((kf) => (
-            <div key={kf.scene_number} className="p-4">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <span className={cn(
-                    'text-[0.625rem] font-mono font-bold px-1.5 py-0.5 rounded',
-                    SECTION_COLOR[kf.section] ?? 'text-on-surface-variant bg-surface-high'
-                  )}>
-                    {kf.section}
-                  </span>
-                  <span className="text-[0.6875rem] font-mono text-on-surface-muted">
-                    Cena {kf.scene_number} · {kf.duration_seconds}s · {kf.camera_angle} · {kf.mood}
-                  </span>
+            {/* Play overlay */}
+            {video.video_url && (
+              <button
+                onClick={() => setPlaying(true)}
+                className="absolute inset-0 flex items-center justify-center
+                  bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+              >
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm
+                  flex items-center justify-center border border-white/30">
+                  <Play size={20} strokeWidth={1.5} className="text-white ml-0.5" fill="white" />
                 </div>
-                <CopyButton text={kf.veo3_prompt_en} />
+              </button>
+            )}
+
+            {/* Duration badge */}
+            {video.duration_seconds != null && (
+              <div className="absolute bottom-2 right-2 bg-black/70 text-white
+                text-[0.5625rem] font-mono px-1.5 py-0.5 rounded flex items-center gap-1">
+                <Clock size={8} strokeWidth={1.5} />
+                {formatDuration(video.duration_seconds)}
               </div>
+            )}
+          </>
+        )}
+      </div>
 
-              {/* VEO3 prompt */}
-              <div className="bg-surface-high rounded-lg p-3 mb-2">
-                <p className="text-[0.625rem] text-on-surface-muted uppercase tracking-widest mb-1">VEO 3</p>
-                <p className="text-[0.75rem] text-on-surface leading-relaxed font-mono">
-                  {kf.veo3_prompt_en}
-                </p>
-              </div>
+      {/* Footer */}
+      <div className="p-3 space-y-2">
+        <p className="text-[0.625rem] font-mono text-on-surface-muted truncate">
+          {video.copy_combination_id.slice(0, 8)}…
+        </p>
 
-              {/* Midjourney prompt */}
-              <div className="bg-surface-high rounded-lg p-3">
-                <p className="text-[0.625rem] text-on-surface-muted uppercase tracking-widest mb-1">Midjourney</p>
-                <p className="text-[0.75rem] text-on-surface leading-relaxed font-mono">
-                  {kf.midjourney_prompt_en}
-                </p>
-              </div>
+        <div className="flex items-center gap-2">
+          {/* Player button */}
+          {video.video_url && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setPlaying(p => !p)}
+              className="flex-1 h-7 text-[0.625rem] text-on-surface-variant hover:text-on-surface hover:bg-surface-high"
+            >
+              {playing
+                ? <><Loader2 size={11} strokeWidth={1.5} className="mr-1" /> Pause</>
+                : <><Play size={11} strokeWidth={1.5} className="mr-1" fill="currentColor" /> Play</>}
+            </Button>
+          )}
 
-              {kf.overlay_suggestion && (
-                <p className="mt-2 text-[0.6875rem] text-status-paused-text">
-                  Overlay: {kf.overlay_suggestion}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/* ── Video pipeline row (mantido do original) ───────────────────────── */
-function VideoPipelineRow({ pipeline }: { pipeline: Pipeline }) {
-  const cost      = parseFloat(pipeline.cost_so_far_usd ?? '0')
-  const isRunning = pipeline.status === 'running'
-
-  return (
-    <div className="bg-surface-container border border-white/5 rounded-xl p-5 hover:bg-surface-high transition-colors duration-150">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-status-running flex items-center justify-center shrink-0">
-            <Film size={18} strokeWidth={1.5} className="text-status-running-text" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-on-surface font-mono">{pipeline.goal}</p>
-            <p className="text-[0.6875rem] text-on-surface-muted/60 mt-0.5">
-              {new Date(pipeline.created_at).toLocaleDateString('pt-BR', {
-                day: '2-digit', month: 'short', year: 'numeric',
-              })}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <StatusBadge status={pipeline.status as 'running' | 'done' | 'failed' | 'pending' | 'paused'} />
-          {isRunning && pipeline.progress_pct != null && (
-            <span className="text-xs font-mono text-status-running-text">{pipeline.progress_pct}%</span>
+          {/* Download */}
+          {video.video_url && (
+            <a
+              href={video.video_url}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 h-7 px-2.5 rounded-md text-[0.625rem] font-medium
+                bg-surface-high text-on-surface-variant border border-white/5
+                hover:bg-surface-highest hover:text-on-surface transition-all duration-150 shrink-0"
+              title="Baixar vídeo"
+            >
+              <Download size={11} strokeWidth={1.5} />
+              Baixar
+            </a>
           )}
         </div>
       </div>
-      <div className="mt-4 flex items-center justify-between gap-3 pt-3 border-t border-white/5">
-        <span className="text-xs text-on-surface-muted font-mono">Custo: ${cost.toFixed(4)}</span>
-        {isRunning ? (
-          <span className="flex items-center gap-1.5 text-xs text-status-running-text">
-            <Loader2 size={10} strokeWidth={1.5} className="animate-spin" /> Em produção…
-          </span>
-        ) : pipeline.status === 'done' ? (
-          <span className="text-xs text-status-done-text font-medium">Concluído</span>
-        ) : null}
+    </div>
+  )
+}
+
+// ── Section header ────────────────────────────────────────────────────────────
+
+function SectionHeader({
+  label,
+  count,
+  accent,
+}: {
+  label:  string
+  count:  number
+  accent?: string
+}) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <h3 className={cn('text-xs font-semibold uppercase tracking-widest', accent ?? 'text-on-surface-muted')}>
+        {label}
+      </h3>
+      <span className={cn(
+        'text-[0.625rem] font-mono px-1.5 py-0.5 rounded-full',
+        accent ? `${accent} bg-surface-high` : 'text-on-surface-muted bg-surface-high',
+      )}>
+        {count}
+      </span>
+    </div>
+  )
+}
+
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+
+export function CriativosTabSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-3 w-20 bg-surface-highest" />
+        {[1, 2].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl bg-surface-highest" />)}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-surface-container border border-white/5 rounded-xl overflow-hidden">
+            <Skeleton className="aspect-[9/16] w-full bg-surface-highest" />
+            <div className="p-3 space-y-2">
+              <Skeleton className="h-3 w-2/3 bg-surface-highest" />
+              <Skeleton className="h-6 w-full bg-surface-highest rounded-md" />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
-/* ── Skeleton ───────────────────────────────────────────────────────── */
-export function CriativosTabSkeleton() {
-  return (
-    <div className="space-y-4">
-      {Array.from({ length: 2 }).map((_, i) => (
-        <Skeleton key={i} className="h-28 w-full rounded-xl bg-surface-highest" />
-      ))}
-    </div>
-  )
-}
+// ── Main component ────────────────────────────────────────────────────────────
 
-/* ── Main component ─────────────────────────────────────────────────── */
-export interface CriativosTabProps {
-  pipelines: Pipeline[]
-  sku:       string
-}
+export function CriativosTab({ sku, productId }: CriativosTabProps) {
+  const { videos, isLoading, personaReady } = useFinalVideos(sku, productId)
+  const [realtimeDot] = useState(true)
 
-export function CriativosTab({ pipelines, sku }: CriativosTabProps) {
-  const [scripts,   setScripts]   = useState<KnowledgeRow<ScriptData>[]>([])
-  const [keyframes, setKeyframes] = useState<KnowledgeRow<KeyframesData>[]>([])
-  const [loading,   setLoading]   = useState(true)
+  if (isLoading) return <CriativosTabSkeleton />
 
-  useEffect(() => {
-    if (!sku) return
-    Promise.all([
-      fetch(`/api/products/${sku}/knowledge?type=script&status=fresh`).then(r => r.json()),
-      fetch(`/api/products/${sku}/knowledge?type=keyframes&status=fresh`).then(r => r.json()),
-    ]).then(([s, k]) => {
-      setScripts(s.knowledge ?? [])
-      setKeyframes(k.knowledge ?? [])
-    }).finally(() => setLoading(false))
-  }, [sku])
+  const queued  = videos.filter(v => v.status === 'queued')
+  const active  = videos.filter(v => isVideoActive(v.status))
+  const ready   = videos.filter(v => v.status === 'ready')
+  const failed  = videos.filter(v => v.status === 'failed')
 
-  const videoPipelines = pipelines.filter(p => p.goal === 'video_prod')
-  const hasContent     = scripts.length > 0 || keyframes.length > 0 || videoPipelines.length > 0
+  const isEmpty = videos.length === 0
 
-  if (loading) return <CriativosTabSkeleton />
-
-  if (!hasContent) {
+  if (isEmpty) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <div className="w-14 h-14 rounded-xl bg-surface-container border border-white/5 flex items-center justify-center">
           <Film size={22} strokeWidth={1.5} className="text-on-surface-muted" />
         </div>
         <div className="text-center space-y-1">
-          <p className="text-sm font-semibold text-on-surface">Nenhum criativo gerado ainda</p>
+          <p className="text-sm font-semibold text-on-surface">Nenhum criativo na fila ainda</p>
           <p className="text-[0.6875rem] text-on-surface-variant max-w-xs">
-            Execute o pipeline completo para gerar roteiro, keyframes e criativos de vídeo.
-            Os agentes <span className="font-mono text-brand">script_writer</span> e{' '}
-            <span className="font-mono text-brand">keyframe_generator</span> produzem estes artefatos.
+            {personaReady
+              ? 'Vá à aba Copies, clique em "Gerar Vídeo" em cada combinação e depois execute o orquestrador.'
+              : 'Configure a persona do produto antes de gerar vídeos.'}
           </p>
         </div>
+        {!personaReady && (
+          <span className="text-[0.625rem] text-status-failed-text bg-status-failed px-3 py-1.5 rounded-lg">
+            Persona não configurada — execute setup-persona.ts
+          </span>
+        )}
       </div>
     )
   }
@@ -354,56 +297,60 @@ export function CriativosTab({ pipelines, sku }: CriativosTabProps) {
   return (
     <div className="space-y-8">
 
-      {/* ── Roteiros ── */}
-      {scripts.length > 0 && (
+      {/* ── Indicador Realtime ── */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-[0.625rem] text-on-surface-muted">
+          <Wifi size={11} strokeWidth={1.5} className={realtimeDot ? 'text-status-done-text' : 'text-on-surface-muted'} />
+          Atualizações em tempo real
+        </div>
+        {!personaReady && (
+          <span className="text-[0.625rem] text-status-paused-text bg-status-paused px-2.5 py-1 rounded-lg flex items-center gap-1">
+            <AlertCircle size={10} strokeWidth={1.5} />
+            Persona não configurada
+          </span>
+        )}
+      </div>
+
+      {/* ── Em fila ── */}
+      {queued.length > 0 && (
         <section>
-          <div className="flex items-center gap-2 mb-4">
-            <FileText size={16} strokeWidth={1.5} className="text-brand" />
-            <h3 className="text-sm font-semibold text-on-surface">
-              Roteiros ({scripts.length})
-            </h3>
-          </div>
-          <div className="space-y-3">
-            {scripts.map(row => (
-              <ScriptCard key={row.id} row={row} />
-            ))}
+          <SectionHeader label="Em fila" count={queued.length} />
+          <div className="space-y-2">
+            {queued.map(v => <QueueRow key={v.id} video={v} />)}
           </div>
         </section>
       )}
 
-      {/* ── Keyframes ── */}
-      {keyframes.length > 0 && (
+      {/* ── Gerando ── */}
+      {active.length > 0 && (
         <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Grid3x3 size={16} strokeWidth={1.5} className="text-status-running-text" />
-            <h3 className="text-sm font-semibold text-on-surface">
-              Keyframes / Prompts visuais ({keyframes.length})
-            </h3>
-          </div>
-          <div className="space-y-3">
-            {keyframes.map(row => (
-              <KeyframesCard key={row.id} row={row} />
-            ))}
+          <SectionHeader label="Gerando" count={active.length} accent="text-status-running-text" />
+          <div className="space-y-2">
+            {active.map(v => <QueueRow key={v.id} video={v} />)}
           </div>
         </section>
       )}
 
-      {/* ── Pipelines de vídeo (produção) ── */}
-      {videoPipelines.length > 0 && (
+      {/* ── Prontos ── */}
+      {ready.length > 0 && (
         <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Film size={16} strokeWidth={1.5} className="text-status-running-text" />
-            <h3 className="text-sm font-semibold text-on-surface">
-              Pipelines de produção de vídeo ({videoPipelines.length})
-            </h3>
-          </div>
-          <div className="space-y-3">
-            {videoPipelines.map(p => (
-              <VideoPipelineRow key={p.id} pipeline={p} />
-            ))}
+          <SectionHeader label="Prontos" count={ready.length} accent="text-status-done-text" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {ready.map(v => <VideoCard key={v.id} video={v} />)}
           </div>
         </section>
       )}
+
+      {/* ── Falharam ── */}
+      {failed.length > 0 && (
+        <section>
+          <SectionHeader label="Falharam" count={failed.length} accent="text-status-failed-text" />
+          <div className="space-y-2">
+            {failed.map(v => <QueueRow key={v.id} video={v} />)}
+          </div>
+        </section>
+      )}
+
     </div>
   )
 }

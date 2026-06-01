@@ -4,6 +4,7 @@ import { Anchor, AlignJustify, MousePointerClick, Layers, CheckSquare } from 'lu
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { useCopyBoard } from '@/hooks/useCopyBoard'
+import { useFinalVideos } from '@/hooks/useFinalVideos'
 import { AprovacaoProgressBar } from './AprovacaoProgressBar'
 import { ColunaComponentes }    from './ColunaComponentes'
 import { CombinacoesList }      from './CombinacoesList'
@@ -179,6 +180,8 @@ export function AprovacaoBoard({ sku, pipelineId, productId }: AprovacaoBoardPro
     canMaterialize,
   } = useCopyBoard(sku, pipelineId, productId)
 
+  const { videosByCombination, personaReady, queueVideo } = useFinalVideos(sku, productId)
+
   // After materializing, jump to copies tab
   const handleMaterialize = useCallback(async () => {
     await materializeCombinations()
@@ -245,6 +248,10 @@ export function AprovacaoBoard({ sku, pipelineId, productId }: AprovacaoBoardPro
             combinations={combinations}
             onToggleVideo={selectComponent}
             onGenerateScript={generateScripts}
+            sku={sku}
+            videosByCombination={videosByCombination}
+            personaReady={personaReady}
+            onQueueVideo={queueVideo}
           />
         )
       )}

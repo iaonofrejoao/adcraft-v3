@@ -6,30 +6,21 @@ import {
   ProductDetailHeader,
   ProductDetailLoading,
 } from '@/components/detalhes-produto'
-import type { Product, Pipeline } from '@/components/detalhes-produto'
-import {
-  CriativosTab,
-  CriativosTabSkeleton,
-} from '@/components/produto-tabs/CriativosTab'
+import type { Product } from '@/components/detalhes-produto'
+import { CriativosTab } from '@/components/produto-tabs/CriativosTab'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 export default function CriativosPage() {
-  const { sku } = useParams<{ sku: string }>()
-  const [product,   setProduct]   = useState<Product | null>(null)
-  const [pipelines, setPipelines] = useState<Pipeline[]>([])
-  const [loading,   setLoading]   = useState(true)
+  const { sku }    = useParams<{ sku: string }>()
+  const [product,  setProduct]  = useState<Product | null>(null)
+  const [loading,  setLoading]  = useState(true)
 
   useEffect(() => {
     if (!sku) return
-    Promise.all([
-      fetch(`/api/products/${sku}`).then((r) => r.json()),
-      fetch(`/api/pipelines?sku=${sku}&limit=50`)
-        .then((r) => r.json())
-        .catch(() => ({ pipelines: [] })),
-    ]).then(([prod, pipes]) => {
-      setProduct(prod.product ?? prod)
-      setPipelines(pipes.pipelines ?? pipes ?? [])
-    }).finally(() => setLoading(false))
+    fetch(`/api/products/${sku}`)
+      .then(r => r.json())
+      .then(d => setProduct(d.product ?? d))
+      .finally(() => setLoading(false))
   }, [sku])
 
   if (loading) return <ProductDetailLoading />
@@ -49,7 +40,7 @@ export default function CriativosPage() {
         <ProductDetailHeader product={product} sku={sku!} />
 
         <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-7 pb-12">
-          <CriativosTab pipelines={pipelines} sku={sku!} />
+          <CriativosTab sku={sku!} productId={product.id} />
         </section>
       </div>
     </ScrollArea>

@@ -132,6 +132,55 @@ export async function updateComplianceStatus(params: {
 }
 
 /**
+ * Salva um artefato ugc_reference por vídeo TikTok aprovado.
+ * Ao contrário de saveArtifact, não supersede todos os artefatos do tipo —
+ * apenas re-análises do mesmo vídeo (identificado por tiktok_video_db_id).
+ */
+export async function saveUgcReference(params: {
+    product_id: string;
+    tiktok_video_db_id: string;
+    artifact_data: Record<string, unknown>;
+}): Promise<string> {
+    const artifactId = randomUUID();
+
+    await db.transaction(async (tx) => {
+        await tx.execute(sql`
+      UPDATE product_knowledge
+      SET status = 'superseded',
+          superseded_at = NOW(),
+          superseded_by = ${artifactId}
+      WHERE product_id = ${params.product_id}
+        AND artifact_type = 'ugc_reference'
+        AND artifact_data->>'tiktok_video_db_id' = ${params.tiktok_video_db_id}
+        AND status = 'fresh'
+    `);
+
+        await tx.insert(productKnowledge).values({
+            id: artifactId,
+            product_id: params.product_id as any,
+            product_version: 1,
+            artifact_type: 'ugc_reference',
+            artifact_data: {
+                tiktok_video_db_id: params.tiktok_video_db_id,
+                ...params.artifact_data,
+            },
+            source_pipeline_id: null,
+            source_task_id: null as any,
+            status: 'fresh',
+        });
+
+        await tx.insert(embeddings).values({
+            id: randomUUID(),
+            source_table: 'product_knowledge',
+            source_id: artifactId as any,
+            model: 'gemini-embedding-001',
+        });
+    });
+
+    return artifactId;
+}
+
+/**
  * Executa as operações decididas pelo niche_curator.
  */
 export async function executeCuratorOperations(params: {

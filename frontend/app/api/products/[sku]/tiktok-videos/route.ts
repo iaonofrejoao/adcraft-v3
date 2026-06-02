@@ -7,6 +7,8 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { spawn } from 'child_process';
+import * as path from 'path';
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -98,8 +100,31 @@ export async function PATCH(
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    if (status === 'approved') {
+      triggerUgcAnalysis(productId, id);
+    }
+
     return NextResponse.json({ video: data });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
+}
+
+// Fire-and-forget: analisa o vídeo aprovado em background sem bloquear a resposta.
+function triggerUgcAnalysis(productId: string, videoDbId: string) {
+  const projectRoot = path.join(process.cwd(), '..');
+  const scriptPath  = path.join(projectRoot, 'scripts', 'video', 'analyze-ugc.ts');
+
+  const child = spawn(
+    'npx',
+    ['tsx', scriptPath, '--product-id', productId, '--video-id', videoDbId],
+    {
+      cwd:   projectRoot,
+      env:   { ...process.env },
+      shell: process.platform === 'win32',
+      stdio: 'ignore',
+      detached: true,
+    },
+  );
+  child.unref();
 }

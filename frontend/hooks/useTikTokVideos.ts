@@ -8,6 +8,7 @@ export interface TikTokVideo {
   id:               string
   tiktok_url:       string
   tiktok_video_id:  string | null
+  video_url:        string | null
   author_handle:    string | null
   description:      string | null
   views_count:      number | null

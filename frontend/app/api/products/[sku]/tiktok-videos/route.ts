@@ -38,7 +38,7 @@ export async function GET(
     let query = supabase
       .from('tiktok_videos')
       .select(`
-        id, tiktok_url, tiktok_video_id, author_handle, description,
+        id, tiktok_url, tiktok_video_id, video_url, author_handle, description,
         views_count, likes_count, relevance_score, status,
         local_path, thumbnail_url, duration_seconds, created_at, reviewed_at
       `)

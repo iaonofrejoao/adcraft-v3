@@ -98,7 +98,9 @@ export function AvatarSection({ data, productName, sku, createdAt }: AvatarSecti
               alignItems: 'center',
               marginRight: 8,
             }}>
-              <Text style={{ fontSize: 12 }}>👤</Text>
+              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: C.info }}>
+                {p.fictional_name?.charAt(0)?.toUpperCase() ?? 'A'}
+              </Text>
             </View>
             <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 10, color: C.textPrimary }}>
               {p.fictional_name}

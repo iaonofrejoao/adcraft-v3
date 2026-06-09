@@ -27,7 +27,8 @@ if (existsSync(rootEnvPath)) {
 const nextConfig = {
   experimental: {
     // Mantém compatibilidade com Node.js runtime nas API routes
-    serverComponentsExternalPackages: [],
+    // @react-pdf/renderer usa APIs nativas do Node (fs, canvas) — não pode ser bundlado pelo webpack
+    serverComponentsExternalPackages: ['@react-pdf/renderer'],
   },
   async redirects() {
     return [

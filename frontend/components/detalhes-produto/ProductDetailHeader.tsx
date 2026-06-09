@@ -360,7 +360,7 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
       </div>
 
       {/* Tab navigation */}
-      <nav className="flex gap-6 px-4 sm:px-6 lg:px-10">
+      <nav className="flex gap-6 px-4 sm:px-6 lg:px-10 overflow-x-auto scrollbar-none">
         {TABS.map(({ label, href }) => {
           const target   = href(sku)
           const isActive = pathname === target
@@ -369,7 +369,7 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
               key={label}
               href={target}
               className={cn(
-                'pb-3 pt-1 text-sm font-medium border-b-2 transition-colors duration-150',
+                'pb-3 pt-1 text-sm font-medium border-b-2 transition-colors duration-150 shrink-0 whitespace-nowrap',
                 isActive
                   ? 'text-brand border-brand'
                   : 'text-on-surface-variant/60 border-transparent hover:text-on-surface-variant'

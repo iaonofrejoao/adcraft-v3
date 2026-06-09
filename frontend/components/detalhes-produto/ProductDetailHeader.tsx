@@ -2,7 +2,7 @@
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronRight, Pencil, Loader2, Globe, Link2, Copy, Check } from 'lucide-react'
+import { ChevronRight, Pencil, Loader2, Globe, Link2, Copy, Check, FileDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
@@ -71,6 +71,57 @@ function ProductUrl({ label, url }: { label: string; url: string }) {
         }
       </button>
     </div>
+  )
+}
+
+// ── Botão de exportação PDF ────────────────────────────────────────────────────
+
+function ExportPDFButton({ sku, productName }: { sku: string; productName: string }) {
+  const [loading, setLoading] = useState(false)
+
+  const handleExport = useCallback(async () => {
+    if (loading) return
+    setLoading(true)
+    const toastId = toast.loading('Gerando PDF do estudo…')
+    try {
+      const res = await fetch(`/api/pdf/${sku}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Erro ao gerar PDF')
+      }
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `estudo-${sku}-${new Date().toISOString().slice(0, 10)}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success(`PDF do estudo de ${productName} gerado`, { id: toastId })
+    } catch (err) {
+      toast.error((err as Error).message, { id: toastId })
+    } finally {
+      setLoading(false)
+    }
+  }, [sku, productName, loading])
+
+  return (
+    <button
+      onClick={handleExport}
+      disabled={loading}
+      title="Exportar estudo completo em PDF"
+      className={cn(
+        'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
+        'bg-surface-container border border-outline-variant/20 text-on-surface-variant',
+        'hover:border-brand/40 hover:text-on-surface hover:bg-surface-high',
+        'disabled:opacity-50 disabled:pointer-events-none',
+      )}
+    >
+      {loading
+        ? <Loader2  size={14} strokeWidth={1.5} className="animate-spin shrink-0" />
+        : <FileDown size={14} strokeWidth={1.5} className="shrink-0" />
+      }
+      <span className="hidden sm:inline">{loading ? 'Gerando…' : 'Exportar PDF'}</span>
+    </button>
   )
 }
 
@@ -344,8 +395,9 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
 
         </div>
 
-        {/* Action button */}
-        <div className="flex items-center gap-3 shrink-0 pt-1">
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 shrink-0 pt-1">
+          <ExportPDFButton sku={sku} productName={product.name} />
           <Link
             href="/demandas"
             className="px-4 py-2 rounded-lg text-sm font-bold text-on-primary

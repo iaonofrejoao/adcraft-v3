@@ -36,15 +36,23 @@ scripts/video/scrape-ugc.ts
        └── Rejeitar → PATCH { status: 'rejected' }
 ```
 
-### Análise Gemini Vision (ao aprovar)
+### Análise Gemini (ao aprovar)
 
-O `analyze-ugc.ts` roda em background **sem bloquear a resposta do PATCH**. Ele analisa:
-- **Thumbnail** da thumbnail_url como imagem base64 via Gemini Vision
-- **Metadados textuais**: description, views, likes, duration, relevance_score
+O `analyze-ugc.ts` roda em background **sem bloquear a resposta do PATCH**.
 
-> ⚠️ O Gemini **não assiste o vídeo** — apenas analisa a thumbnail + contexto textual.
+**Modo preferencial — vídeo completo:**
+1. yt-dlp baixa o MP4 para arquivo temporário (~15–30s)
+2. Upload para Gemini Files API (~10s)
+3. Aguarda estado `ACTIVE` (~5s)
+4. `generateContent` com o vídeo completo — Gemini amostra frames ao longo de todo o vídeo, transcreve o áudio e entende a sequência temporal
+5. Deleta o arquivo da Files API após análise
+6. Limpa o arquivo temporário local
 
-Extrai 13 campos estruturados (hook_type, visual_style, narrative_angle, tone, setting, key_visual_elements, hook_structure, cta_style, target_avatar_signals, engagement_interpretation, angle_inspiration, what_to_replicate, what_to_avoid) e salva como artefato `ugc_reference` em `product_knowledge` com embedding para busca semântica futura.
+**Fallback — thumbnail:** se o download ou upload falhar por qualquer motivo, analisa a thumbnail estática + metadados textuais.
+
+O campo `analysis_mode: 'video' | 'thumbnail'` é salvo no artefato para rastrear qual modo foi usado.
+
+Extrai 16 campos estruturados incluindo `hook_text` (transcrição exata dos primeiros 3s), `copy_spoken` (copy falada completa), `cta_text`, `editing_pace`, `audio_energy` — campos que só são possíveis com análise de vídeo completo. Salva como artefato `ugc_reference` em `product_knowledge` com embedding para busca semântica futura.
 
 ### Biblioteca UGC global
 

@@ -85,8 +85,9 @@ const TABS = [
   { label: 'Ângulos',     href: (sku: string) => `/products/${sku}/angulos`     },
   { label: 'Copy',        href: (sku: string) => `/products/${sku}/copies`      },
   { label: 'Personagens', href: (sku: string) => `/products/${sku}/personagens` },
-  { label: 'Vídeo',       href: (sku: string) => `/products/${sku}/video`       },
-  { label: 'Campanhas',   href: (sku: string) => `/products/${sku}/campanhas`   },
+  { label: 'Vídeo',       href: (sku: string) => `/products/${sku}/video`        },
+  { label: 'Anúncios FB', href: (sku: string) => `/products/${sku}/facebook-ads` },
+  { label: 'Campanhas',   href: (sku: string) => `/products/${sku}/campanhas`    },
   { label: 'VSL',         href: (sku: string) => `/products/${sku}/vsl`         },
   { label: 'Histórico',   href: (sku: string) => `/products/${sku}/historico`   },
 ] as const

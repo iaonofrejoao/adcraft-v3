@@ -107,8 +107,13 @@ export async function GET(
 
     buffer = await renderToBuffer(element)
   } catch (err) {
-    console.error('[PDF] Erro ao renderizar:', err)
-    return NextResponse.json({ error: 'Erro ao gerar PDF' }, { status: 500 })
+    const msg   = err instanceof Error ? err.message : String(err)
+    const stack = err instanceof Error ? err.stack   : undefined
+    console.error('[PDF] Erro ao renderizar:', msg, '\n', stack)
+    return NextResponse.json(
+      { error: 'Erro ao gerar PDF', detail: msg, stack },
+      { status: 500 }
+    )
   }
 
   // 6. Retornar o arquivo

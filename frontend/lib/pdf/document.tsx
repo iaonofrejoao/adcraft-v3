@@ -1,3 +1,4 @@
+import React from 'react'
 import { Document } from '@react-pdf/renderer'
 import { CoverPage }     from './sections/cover'
 import { TocPage }       from './sections/toc'

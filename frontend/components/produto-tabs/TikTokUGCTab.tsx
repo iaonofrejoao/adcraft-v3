@@ -63,13 +63,18 @@ interface VideoCardProps {
 }
 
 function VideoCard({ video, onApprove, onReject, onReset, inUse }: VideoCardProps) {
-  const [imgError, setImgError] = useState(false)
-  const [playerOpen, setPlayerOpen] = useState(false)
+  const [imgError,   setImgError]   = useState(false)
+  const [playing,    setPlaying]    = useState(false)
 
   const isApproved = video.status === 'approved'
   const isRejected = video.status === 'rejected'
   const isPending  = video.status === 'pending'
-  const canPlay    = !!video.video_url
+  const canPlay    = !!video.tiktok_url
+
+  // Proxy server-side: yt-dlp extrai a URL real do CDN; resolve restrições de Referer
+  const proxyUrl = video.tiktok_url
+    ? `/api/video-proxy?url=${encodeURIComponent(video.tiktok_url)}`
+    : null
 
   return (
     <div className={cn(
@@ -78,24 +83,26 @@ function VideoCard({ video, onApprove, onReject, onReset, inUse }: VideoCardProp
       isRejected ? 'border-status-failed-text/20 opacity-60' :
                    'border-white/5',
     )}>
-      {/* Thumbnail / Player */}
+      {/* Thumbnail / Player inline */}
       <div className="relative aspect-[9/16] bg-black overflow-hidden">
-        {playerOpen && canPlay ? (
+        {playing && proxyUrl ? (
           <>
             <video
-              src={video.video_url!}
+              key={proxyUrl}
+              src={proxyUrl}
               className="w-full h-full object-contain"
               autoPlay
               controls
               playsInline
               loop
             />
+            {/* Botão fechar — posicionado acima dos controles nativos */}
             <button
-              onClick={() => setPlayerOpen(false)}
-              className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center z-10 transition-colors duration-150"
+              onClick={() => setPlaying(false)}
+              className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center z-20 transition-colors duration-150 pointer-events-auto"
               title="Fechar player"
             >
-              <X size={11} strokeWidth={2} className="text-white" />
+              <X size={12} strokeWidth={2.5} className="text-white" />
             </button>
           </>
         ) : (
@@ -113,10 +120,14 @@ function VideoCard({ video, onApprove, onReject, onReset, inUse }: VideoCardProp
               </div>
             )}
 
-            {/* Play button overlay */}
             {canPlay && (
               <button
-                onClick={() => setPlayerOpen(true)}
+                onClick={() => setPlaying(true)}
+                onMouseEnter={() => {
+                  // Pre-warm: inicia download em background no hover
+                  fetch(`/api/video-proxy?url=${encodeURIComponent(video.tiktok_url)}&warm=1`)
+                    .catch(() => {})
+                }}
                 className="absolute inset-0 flex items-center justify-center group"
                 title="Reproduzir vídeo"
               >
@@ -126,7 +137,6 @@ function VideoCard({ video, onApprove, onReject, onReset, inUse }: VideoCardProp
               </button>
             )}
 
-            {/* Status overlay */}
             {isApproved && (
               <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-status-done flex items-center justify-center">
                 <Check size={12} strokeWidth={2} className="text-status-done-text" />
@@ -137,15 +147,11 @@ function VideoCard({ video, onApprove, onReject, onReset, inUse }: VideoCardProp
                 <X size={12} strokeWidth={2} className="text-status-failed-text" />
               </div>
             )}
-
-            {/* "Em uso" badge */}
             {inUse && (
               <div className="absolute top-2 left-2 bg-brand/90 text-on-primary text-[0.5625rem] font-bold px-1.5 py-0.5 rounded">
                 Em uso
               </div>
             )}
-
-            {/* Duration */}
             {video.duration_seconds != null && (
               <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[0.5625rem] font-mono px-1 py-0.5 rounded flex items-center gap-0.5">
                 <Clock size={8} strokeWidth={1.5} />

@@ -41,23 +41,39 @@ interface ScoredVideo extends TikTokVideo {
 
 // ── Apify fetch ───────────────────────────────────────────────────────────────
 
-function queryToHashtags(query: string): string[] {
+// IMPORTANTE: usa apenas 1 hashtag — cada hashtag vira uma job Apify separada,
+// multiplicando o consumo de créditos.
+function queryToSingleHashtag(query: string): string {
   return query
     .toLowerCase()
     .split(/[\s,]+/)
     .filter(Boolean)
-    .map(t => t.replace(/^#/, ''));
+    .map(t => t.replace(/^#/, ''))[0] ?? 'weightloss';
 }
 
-async function fetchTikTokVideos(query: string, max: number, apifyToken: string): Promise<TikTokVideo[]> {
-  const hashtags = queryToHashtags(query);
-  console.log(`[Apify] Hashtags: ${hashtags.map(h => '#' + h).join(', ')} — máx. ${max} vídeos`);
+// Usa o campo textLanguage retornado pelo Apify (mais preciso que heurística)
+function isEnglishItem(item: any): boolean {
+  const lang = item.textLanguage ?? '';
+  return lang === '' || lang.startsWith('en');
+}
+
+async function fetchTikTokVideos(
+  query: string,
+  max: number,
+  apifyToken: string,
+  languageFilter?: string,
+): Promise<TikTokVideo[]> {
+  const hashtag = queryToSingleHashtag(query);
+  console.log(`[Apify] Hashtag: #${hashtag} — máx. ${max} vídeos${languageFilter ? ` (filtro: ${languageFilter})` : ''}`);
 
   const url = `https://api.apify.com/v2/acts/clockworks~tiktok-hashtag-scraper/run-sync-get-dataset-items?token=${apifyToken}&timeout=300`;
 
+  // Solicita o dobro do max para ter margem após o filtro de idioma
+  const fetchCount = languageFilter === 'en' ? Math.min(max * 2, 100) : Math.min(max, 100);
+
   const body = {
-    hashtags,
-    resultsPerPage: Math.min(max, 100),
+    hashtags: [hashtag],
+    resultsPerPage: fetchCount,
     shouldDownloadVideos: false,
     shouldDownloadCovers: false,
   };
@@ -80,18 +96,29 @@ async function fetchTikTokVideos(query: string, max: number, apifyToken: string)
   }
 
   const items: any[] = await res.json();
-  console.log(`[Apify] ${items.length} vídeos recebidos.`);
+  console.log(`[Apify] ${items.length} vídeos recebidos do Apify.`);
 
-  return items.slice(0, max).map(item => ({
-    id:          item.id ?? item.videoId ?? String(item.createTime),
+  const filtered = languageFilter === 'en'
+    ? items.filter(item => isEnglishItem(item))
+    : items;
+
+  if (languageFilter === 'en') {
+    console.log(`[Apify] ${filtered.length} vídeos em inglês (campo textLanguage).`);
+  }
+
+  return filtered.slice(0, max).map(item => ({
+    id:          item.id ?? String(item.createTime),
     webpage_url: item.webVideoUrl ?? '',
-    video_url:   item.videoUrl ?? item.downloadAddr ?? null,
+    // URL CDN do vídeo: extraída do subtitleLinks (versão mp4 com legenda ASR)
+    video_url:   item.videoMeta?.subtitleLinks?.[0]?.tiktokLink
+                  ?? item.videoMeta?.subtitleLinks?.[0]?.downloadLink
+                  ?? null,
     uploader:    item.authorMeta?.name ?? item.authorMeta?.nickName ?? 'unknown',
-    description: item.text ?? item.desc ?? '',
-    view_count:  item.playCount ?? item.stats?.playCount ?? 0,
-    like_count:  item.diggCount ?? item.stats?.diggCount ?? 0,
-    duration:    item.videoMeta?.duration ?? item.duration ?? 0,
-    thumbnail:   item.covers?.default ?? item.covers?.dynamic ?? item.thumbnail ?? '',
+    description: item.text ?? '',
+    view_count:  item.playCount ?? 0,
+    like_count:  item.diggCount ?? 0,
+    duration:    item.videoMeta?.duration ?? 0,
+    thumbnail:   item.videoMeta?.coverUrl ?? item.videoMeta?.originalCoverUrl ?? '',
   }));
 }
 
@@ -188,6 +215,7 @@ async function main() {
       'product-id': { type: 'string' },
       'query':      { type: 'string' },
       'max':        { type: 'string' },
+      'language':   { type: 'string' },  // 'en' para filtrar só inglês
       'dry-run':    { type: 'boolean' },
     },
   });
@@ -195,6 +223,7 @@ async function main() {
   const productId = values['product-id'];
   const queryRaw  = values['query'];
   const max       = parseInt(values['max'] ?? '20', 10);
+  const language  = values['language'];
   const dryRun    = values['dry-run'] ?? false;
 
   if (!productId) throw new Error('--product-id é obrigatório');
@@ -207,7 +236,7 @@ async function main() {
   console.log(`[scrape-ugc] Produto: ${productId}`);
   console.log(`[scrape-ugc] Nicho: "${niche}"`);
 
-  const raw    = await fetchTikTokVideos(queryRaw, Math.min(max, 100), apifyToken);
+  const raw    = await fetchTikTokVideos(queryRaw, Math.min(max, 100), apifyToken, language);
   const scored = scoreVideos(raw, niche);
 
   scored.sort((a, b) => b.relevance_score - a.relevance_score);

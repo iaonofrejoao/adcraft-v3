@@ -4,3 +4,8 @@
 -- Permite exibir um player de vídeo nativo no frontend sem depender do embed TikTok.
 
 ALTER TABLE tiktok_videos ADD COLUMN IF NOT EXISTS video_url TEXT;
+
+-- UNIQUE constraint no tiktok_video_id para garantir upsert correto
+CREATE UNIQUE INDEX IF NOT EXISTS tiktok_videos_video_id_unique
+  ON tiktok_videos (tiktok_video_id)
+  WHERE tiktok_video_id IS NOT NULL;

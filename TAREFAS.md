@@ -32,6 +32,11 @@ Atualizar a cada sessão de trabalho.
 | F-08 | Logs WebSocket em tempo real na tela Demandas | ⬜ PENDENTE | Tela Demandas a 80% |
 | F-09 | Diff de copy e score de viabilidade na tela Produto | ⬜ PENDENTE | Tela Produto a 70% |
 
+### Arquitetura
+| # | Tarefa | Status | Observações |
+|---|--------|--------|-------------|
+| A-01 | Decidir e migrar estrutura de projeto: monorepo pnpm workspaces + Turborepo vs 2 repos | ⬜ PENDENTE | Ver análise na conversa de 2026-06-01. Recomendação: monorepo com `packages/db` compartilhado entre `apps/web` e `apps/workers`. Swagger fica em espera até ter endpoints proprietários para terceiros. |
+
 ### Qualidade e Testes
 | # | Tarefa | Status | Observações |
 |---|--------|--------|-------------|

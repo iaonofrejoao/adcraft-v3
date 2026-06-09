@@ -29,6 +29,7 @@ const FRESHNESS_DAYS: Record<ArtifactType, number | null> = {
   google_ads:                    null,  // estrutura de ads por lançamento
   performance_report:            null,  // dados reais — sempre regera
   scaling_plan:                  null,  // plano de escala — sempre regera com dados novos
+  ugc_reference:                 90,   // referências UGC são estáveis — vídeo não muda
 };
 
 /**

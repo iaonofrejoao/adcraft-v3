@@ -2,11 +2,20 @@
 import { useState } from 'react'
 import {
   Check, X, RotateCcw, Eye, Heart, Clock, Star,
-  Video, RefreshCw, ExternalLink, Filter,
+  Video, RefreshCw, ExternalLink, Filter, Play, Download, Loader2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import {
   useTikTokVideos,
   type TikTokVideo,
@@ -54,11 +63,18 @@ interface VideoCardProps {
 }
 
 function VideoCard({ video, onApprove, onReject, onReset, inUse }: VideoCardProps) {
-  const [imgError, setImgError] = useState(false)
+  const [imgError,   setImgError]   = useState(false)
+  const [playing,    setPlaying]    = useState(false)
 
   const isApproved = video.status === 'approved'
   const isRejected = video.status === 'rejected'
   const isPending  = video.status === 'pending'
+  const canPlay    = !!video.tiktok_url
+
+  // Proxy server-side: yt-dlp extrai a URL real do CDN; resolve restrições de Referer
+  const proxyUrl = video.tiktok_url
+    ? `/api/video-proxy?url=${encodeURIComponent(video.tiktok_url)}`
+    : null
 
   return (
     <div className={cn(
@@ -67,46 +83,82 @@ function VideoCard({ video, onApprove, onReject, onReset, inUse }: VideoCardProp
       isRejected ? 'border-status-failed-text/20 opacity-60' :
                    'border-white/5',
     )}>
-      {/* Thumbnail */}
-      <div className="relative aspect-[9/16] bg-surface-high overflow-hidden">
-        {video.thumbnail_url && !imgError ? (
-          <img
-            src={video.thumbnail_url}
-            alt={video.author_handle ?? 'TikTok'}
-            className="w-full h-full object-cover"
-            onError={() => setImgError(true)}
-          />
+      {/* Thumbnail / Player inline */}
+      <div className="relative aspect-[9/16] bg-black overflow-hidden">
+        {playing && proxyUrl ? (
+          <>
+            <video
+              key={proxyUrl}
+              src={proxyUrl}
+              className="w-full h-full object-contain"
+              autoPlay
+              controls
+              playsInline
+              loop
+            />
+            {/* Botão fechar — posicionado acima dos controles nativos */}
+            <button
+              onClick={() => setPlaying(false)}
+              className="absolute top-2 left-2 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center z-20 transition-colors duration-150 pointer-events-auto"
+              title="Fechar player"
+            >
+              <X size={12} strokeWidth={2.5} className="text-white" />
+            </button>
+          </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Video size={28} strokeWidth={1.5} className="text-on-surface-muted" />
-          </div>
-        )}
+          <>
+            {video.thumbnail_url && !imgError ? (
+              <img
+                src={video.thumbnail_url}
+                alt={video.author_handle ?? 'TikTok'}
+                className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Video size={28} strokeWidth={1.5} className="text-on-surface-muted" />
+              </div>
+            )}
 
-        {/* Status overlay */}
-        {isApproved && (
-          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-status-done flex items-center justify-center">
-            <Check size={12} strokeWidth={2} className="text-status-done-text" />
-          </div>
-        )}
-        {isRejected && (
-          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-status-failed flex items-center justify-center">
-            <X size={12} strokeWidth={2} className="text-status-failed-text" />
-          </div>
-        )}
+            {canPlay && (
+              <button
+                onClick={() => setPlaying(true)}
+                onMouseEnter={() => {
+                  // Pre-warm: inicia download em background no hover
+                  fetch(`/api/video-proxy?url=${encodeURIComponent(video.tiktok_url)}&warm=1`)
+                    .catch(() => {})
+                }}
+                className="absolute inset-0 flex items-center justify-center group"
+                title="Reproduzir vídeo"
+              >
+                <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center group-hover:bg-black/75 transition-colors duration-150">
+                  <Play size={16} strokeWidth={1.5} fill="white" className="text-white ml-0.5" />
+                </div>
+              </button>
+            )}
 
-        {/* "Em uso" badge */}
-        {inUse && (
-          <div className="absolute top-2 left-2 bg-brand/90 text-on-primary text-[0.5625rem] font-bold px-1.5 py-0.5 rounded">
-            Em uso
-          </div>
-        )}
-
-        {/* Duration */}
-        {video.duration_seconds != null && (
-          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[0.5625rem] font-mono px-1 py-0.5 rounded flex items-center gap-0.5">
-            <Clock size={8} strokeWidth={1.5} />
-            {video.duration_seconds}s
-          </div>
+            {isApproved && (
+              <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-status-done flex items-center justify-center">
+                <Check size={12} strokeWidth={2} className="text-status-done-text" />
+              </div>
+            )}
+            {isRejected && (
+              <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-status-failed flex items-center justify-center">
+                <X size={12} strokeWidth={2} className="text-status-failed-text" />
+              </div>
+            )}
+            {inUse && (
+              <div className="absolute top-2 left-2 bg-brand/90 text-on-primary text-[0.5625rem] font-bold px-1.5 py-0.5 rounded">
+                Em uso
+              </div>
+            )}
+            {video.duration_seconds != null && (
+              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[0.5625rem] font-mono px-1 py-0.5 rounded flex items-center gap-0.5">
+                <Clock size={8} strokeWidth={1.5} />
+                {video.duration_seconds}s
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -205,6 +257,116 @@ function VideoCard({ video, onApprove, onReject, onReset, inUse }: VideoCardProp
   )
 }
 
+// ── Scrape Dialog ─────────────────────────────────────────────────────────────
+
+interface ScrapeUGCDialogProps {
+  sku:      string
+  open:     boolean
+  onClose:  () => void
+  onDone:   () => void
+}
+
+function ScrapeUGCDialog({ sku, open, onClose, onDone }: ScrapeUGCDialogProps) {
+  const [query,   setQuery]   = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleConfirm = async () => {
+    const q = query.trim()
+    if (!q) { toast.error('Digite pelo menos uma hashtag'); return }
+
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/products/${sku}/scrape-ugc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: q, max: 20 }),
+        signal: AbortSignal.timeout(310_000),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) throw new Error(data.error ?? 'Erro desconhecido')
+      toast.success(`${data.count} vídeo${data.count !== 1 ? 's' : ''} coletado${data.count !== 1 ? 's' : ''} com sucesso`)
+      onDone()
+      onClose()
+    } catch (err: any) {
+      toast.error(err.message ?? 'Falha ao coletar vídeos')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!loading && !isOpen) onClose()
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="bg-surface-container border-white/10 text-on-surface max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-base font-semibold">Coletar vídeos TikTok</DialogTitle>
+          <DialogDescription className="text-on-surface-variant text-sm">
+            O script vai buscar até 20 vídeos nas hashtags informadas via Apify e salvá-los para revisão.
+            Isso leva entre 30 e 90 segundos.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-1">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-on-surface-variant">
+              Hashtags / palavras-chave
+            </label>
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !loading) handleConfirm() }}
+              placeholder="ex: emagrecimento termogenico suplemento"
+              disabled={loading}
+              className={cn(
+                'w-full rounded-lg border border-white/10 bg-surface-high px-3 py-2',
+                'text-sm text-on-surface placeholder:text-on-surface-muted/50',
+                'outline-none focus:border-brand/60 transition-colors',
+                loading && 'opacity-50 pointer-events-none',
+              )}
+            />
+            <p className="text-[0.6875rem] text-on-surface-muted">
+              Separe por espaço. Serão buscados vídeos para cada hashtag.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            disabled={loading}
+            className="text-on-surface-variant hover:text-on-surface"
+          >
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleConfirm}
+            disabled={loading || !query.trim()}
+            className="bg-brand text-on-primary hover:opacity-90 border-0"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={13} strokeWidth={1.5} className="mr-1.5 animate-spin" />
+                Coletando…
+              </>
+            ) : (
+              <>
+                <Download size={13} strokeWidth={1.5} className="mr-1.5" />
+                Confirmar e coletar
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 
 export function TikTokUGCTabSkeleton() {
@@ -241,6 +403,8 @@ export function TikTokUGCTab({ sku, inUseIds }: TikTokUGCTabProps) {
   const { videos, isLoading, filter, setFilter, approve, reject, reset, refresh, counts } =
     useTikTokVideos(sku)
 
+  const [scrapeOpen, setScrapeOpen] = useState(false)
+
   if (isLoading) return <TikTokUGCTabSkeleton />
 
   return (
@@ -272,15 +436,33 @@ export function TikTokUGCTab({ sku, inUseIds }: TikTokUGCTabProps) {
           ))}
         </div>
 
-        <button
-          onClick={refresh}
-          title="Recarregar"
-          className="flex items-center gap-1.5 text-[0.6875rem] text-on-surface-muted hover:text-on-surface transition-colors duration-150"
-        >
-          <RefreshCw size={13} strokeWidth={1.5} />
-          Recarregar
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={refresh}
+            title="Recarregar"
+            className="flex items-center gap-1.5 text-[0.6875rem] text-on-surface-muted hover:text-on-surface transition-colors duration-150"
+          >
+            <RefreshCw size={13} strokeWidth={1.5} />
+            Recarregar
+          </button>
+
+          <Button
+            size="sm"
+            onClick={() => setScrapeOpen(true)}
+            className="h-7 px-3 text-[0.6875rem] font-medium bg-brand text-on-primary hover:opacity-90 border-0"
+          >
+            <Download size={13} strokeWidth={1.5} className="mr-1.5" />
+            Coletar UGC
+          </Button>
+        </div>
       </div>
+
+      <ScrapeUGCDialog
+        sku={sku}
+        open={scrapeOpen}
+        onClose={() => setScrapeOpen(false)}
+        onDone={refresh}
+      />
 
       {/* ── Empty state ── */}
       {videos.length === 0 && (

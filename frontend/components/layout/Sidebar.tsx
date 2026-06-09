@@ -1,18 +1,19 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ClipboardList, Package, Film, Brain, Megaphone } from 'lucide-react'
+import { ClipboardList, Package, Film, Brain, Megaphone, Library } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavItem { href: string; label: string; Icon: LucideIcon }
 
 const NAV: NavItem[] = [
-  { href: '/demandas',  label: 'Demandas',  Icon: ClipboardList },
-  { href: '/products',  label: 'Produtos',  Icon: Package       },
-  { href: '/creatives', label: 'Criativos', Icon: Film          },
-  { href: '/insights',       label: 'Memória',          Icon: Brain      },
-  { href: '/feed-anuncios',  label: 'Feed de Anúncios', Icon: Megaphone  },
+  { href: '/demandas',    label: 'Demandas',         Icon: ClipboardList },
+  { href: '/products',    label: 'Produtos',          Icon: Package       },
+  { href: '/creatives',   label: 'Criativos',         Icon: Film          },
+  { href: '/biblioteca',  label: 'Biblioteca UGC',    Icon: Library       },
+  { href: '/insights',    label: 'Memória',            Icon: Brain         },
+  { href: '/feed-anuncios', label: 'Feed de Anúncios', Icon: Megaphone    },
 ]
 
 export function Sidebar() {

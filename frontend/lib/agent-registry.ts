@@ -23,7 +23,8 @@ export type ArtifactType =
   | 'facebook_ads'
   | 'google_ads'
   | 'performance_report'
-  | 'scaling_plan';
+  | 'scaling_plan'
+  | 'ugc_reference';
 
 export type AgentName =
   // ── Legado (7 agentes Gemini) ─────────────────────────────────────────────

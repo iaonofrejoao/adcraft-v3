@@ -6,7 +6,6 @@ import { ChevronRight, Pencil, Loader2, Globe, Link2, Copy, Check } from 'lucide
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
-import { PersonaStatusBadge } from './PersonaStatusBadge'
 import type { Product } from './types'
 
 // ── Country / Language mapping ────────────────────────────────────────────────
@@ -342,11 +341,6 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
             </div>
           )}
 
-          {/* Persona row */}
-          <div className="flex items-center gap-2 mt-2">
-            <span className="w-1 h-1 bg-white/10 rounded-full shrink-0 hidden sm:block" />
-            <PersonaStatusBadge sku={sku} />
-          </div>
         </div>
 
         {/* Action button */}

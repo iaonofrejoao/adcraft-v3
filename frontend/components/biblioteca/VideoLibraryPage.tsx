@@ -63,11 +63,15 @@ function LibraryCard({ video, onApprove, onReject, onReset }: LibraryCardProps) 
   const [imgError, setImgError] = useState(false)
   const [playing,  setPlaying]  = useState(false)
 
-  const isApproved = video.status === 'approved'
-  const isRejected = video.status === 'rejected'
-  const isPending  = video.status === 'pending'
-  const proxyUrl   = video.tiktok_url
+  const isApproved   = video.status === 'approved'
+  const isRejected   = video.status === 'rejected'
+  const isPending    = video.status === 'pending'
+  const proxyUrl     = video.tiktok_url
     ? `/api/video-proxy?url=${encodeURIComponent(video.tiktok_url)}`
+    : null
+  // Usa a tiktok_url (página) no proxy — as thumbnail_url do CDN expiram em horas
+  const thumbnailSrc = video.tiktok_url
+    ? `/api/thumbnail-proxy?url=${encodeURIComponent(video.tiktok_url)}`
     : null
 
   return (
@@ -97,9 +101,9 @@ function LibraryCard({ video, onApprove, onReject, onReset }: LibraryCardProps) 
           </>
         ) : (
           <>
-            {video.thumbnail_url && !imgError ? (
+            {thumbnailSrc && !imgError ? (
               <img
-                src={video.thumbnail_url}
+                src={thumbnailSrc}
                 alt={video.author_handle ?? 'TikTok'}
                 className="w-full h-full object-cover"
                 onError={() => setImgError(true)}

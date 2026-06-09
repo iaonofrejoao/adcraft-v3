@@ -1,54 +1,92 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ClipboardList, Package, Film, Brain, Megaphone, Library, MonitorPlay } from 'lucide-react'
+import { ClipboardList, Package, Film, Brain, Megaphone, Library, MonitorPlay, ChevronLeft } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface NavItem { href: string; label: string; Icon: LucideIcon }
 
 const NAV: NavItem[] = [
-  { href: '/demandas',    label: 'Demandas',         Icon: ClipboardList },
-  { href: '/products',    label: 'Produtos',          Icon: Package       },
-  { href: '/creatives',   label: 'Criativos',         Icon: Film          },
-  { href: '/biblioteca',   label: 'Vídeos Tiktok',     Icon: Library      },
-  { href: '/anuncios-fb', label: 'Anúncios Facebook',  Icon: MonitorPlay  },
-  { href: '/insights',    label: 'Memória',             Icon: Brain        },
-  { href: '/feed-anuncios', label: 'Feed de Anúncios', Icon: Megaphone    },
+  { href: '/demandas',      label: 'Demandas',          Icon: ClipboardList },
+  { href: '/products',      label: 'Produtos',           Icon: Package       },
+  { href: '/creatives',     label: 'Criativos',          Icon: Film          },
+  { href: '/biblioteca',    label: 'Vídeos Tiktok',      Icon: Library       },
+  { href: '/anuncios-fb',   label: 'Anúncios Facebook',  Icon: MonitorPlay   },
+  { href: '/insights',      label: 'Memória',            Icon: Brain         },
+  { href: '/feed-anuncios', label: 'Feed de Anúncios',   Icon: Megaphone     },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <aside className="flex h-screen flex-col w-56 shrink-0 bg-surface-low">
+    <aside className={cn(
+      'flex h-screen flex-col shrink-0 bg-surface-low overflow-hidden',
+      'transition-[width] duration-200 ease-in-out',
+      collapsed ? 'w-14' : 'w-56',
+    )}>
 
-      {/* Logo */}
-      <div className="px-4 py-4">
-        <span className="text-lg font-semibold text-brand">
+      {/* Header: logo + toggle */}
+      <div className="flex items-center justify-between px-3 py-4 min-w-0">
+        <span className={cn(
+          'text-lg font-semibold text-brand whitespace-nowrap overflow-hidden',
+          'transition-[max-width,opacity] duration-150 ease-in-out',
+          collapsed ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100 delay-100',
+        )}>
           AdCraft <span className="text-xs font-normal text-on-surface-muted">v2</span>
         </span>
-      </div>
-      <div className="h-px bg-outline-variant/15" />
 
-      {/* Nav principal */}
+        <button
+          onClick={() => setCollapsed(c => !c)}
+          aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+          className="shrink-0 p-1.5 rounded text-on-surface-muted hover:text-on-surface hover:bg-surface-high transition-colors duration-150"
+        >
+          <ChevronLeft
+            size={16}
+            strokeWidth={1.5}
+            className={cn(
+              'transition-transform duration-200 ease-in-out',
+              collapsed && 'rotate-180',
+            )}
+          />
+        </button>
+      </div>
+
+      <div className="h-px bg-outline-variant/15 shrink-0" />
+
+      {/* Nav principal — árvore estável, tooltip só ativo quando recolhido */}
       <nav className="px-2 pt-3 pb-1 space-y-0.5">
         {NAV.map(({ href, label, Icon }) => {
           const active = pathname.startsWith(href)
+
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors duration-150',
-                active
-                  ? 'bg-brand/10 text-brand border-l-2 border-brand'
-                  : 'text-on-surface-variant hover:bg-surface-high',
-              )}
-            >
-              <Icon size={16} strokeWidth={1.5} />
-              {label}
-            </Link>
+            <Tooltip key={href} delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Link
+                  href={href}
+                  className={cn(
+                    'flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors duration-150',
+                    active
+                      ? cn('bg-brand/10 text-brand', !collapsed && 'border-l-2 border-brand')
+                      : 'text-on-surface-variant hover:bg-surface-high',
+                  )}
+                >
+                  <Icon size={16} strokeWidth={1.5} className="shrink-0" />
+                  <span className={cn(
+                    'whitespace-nowrap overflow-hidden',
+                    'transition-[max-width,opacity] duration-150 ease-in-out',
+                    collapsed ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100 delay-100',
+                  )}>
+                    {label}
+                  </span>
+                </Link>
+              </TooltipTrigger>
+              {collapsed && <TooltipContent side="right">{label}</TooltipContent>}
+            </Tooltip>
           )
         })}
       </nav>

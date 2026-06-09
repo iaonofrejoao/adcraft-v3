@@ -82,6 +82,12 @@ interface AdCardProps {
   onReset:   (id: string) => void
 }
 
+function proxyThumb(url: string | null): string | null {
+  if (!url) return null
+  if (url.includes('.fbcdn.net')) return `/api/thumbnail-proxy?url=${encodeURIComponent(url)}`
+  return url
+}
+
 function AdCard({ ad, onApprove, onReject, onReset }: AdCardProps) {
   const [imgError, setImgError] = useState(false)
 
@@ -89,7 +95,7 @@ function AdCard({ ad, onApprove, onReject, onReset }: AdCardProps) {
   const isRejected = ad.status === 'rejected'
   const isPending  = ad.status === 'pending'
 
-  const thumb = ad.image_url ?? ad.video_url ?? null
+  const thumb = proxyThumb(ad.image_url)
 
   return (
     <div className={cn(

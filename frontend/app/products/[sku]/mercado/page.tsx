@@ -56,7 +56,6 @@ export default function MercadoPage() {
             <MercadoTab
               data={knowledge.artifact_data as unknown as MarketArtifactData}
               createdAt={knowledge.created_at}
-              sku={sku!}
             />
           )}
         </section>

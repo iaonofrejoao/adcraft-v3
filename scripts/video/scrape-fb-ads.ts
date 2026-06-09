@@ -66,9 +66,13 @@ function extractMediaType(snapshot: any): FbAd['media_type'] {
 function extractImageUrl(snapshot: any): string | null {
   if (!snapshot) return null
   return snapshot.resized_image_url
+    ?? snapshot.video_preview_image_url
+    ?? snapshot.thumbnail_url
     ?? snapshot.images?.[0]?.resized_url
     ?? snapshot.images?.[0]?.url
     ?? snapshot.cards?.[0]?.resized_image_url
+    ?? snapshot.cards?.[0]?.image_url
+    ?? snapshot.cards?.[0]?.thumbnail_url
     ?? null
 }
 

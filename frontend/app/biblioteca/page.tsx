@@ -1,7 +1,7 @@
 import { Library } from 'lucide-react'
 import { VideoLibraryPage } from '@/components/biblioteca/VideoLibraryPage'
 
-export const metadata = { title: 'Biblioteca UGC — AdCraft' }
+export const metadata = { title: 'Vídeos Tiktok — AdCraft' }
 
 export default function BibliotecaPage() {
   return (
@@ -11,7 +11,7 @@ export default function BibliotecaPage() {
         <div className="flex items-center gap-2.5">
           <Library size={18} strokeWidth={1.5} className="text-brand" />
           <h1 className="text-base font-semibold text-on-surface tracking-tight">
-            Biblioteca UGC
+            Vídeos Tiktok
           </h1>
           <span className="text-xs text-on-surface-muted">
             — todos os vídeos TikTok coletados

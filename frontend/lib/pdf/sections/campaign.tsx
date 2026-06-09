@@ -77,7 +77,8 @@ export function CampaignSection({ data, productName, sku, createdAt }: CampaignS
     day: '2-digit', month: 'short', year: 'numeric',
   })
 
-  const budgetFmt = (n: number) => `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+  const budgetFmt = (n?: number | null) =>
+    n != null ? `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'
 
   return (
     <Page size="A4" style={S.page}>

@@ -127,7 +127,7 @@ export async function GET(req: NextRequest) {
     return new Response('Falha ao buscar thumbnail', { status: 502 })
   }
 
-  return new Response(entry.buffer, {
+  return new Response(new Uint8Array(entry.buffer), {
     status: 200,
     headers: {
       'Content-Type':  entry.contentType,

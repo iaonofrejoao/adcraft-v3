@@ -56,7 +56,7 @@ async function patchAd(sku: string, id: string, status: FbAdStatus) {
 export function useFacebookAds(sku: string): UseFacebookAdsReturn {
   const [allAds,    setAllAds]    = useState<FbAd[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [filter,    setFilter]    = useState<FbAdStatusFilter>('all')
+  const [filter,    setFilter]    = useState<FbAdStatusFilter>('pending')
   const [tick,      setTick]      = useState(0)
 
   const refresh = useCallback(() => setTick(t => t + 1), [])

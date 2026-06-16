@@ -1,8 +1,9 @@
 'use client'
 import { useState }         from 'react'
+import dynamic              from 'next/dynamic'
 import {
-  Brain, Lightbulb, TrendingUp,
-  CheckCircle2, XCircle, RefreshCw, ChevronDown, ChevronUp,
+  Brain, Lightbulb, TrendingUp, GitBranch,
+  CheckCircle2, XCircle, RefreshCw, ChevronDown, ChevronUp, Sparkles,
 } from 'lucide-react'
 import { cn }               from '@/lib/utils'
 import { Skeleton }         from '@/components/ui/skeleton'
@@ -10,6 +11,11 @@ import { FilterBar, type FilterOption } from '@/components/ui/FilterBar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useInsights }      from '@/hooks/useInsights'
 import type { Learning, Pattern, Insight } from '@/hooks/useInsights'
+
+const MemoryGraph = dynamic(
+  () => import('@/components/insights/MemoryGraph').then(m => ({ default: m.MemoryGraph })),
+  { ssr: false, loading: () => <Skeleton className="h-full w-full rounded-none" /> },
+)
 
 const CATEGORY_PILLS: FilterOption[] = [
   { value: 'all',        label: 'Todos'       },
@@ -224,6 +230,13 @@ function CardSkeleton() {
 
 // ── Página principal ──────────────────────────────────────────────────────────
 
+interface RefreshResult {
+  embeddingsGenerated: number
+  patternsUpdated:     number
+  insightsGenerated:   number
+  groupsProcessed:     number
+}
+
 export default function InsightsPage() {
   const {
     learnings, patterns, insights,
@@ -234,7 +247,27 @@ export default function InsightsPage() {
     reload,
   } = useInsights()
 
-  const [activeTab, setActiveTab] = useState<'insights' | 'patterns' | 'learnings'>('insights')
+  const [activeTab,      setActiveTab]      = useState<'insights' | 'patterns' | 'learnings' | 'grafo'>('insights')
+  const [isProcessing,   setIsProcessing]   = useState(false)
+  const [refreshResult,  setRefreshResult]  = useState<RefreshResult | null>(null)
+  const [refreshError,   setRefreshError]   = useState<string | null>(null)
+
+  const handleProcessMemory = async () => {
+    setIsProcessing(true)
+    setRefreshResult(null)
+    setRefreshError(null)
+    try {
+      const res  = await fetch('/api/memory/refresh', { method: 'POST' })
+      const data = await res.json() as RefreshResult & { ok: boolean; error?: string }
+      if (!data.ok) throw new Error(data.error ?? 'Erro desconhecido')
+      setRefreshResult(data)
+      reload()
+    } catch (err) {
+      setRefreshError(err instanceof Error ? err.message : 'Erro ao processar memória')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
 
   return (
     <div className="flex flex-col h-full bg-surface overflow-hidden">
@@ -250,15 +283,49 @@ export default function InsightsPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={reload}
-            disabled={isLoading}
-            className="p-2 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-high transition-colors"
-            title="Recarregar"
-          >
-            <RefreshCw size={14} strokeWidth={1.5} className={isLoading ? 'animate-spin' : ''} />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Recarregar dados locais */}
+            <button
+              onClick={reload}
+              disabled={isLoading || isProcessing}
+              className="p-2 rounded-md text-on-surface-muted hover:text-on-surface hover:bg-surface-high transition-colors"
+              title="Recarregar dados"
+            >
+              <RefreshCw size={14} strokeWidth={1.5} className={isLoading ? 'animate-spin' : ''} />
+            </button>
+
+            {/* Processar memória (embeddings + aggregation) */}
+            <button
+              onClick={handleProcessMemory}
+              disabled={isProcessing || isLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors bg-primary-container text-primary hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Gerar embeddings + patterns + insights"
+            >
+              <Sparkles size={13} strokeWidth={1.5} className={isProcessing ? 'animate-pulse' : ''} />
+              {isProcessing ? 'Processando…' : 'Processar memória'}
+            </button>
+          </div>
         </div>
+
+        {/* Feedback do processamento */}
+        {refreshResult && (
+          <div className="mt-3 flex items-center gap-3 text-[11px] font-mono text-on-surface-variant bg-surface-high rounded-md px-3 py-2">
+            <CheckCircle2 size={12} strokeWidth={1.5} className="text-status-done-text shrink-0" />
+            <span>
+              {refreshResult.embeddingsGenerated} embeddings gerados ·{' '}
+              {refreshResult.patternsUpdated} patterns ·{' '}
+              {refreshResult.insightsGenerated} insights ·{' '}
+              {refreshResult.groupsProcessed} grupos analisados
+            </span>
+          </div>
+        )}
+        {refreshError && (
+          <div className="mt-3 flex items-center gap-3 text-[11px] font-mono text-status-failed-text bg-status-failed-bg rounded-md px-3 py-2">
+            <XCircle size={12} strokeWidth={1.5} className="shrink-0" />
+            <span>{refreshError}</span>
+          </div>
+        )}
 
         {/* Stats rápidas */}
         <div className="flex items-center gap-6 mt-4 flex-wrap">
@@ -266,6 +333,7 @@ export default function InsightsPage() {
             { icon: Lightbulb,   label: 'Insights',   count: insights.length,  tab: 'insights'  as const },
             { icon: TrendingUp,  label: 'Padrões',    count: patterns.length,  tab: 'patterns'  as const },
             { icon: Brain,       label: 'Learnings',  count: learnings.length, tab: 'learnings' as const },
+            { icon: GitBranch,   label: 'Grafo',      count: null,             tab: 'grafo'     as const },
           ].map(({ icon: Icon, label, count, tab }) => (
             <button
               key={tab}
@@ -279,12 +347,14 @@ export default function InsightsPage() {
             >
               <Icon size={14} strokeWidth={1.5} />
               <span className="text-[12px] font-medium">{label}</span>
-              <span className={cn(
-                'text-[11px] font-mono rounded-full px-1.5 py-0.5 min-w-[20px] text-center',
-                activeTab === tab ? 'bg-primary/20' : 'bg-surface-high',
-              )}>
-                {count}
-              </span>
+              {count !== null && (
+                <span className={cn(
+                  'text-[11px] font-mono rounded-full px-1.5 py-0.5 min-w-[20px] text-center',
+                  activeTab === tab ? 'bg-primary/20' : 'bg-surface-high',
+                )}>
+                  {count}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -304,13 +374,20 @@ export default function InsightsPage() {
         </div>
       )}
 
-      {/* Conteúdo */}
-      <ScrollArea className="flex-1">
+      {/* Tab: Grafo (fora do ScrollArea — precisa de altura 100%) */}
+      {activeTab === 'grafo' && (
+        <div className="flex-1 min-h-0">
+          <MemoryGraph learnings={learnings} patterns={patterns} insights={insights} />
+        </div>
+      )}
+
+      {/* Conteúdo em lista */}
+      <ScrollArea className={cn('flex-1 min-h-0', activeTab === 'grafo' && 'hidden')}>
       <div className="px-6 py-6">
 
         {/* Tab: Insights */}
         {activeTab === 'insights' && (
-          <div className="max-w-2xl space-y-4">
+          <div className="max-w-2xl mx-auto space-y-4">
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)
             ) : insights.length === 0 ? (
@@ -338,7 +415,7 @@ export default function InsightsPage() {
 
         {/* Tab: Padrões */}
         {activeTab === 'patterns' && (
-          <div className="max-w-2xl space-y-3">
+          <div className="max-w-2xl mx-auto space-y-3">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => <CardSkeleton key={i} />)
             ) : patterns.length === 0 ? (
@@ -362,7 +439,7 @@ export default function InsightsPage() {
 
         {/* Tab: Learnings */}
         {activeTab === 'learnings' && (
-          <div className="max-w-2xl space-y-3">
+          <div className="max-w-2xl mx-auto space-y-3">
             {isLoading ? (
               Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)
             ) : learnings.length === 0 ? (

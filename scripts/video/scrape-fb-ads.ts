@@ -1,22 +1,31 @@
 /**
  * scripts/video/scrape-fb-ads.ts
- * Busca anúncios do Facebook Ads Library via Apify e pontua relevância por longevidade.
+ * Busca anúncios do Facebook Ads Library via Apify, pontua relevância e salva tudo.
  *
  * Uso:
  *   npx tsx scripts/video/scrape-fb-ads.ts \
  *     --product-id <uuid>               \
- *     --query     "fat burner weight loss" \  # palavras-chave de busca
- *     --country   US                    \   # código do país (default: US)
- *     --max        5                    \   # máximo de anúncios (default: 10)
+ *     --query     "fat burner weight loss" \
+ *     --country   US                    \
+ *     --max        20                   \   # máximo de anúncios a coletar (default: 20)
  *     [--dry-run]                           # não salva no banco
+ *
+ * Comportamento:
+ *   1. Usa Claude Haiku para expandir a query em 4 variações semânticas.
+ *   2. Passa todos os termos de uma vez ao Apify (uma chamada, sem multiplicar custo).
+ *   3. Salva TODOS os resultados retornados — nenhum descartado.
+ *   4. Score < 0.20 → status 'rejected' automático (visível na aba Rejeitados).
+ *   5. Score ≥ 0.20 → status 'pending' (aguarda revisão humana).
  *
  * Dependências:
  *   - APIFY_TOKEN no .env
+ *   - ANTHROPIC_API_KEY no .env (opcional — sem ele, usa query literal)
  */
 
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { parseArgs } from 'node:util';
+import Anthropic from '@anthropic-ai/sdk';
 import { supabase } from '../../workers/lib/db';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -24,31 +33,69 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface FbAd {
-  fb_ad_id:       string
-  page_name:      string
-  page_id:        string
-  ad_copy:        string
-  headline:       string
-  cta_text:       string
+  fb_ad_id:        string
+  page_name:       string
+  page_id:         string
+  ad_copy:         string
+  headline:        string
+  cta_text:        string
   destination_url: string
-  media_type:     'video' | 'image' | 'carousel' | 'unknown'
-  video_url:      string | null
-  image_url:      string | null
-  platforms:      string[]
-  started_at:     Date | null
-  stopped_at:     Date | null
-  days_running:   number
+  media_type:      'video' | 'image' | 'carousel' | 'unknown'
+  video_url:       string | null
+  image_url:       string | null
+  platforms:       string[]
+  started_at:      Date | null
+  stopped_at:      Date | null
+  days_running:    number
 }
 
 interface ScoredAd extends FbAd {
   relevance_score: number
 }
 
+// ── Query expansion (Claude Haiku) ────────────────────────────────────────────
+
+async function expandQuery(query: string, niche: string, apiKey: string): Promise<string[]> {
+  if (!apiKey) {
+    console.log('[expand] ANTHROPIC_API_KEY ausente — usando query literal.');
+    return [query];
+  }
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const res = await client.messages.create({
+      model:      'claude-haiku-4-5-20251001',
+      max_tokens: 256,
+      messages: [{
+        role:    'user',
+        content: `You are helping search for Facebook ads in the "${niche}" niche.\n` +
+                 `Original query: "${query}"\n\n` +
+                 `Generate exactly 4 alternative search terms that cover different ways ` +
+                 `competitors describe similar products (synonyms, adjacent angles, ` +
+                 `benefit-focused terms). Keep each term short (2-5 words).\n\n` +
+                 `Return ONLY a JSON array of 4 strings. No explanation.`,
+      }],
+    });
+
+    const text    = (res.content.find((b) => b.type === 'text') as Anthropic.TextBlock | undefined)?.text ?? '[]';
+    const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+    const arr     = JSON.parse(cleaned) as unknown;
+
+    if (!Array.isArray(arr)) throw new Error('Resposta não é array');
+
+    const terms = [query, ...(arr as string[]).slice(0, 4)];
+    console.log(`[expand] Termos gerados: ${terms.join(' | ')}`);
+    return terms;
+  } catch (err: any) {
+    console.warn(`[expand] Falha na expansão (${err.message}) — usando query literal.`);
+    return [query];
+  }
+}
+
 // ── Apify fetch ───────────────────────────────────────────────────────────────
 
 function extractAdCopy(snapshot: any): string {
   if (!snapshot) return ''
-  // Tenta múltiplos formatos retornados pelo actor
   const html = snapshot?.body?.markup?.__html ?? ''
   if (html) return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 2000)
   const text = snapshot?.body_text ?? snapshot?.caption ?? snapshot?.cards?.[0]?.body ?? ''
@@ -87,7 +134,6 @@ function extractVideoUrl(snapshot: any): string | null {
 
 function parseStartDate(raw: any): Date | null {
   if (!raw) return null
-  // Unix timestamp (number) ou string ISO
   if (typeof raw === 'number' && raw > 0) return new Date(raw * 1000)
   if (typeof raw === 'string' && raw.length > 0) return new Date(raw)
   return null
@@ -100,22 +146,22 @@ function calcDaysRunning(started: Date | null, stopped: Date | null): number {
 }
 
 async function fetchFbAds(
-  query: string,
+  searchTerms: string[],
   country: string,
   max: number,
   apifyToken: string,
 ): Promise<FbAd[]> {
-  console.log(`[Apify] Buscando anúncios: "${query}" | país: ${country} | máx: ${max}`);
+  console.log(`[Apify] Termos: ${searchTerms.join(' | ')} | país: ${country} | máx: ${max}`);
 
   const url = `https://api.apify.com/v2/acts/apify~facebook-ads-scraper/run-sync-get-dataset-items?token=${apifyToken}&timeout=300`;
 
   const body = {
-    searchTerms:        [query],
+    searchTerms,
     country,
     adType:             'ALL',
     publisherPlatforms: ['facebook', 'instagram'],
     adActiveStatus:     'ACTIVE',
-    limit:              Math.min(max * 3, 50), // pede mais para ter margem de filtro
+    limit:              Math.min(max, 50),
   };
 
   let res: Response;
@@ -138,11 +184,10 @@ async function fetchFbAds(
   const items: any[] = await res.json();
   console.log(`[Apify] ${items.length} anúncios recebidos.`);
 
-  return items.slice(0, max).map(item => {
+  return items.map(item => {
     const snap      = item.snapshot ?? item;
     const started   = parseStartDate(item.startDate ?? item.ad_delivery_start_time);
     const stoppedRaw = item.endDate ?? item.ad_delivery_stop_time;
-    // endDate = 0 significa ainda ativo
     const stopped   = (stoppedRaw && stoppedRaw !== 0) ? parseStartDate(stoppedRaw) : null;
 
     return {
@@ -167,15 +212,12 @@ async function fetchFbAds(
 // ── Scoring ───────────────────────────────────────────────────────────────────
 
 function scoreAd(ad: FbAd, nicheKeywords: string[]): number {
-  // Longevidade: capped em 90 dias → score 1.0 (60%)
   const longevityScore = Math.min(ad.days_running / 90, 1);
 
-  // Relevância por keywords (30%)
-  const text = `${ad.ad_copy} ${ad.headline} ${ad.page_name}`.toLowerCase();
-  const hits  = nicheKeywords.filter(k => text.includes(k)).length;
+  const text    = `${ad.ad_copy} ${ad.headline} ${ad.page_name}`.toLowerCase();
+  const hits    = nicheKeywords.filter(k => text.includes(k)).length;
   const kwScore = Math.min(hits / Math.max(nicheKeywords.length * 0.3, 1), 1);
 
-  // Bônus de mídia (10%)
   const mediaScore = ad.media_type === 'video' ? 1 : ad.media_type === 'carousel' ? 0.7 : 0.5;
 
   const raw = longevityScore * 0.6 + kwScore * 0.3 + mediaScore * 0.1;
@@ -208,7 +250,11 @@ async function resolveProduct(productId: string): Promise<{ name: string; niche:
   };
 }
 
-async function saveToDatabase(productId: string, ads: ScoredAd[]): Promise<string[]> {
+// Score < 0.20 → rejeitado automaticamente (baixa relevância/longevidade)
+// Score ≥ 0.20 → pendente para revisão humana
+const AUTO_REJECT_THRESHOLD = 0.20;
+
+async function saveToDatabase(productId: string, ads: ScoredAd[]): Promise<{ saved: number; pending: number; autoRejected: number }> {
   const rows = ads.map(ad => ({
     product_id:      productId,
     fb_ad_id:        ad.fb_ad_id,
@@ -226,16 +272,21 @@ async function saveToDatabase(productId: string, ads: ScoredAd[]): Promise<strin
     stopped_at:      ad.stopped_at?.toISOString() ?? null,
     days_running:    ad.days_running,
     relevance_score: ad.relevance_score,
-    status:          'pending',
+    status:          ad.relevance_score >= AUTO_REJECT_THRESHOLD ? 'pending' : 'rejected',
   }));
 
   const { data, error } = await supabase
     .from('facebook_ads')
     .upsert(rows, { onConflict: 'product_id,fb_ad_id', ignoreDuplicates: false })
-    .select('id');
+    .select('id, status');
 
   if (error) throw error;
-  return (data ?? []).map((r: any) => r.id);
+
+  const results    = data ?? [];
+  const pending    = results.filter((r: any) => r.status === 'pending').length;
+  const autoRejected = results.filter((r: any) => r.status === 'rejected').length;
+
+  return { saved: results.length, pending, autoRejected };
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -254,13 +305,15 @@ async function main() {
 
   const productId = values['product-id'];
   const queryRaw  = values['query'];
-  const max       = parseInt(values['max'] ?? '10', 10);
+  const max       = parseInt(values['max'] ?? '20', 10);
   const dryRun    = values['dry-run'] ?? false;
 
   if (!productId) throw new Error('--product-id é obrigatório');
   if (!queryRaw)  throw new Error('--query é obrigatório');
 
-  const apifyToken = process.env.APIFY_TOKEN ?? '';
+  const apifyToken    = process.env.APIFY_TOKEN ?? '';
+  const anthropicKey  = process.env.ANTHROPIC_API_KEY ?? '';
+
   if (!apifyToken) throw new Error('APIFY_TOKEN não configurado no .env');
 
   const product = await resolveProduct(productId);
@@ -268,13 +321,20 @@ async function main() {
   const niche    = `${product.name} ${product.niche}`;
 
   console.log(`[scrape-fb-ads] Produto: ${product.name} (${productId})`);
-  console.log(`[scrape-fb-ads] Nicho: "${niche}" | País: ${country}`);
+  console.log(`[scrape-fb-ads] Nicho: "${niche}" | País: ${country} | Máx: ${max}`);
 
-  const raw     = await fetchFbAds(queryRaw, country, max, apifyToken);
+  // 1. Expandir query semanticamente
+  const searchTerms = await expandQuery(queryRaw, niche, anthropicKey);
+
+  // 2. Coletar do Apify (uma chamada, todos os termos)
+  const raw      = await fetchFbAds(searchTerms, country, max, apifyToken);
   const keywords = buildKeywords(niche);
-  const scored  = raw.map(ad => ({ ...ad, relevance_score: scoreAd(ad, keywords) }));
+  const scored   = raw.map(ad => ({ ...ad, relevance_score: scoreAd(ad, keywords) }));
 
   scored.sort((a, b) => b.relevance_score - a.relevance_score);
+
+  const willAutoReject = scored.filter(a => a.relevance_score < AUTO_REJECT_THRESHOLD).length;
+  console.log(`[scrape-fb-ads] ${scored.length} anúncios pontuados | ${willAutoReject} abaixo do threshold (→ rejected)`);
 
   if (dryRun) {
     console.log('\n[DRY-RUN] Resultado (não salvo):');
@@ -287,9 +347,8 @@ async function main() {
     return;
   }
 
-  const ids = await saveToDatabase(productId, scored);
-  console.log(`[scrape-fb-ads] ${ids.length} anúncios salvos/atualizados:`);
-  ids.forEach(id => console.log(' ', id));
+  const { saved, pending, autoRejected } = await saveToDatabase(productId, scored);
+  console.log(`[scrape-fb-ads] ${saved} anúncios salvos/atualizados: ${pending} pendentes, ${autoRejected} auto-rejeitados.`);
 }
 
 main().catch(err => {

@@ -1,5 +1,4 @@
 'use client'
-import Link from 'next/link'
 import {
   Crosshair, Zap, Heart, Lightbulb,
   Sparkles,
@@ -88,15 +87,6 @@ export function AngulosTabEmpty({ sku: _sku }: { sku: string }) {
           Execute o pipeline completo para gerar os ângulos deste produto
         </p>
       </div>
-      <Link
-        href="/demandas"
-        className="text-sm px-4 py-2 rounded font-medium text-on-primary
-          bg-brand-gradient
-          hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
-          transition-shadow duration-150"
-      >
-        Ver demandas
-      </Link>
     </div>
   )
 }

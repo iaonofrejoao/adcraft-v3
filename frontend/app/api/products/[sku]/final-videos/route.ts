@@ -16,7 +16,7 @@ function getServiceClient() {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-async function resolveProductId(supabase: ReturnType<typeof createClient>, sku: string) {
+async function resolveProductId(supabase: ReturnType<typeof getServiceClient>, sku: string) {
   const { data, error } = await supabase
     .from('products')
     .select('id')

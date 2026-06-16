@@ -10,13 +10,12 @@ export interface ShortcutDef {
 
 /** Mapa de shortcuts exibidos no modal de ajuda — fonte única da verdade. */
 export const SHORTCUT_DEFS: ShortcutDef[] = [
-  { display: '?',    description: 'Abrir atalhos de teclado'     },
-  { display: '⌘ /',  description: 'Focar no chat do Jarvis'       },
-  { display: 'g p',  description: 'Ir para Produtos'              },
-  { display: 'g d',  description: 'Ir para Demandas'              },
-  { display: 'g c',  description: 'Ir para Criativos'             },
-  { display: 'g i',  description: 'Ir para Memória / Insights'    },
-  { display: 'Esc',  description: 'Fechar modal / cancelar'       },
+  { display: '?',    description: 'Abrir atalhos de teclado'  },
+  { display: 'g h',  description: 'Ir para Dashboard'         },
+  { display: 'g p',  description: 'Ir para Produtos'          },
+  { display: 'g c',  description: 'Ir para Criativos'         },
+  { display: 'g i',  description: 'Ir para Memória / Insights'},
+  { display: 'Esc',  description: 'Fechar modal / cancelar'   },
 ]
 
 /**
@@ -47,22 +46,12 @@ export function useKeyboardShortcuts(onOpenHelp: () => void) {
       const key = e.key
       const mod = e.metaKey || e.ctrlKey
 
-      // ── Cmd+/ → foca no Jarvis ────────────────────────────────────────────
-      if (mod && key === '/') {
-        e.preventDefault()
-        const input = document.querySelector<HTMLElement>(
-          '[data-jarvis-input]'
-        )
-        input?.focus()
-        return
-      }
-
       // ── Sequências com prefixo "g" ────────────────────────────────────────
       if (pendingRef.current === 'g') {
         clearPending()
         switch (key) {
+          case 'h': router.push('/dashboard'); break
           case 'p': router.push('/products');  break
-          case 'd': router.push('/demandas');  break
           case 'c': router.push('/creatives'); break
           case 'i': router.push('/insights');  break
         }

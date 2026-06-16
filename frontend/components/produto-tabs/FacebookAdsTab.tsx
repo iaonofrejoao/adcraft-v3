@@ -311,8 +311,8 @@ function ScrapeFbDialog({ sku, open, onClose, onDone }: ScrapeFbDialogProps) {
         <DialogHeader>
           <DialogTitle className="text-base font-semibold">Coletar anúncios do Facebook</DialogTitle>
           <DialogDescription className="text-on-surface-variant text-sm">
-            Busca anúncios ativos na Facebook Ads Library via Apify.
-            O score de relevância usa os dias no ar como principal sinal de performance.
+            Expande automaticamente a sua query com variações semânticas e busca na Facebook Ads Library via Apify.
+            Todos os anúncios coletados são salvos — baixa relevância vai para a aba Rejeitados.
           </DialogDescription>
         </DialogHeader>
 
@@ -492,7 +492,7 @@ export function FacebookAdsTab({ sku }: FacebookAdsTabProps) {
             <span className="text-on-surface-variant">30% relevância de keywords</span>
             {' + '}
             <span className="text-on-surface-variant">10% tipo de mídia</span>.
-            Anúncios ativos há 30+ dias são fortes sinais de conversão.
+            Score {'<'} 20% vai para Rejeitados automaticamente — você pode restaurar qualquer um.
           </span>
         </div>
       )}

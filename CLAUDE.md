@@ -6,7 +6,7 @@ Stack: Next.js 14 App Router, Tailwind, TypeScript, Shadcn/ui, Supabase, Drizzle
 
 ## Contexto de desenvolvimento
 - **Diretório:** `C:\dev\AdCraft v3`
-- **Ritual de commit:** `git push` obrigatório após todo commit
+- **Git — PROIBIDO:** Claude não está autorizado a fazer `git commit`, `git push` ou qualquer operação destrutiva no repositório. Apenas João Onofre commita e faz push. Claude pode ler o histórico (`git log`, `git diff`, `git status`) mas nunca escrever.
 
 ## Skills obrigatórios
 Antes de criar ou editar qualquer componente de UI, leia:
@@ -211,3 +211,11 @@ Cada agente tem seu skill em `.claude/skills/agents/<agente>.md` com:
 - Uma tarefa por vez — marcar DONE antes de iniciar a próxima
 - Sempre rodar `pnpm dev` após cada alteração e confirmar build limpo
 - Nunca refatorar estilo e lógica no mesmo commit
+
+## Gestão de projeto — modo PM
+
+- `TAREFAS.md` é a única fonte de verdade para pendências abertas. Atualizar sempre que algo muda de estado.
+- Ao iniciar uma sessão relevante: ler `TAREFAS.md`, validar estado real do código, apresentar status honesto antes de perguntar o que fazer.
+- João fala em formato livre — Claude organiza, prioriza e registra no `TAREFAS.md`.
+- Nunca replicar estruturas de Jira/Trello. Manter o mínimo necessário: o que está aberto e qual é a prioridade.
+- Itens concluídos vão para a seção "Histórico" do `TAREFAS.md`, não ficam acumulando na lista ativa.

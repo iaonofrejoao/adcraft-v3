@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import Link from 'next/link'
 import {
   FileText, Search, Layers, Film, Download,
   CheckCircle2, XCircle, Clock, Pause,
@@ -192,15 +191,6 @@ export function HistoricoTabEmpty({ sku }: { sku: string }) {
           O histórico completo aparecerá aqui após o primeiro pipeline
         </p>
       </div>
-      <Link
-        href="/demandas"
-        className="text-sm px-4 py-2 rounded font-medium text-on-primary
-          bg-brand-gradient
-          hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
-          transition-shadow duration-150"
-      >
-        Ver demandas
-      </Link>
     </div>
   )
 }

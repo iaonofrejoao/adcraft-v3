@@ -76,7 +76,7 @@ export function useInsights(): UseInsightsReturn {
         .from('execution_learnings')
         .select('id, category, observation, confidence, evidence, product_id, niche_id, validated_by_user, created_at')
         .eq('status', 'active')
-        .neq('validated_by_user', false)
+        .or('validated_by_user.is.null,validated_by_user.eq.true')
         .gte('confidence', '0.4')
         .order('confidence', { ascending: false })
         .limit(50)

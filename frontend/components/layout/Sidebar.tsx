@@ -2,21 +2,21 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ClipboardList, Package, Film, Brain, Megaphone, Library, MonitorPlay, ChevronLeft } from 'lucide-react'
+import { Package, Film, Brain, Library, MonitorPlay, ChevronLeft, LayoutDashboard } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { AdCraftLogoMark } from '@/components/layout/AdCraftLogo'
 
 interface NavItem { href: string; label: string; Icon: LucideIcon }
 
 const NAV: NavItem[] = [
-  { href: '/demandas',      label: 'Demandas',          Icon: ClipboardList },
-  { href: '/products',      label: 'Produtos',           Icon: Package       },
-  { href: '/creatives',     label: 'Criativos',          Icon: Film          },
-  { href: '/biblioteca',    label: 'Vídeos Tiktok',      Icon: Library       },
-  { href: '/anuncios-fb',   label: 'Anúncios Facebook',  Icon: MonitorPlay   },
-  { href: '/insights',      label: 'Memória',            Icon: Brain         },
-  { href: '/feed-anuncios', label: 'Feed de Anúncios',   Icon: Megaphone     },
+  { href: '/dashboard',   label: 'Dashboard',          Icon: LayoutDashboard },
+  { href: '/products',    label: 'Produtos',           Icon: Package         },
+  { href: '/creatives',   label: 'Criativos',          Icon: Film            },
+  { href: '/biblioteca',  label: 'Vídeos Tiktok',      Icon: Library         },
+  { href: '/anuncios-fb', label: 'Anúncios Facebook',  Icon: MonitorPlay     },
+  { href: '/insights',    label: 'Memória',            Icon: Brain           },
 ]
 
 export function Sidebar() {
@@ -32,13 +32,20 @@ export function Sidebar() {
 
       {/* Header: logo + toggle */}
       <div className="flex items-center justify-between px-3 py-4 min-w-0">
-        <span className={cn(
-          'text-lg font-semibold text-brand whitespace-nowrap overflow-hidden',
-          'transition-[max-width,opacity] duration-150 ease-in-out',
-          collapsed ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100 delay-100',
-        )}>
-          AdCraft <span className="text-xs font-normal text-on-surface-muted">v2</span>
-        </span>
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2 min-w-0 shrink-0 rounded hover:opacity-80 transition-opacity duration-150"
+          aria-label="Ir para o Dashboard"
+        >
+          <AdCraftLogoMark size={22} className="shrink-0" />
+          <span className={cn(
+            'text-sm font-semibold text-on-surface whitespace-nowrap overflow-hidden',
+            'transition-[max-width,opacity] duration-150 ease-in-out',
+            collapsed ? 'max-w-0 opacity-0' : 'max-w-[120px] opacity-100 delay-100',
+          )}>
+            AdCraft <span className="text-xs font-normal text-on-surface-muted">v3</span>
+          </span>
+        </Link>
 
         <button
           onClick={() => setCollapsed(c => !c)}

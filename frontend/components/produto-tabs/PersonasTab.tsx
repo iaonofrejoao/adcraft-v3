@@ -1,7 +1,6 @@
 'use client'
 import { type ElementType, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
   UserRound, MapPin, Briefcase, BookOpen, Heart,
   AlertCircle, MessageCircle, ExternalLink, Loader2,
@@ -123,7 +122,6 @@ export function PersonasTabSkeleton() {
 
 /* ── Empty state ────────────────────────────────────────────────────── */
 export function PersonasTabEmpty({ sku }: { sku: string }) {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   async function handleGenerate() {
@@ -136,9 +134,8 @@ export function PersonasTabEmpty({ sku }: { sku: string }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erro ao iniciar pipeline')
-      router.push(`/demandas/${data.pipeline_id}`)
     } catch {
-      router.push(`/?msg=@${sku}+/avatar`)
+      // pipeline iniciado — sem redirecionamento por enquanto
     } finally {
       setLoading(false)
     }

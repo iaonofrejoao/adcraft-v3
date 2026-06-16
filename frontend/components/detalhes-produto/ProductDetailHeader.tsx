@@ -6,25 +6,8 @@ import { ChevronRight, Pencil, Loader2, Globe, Link2, Copy, Check, FileDown } fr
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
+import { COUNTRIES } from '@/lib/constants'
 import type { Product } from './types'
-
-// ── Country / Language mapping ────────────────────────────────────────────────
-
-const COUNTRIES = [
-  { code: 'BR', flag: '🇧🇷', label: 'Brasil',        language: 'pt-BR' },
-  { code: 'PT', flag: '🇵🇹', label: 'Portugal',       language: 'pt-PT' },
-  { code: 'US', flag: '🇺🇸', label: 'Estados Unidos', language: 'en-US' },
-  { code: 'GB', flag: '🇬🇧', label: 'Reino Unido',    language: 'en-GB' },
-  { code: 'ES', flag: '🇪🇸', label: 'Espanha',        language: 'es-ES' },
-  { code: 'MX', flag: '🇲🇽', label: 'México',         language: 'es-MX' },
-  { code: 'AR', flag: '🇦🇷', label: 'Argentina',      language: 'es-AR' },
-  { code: 'CO', flag: '🇨🇴', label: 'Colômbia',       language: 'es-CO' },
-  { code: 'CL', flag: '🇨🇱', label: 'Chile',          language: 'es-CL' },
-  { code: 'PE', flag: '🇵🇪', label: 'Peru',           language: 'es-PE' },
-  { code: 'FR', flag: '🇫🇷', label: 'França',         language: 'fr-FR' },
-  { code: 'DE', flag: '🇩🇪', label: 'Alemanha',       language: 'de-DE' },
-  { code: 'IT', flag: '🇮🇹', label: 'Itália',         language: 'it-IT' },
-] as const
 
 function getCountry(code: string) {
   return COUNTRIES.find((c) => c.code === code) ?? COUNTRIES[0]
@@ -398,16 +381,6 @@ export function ProductDetailHeader({ product, sku }: ProductDetailHeaderProps) 
         {/* Action buttons */}
         <div className="flex items-center gap-2 shrink-0 pt-1">
           <ExportPDFButton sku={sku} productName={product.name} />
-          <Link
-            href="/demandas"
-            className="px-4 py-2 rounded-lg text-sm font-bold text-on-primary
-              bg-brand-gradient
-              shadow-[0_12px_40px_-10px_rgba(249,115,22,0.3)]
-              hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1),0_12px_40px_-10px_rgba(249,115,22,0.3)]
-              hover:scale-[1.02] active:scale-[0.98] transition-all duration-150"
-          >
-            Ver demandas
-          </Link>
         </div>
       </div>
 

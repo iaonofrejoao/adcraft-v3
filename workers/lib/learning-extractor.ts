@@ -14,11 +14,11 @@ import { eq, sql } from 'drizzle-orm';
 import { db } from './db';
 import {
   pipelines, tasks, products,
+  productKnowledge,
   executionLearnings, embeddings,
 } from '../../frontend/lib/schema/index';
-import { callTextGemini } from './llm/gemini-client';
+import { callTextClaude } from './llm/claude-provider';
 
-const MODEL = 'gemini-2.5-flash';
 const MAX_LEARNINGS = 8;
 
 // ── Tipos internos ─────────────────────────────────────────────────────────────
@@ -63,14 +63,16 @@ async function buildPipelineSummary(pipelineId: string): Promise<PipelineSummary
   if (!pipeline) return null;
 
   let product_name: string | null = null;
+  let niche_id: string | null = null;
   if (pipeline.product_id) {
     const product = await db
-      .select({ name: products.name })
+      .select({ name: products.name, niche_id: products.niche_id })
       .from(products)
       .where(eq(products.id, pipeline.product_id))
       .limit(1)
       .then((r) => r[0] ?? null);
     product_name = product?.name ?? null;
+    niche_id     = product?.niche_id ?? null;
   }
 
   const taskRows = await db
@@ -82,17 +84,51 @@ async function buildPipelineSummary(pipelineId: string): Promise<PipelineSummary
     .from(tasks)
     .where(eq(tasks.pipeline_id as any, pipelineId));
 
+  const mappedTasks = taskRows.map((t) => ({
+    agent_name: t.agent_name,
+    status:     t.status ?? 'unknown',
+    output:     t.output as Record<string, unknown> | null,
+  }));
+
+  // Fallback: se nenhuma task tem output, usa artefatos de product_knowledge
+  const hasOutput = mappedTasks.some((t) => t.status === 'completed' && t.output);
+  if (!hasOutput) {
+    const SKIP_TYPES = new Set(['script', 'keyframes', 'video_assets', 'character', 'utms', 'product']);
+    const artifacts = await db
+      .select({
+        artifact_type: productKnowledge.artifact_type,
+        artifact_data: productKnowledge.artifact_data,
+      })
+      .from(productKnowledge)
+      .where(eq(productKnowledge.source_pipeline_id as any, pipelineId));
+
+    const artifactTasks = artifacts
+      .filter((a) => a.artifact_type && !SKIP_TYPES.has(a.artifact_type))
+      .map((a) => ({
+        agent_name: a.artifact_type!,
+        status:     'completed',
+        output:     a.artifact_data as Record<string, unknown> | null,
+      }));
+
+    if (artifactTasks.length > 0) {
+      return {
+        pipeline_id:  pipelineId,
+        product_id:   pipeline.product_id ?? null,
+        niche_id,
+        goal:         pipeline.goal,
+        product_name,
+        tasks: artifactTasks,
+      };
+    }
+  }
+
   return {
     pipeline_id:  pipelineId,
     product_id:   pipeline.product_id ?? null,
-    niche_id:     null,
+    niche_id,
     goal:         pipeline.goal,
     product_name,
-    tasks: taskRows.map((t) => ({
-      agent_name: t.agent_name,
-      status:     t.status ?? 'unknown',
-      output:     t.output as Record<string, unknown> | null,
-    })),
+    tasks: mappedTasks,
   };
 }
 
@@ -129,9 +165,8 @@ async function extractWithGemini(summary: PipelineSummary): Promise<RawLearning[
   const systemPrompt = loadSystemPrompt();
   const userMessage  = `Analise este pipeline concluído e extraia aprendizados:\n\n${serializeSummary(summary)}`;
 
-  const text = await callTextGemini(
+  const text = await callTextClaude(
     'learning_extractor',
-    MODEL,
     systemPrompt,
     userMessage,
     summary.product_id ?? undefined,

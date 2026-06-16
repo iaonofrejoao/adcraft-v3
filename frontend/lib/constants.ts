@@ -17,12 +17,24 @@ export const PRODUCT_DEFAULTS = {
   ticketPrice: 97,
 } as const
 
-// ── Colunas do Kanban de demandas ─────────────────────────────────────────────
-export const KANBAN_COLS = [
-  { id: 'pending',     label: 'Pendente'     },
-  { id: 'in_progress', label: 'Em andamento' },
-  { id: 'done',        label: 'Concluído'    },
+// ── Países/idiomas suportados ─────────────────────────────────────────────────
+export const COUNTRIES = [
+  { code: 'BR', flag: '🇧🇷', label: 'Brasil',         language: 'pt-BR' },
+  { code: 'PT', flag: '🇵🇹', label: 'Portugal',        language: 'pt-PT' },
+  { code: 'US', flag: '🇺🇸', label: 'Estados Unidos',  language: 'en-US' },
+  { code: 'GB', flag: '🇬🇧', label: 'Reino Unido',     language: 'en-GB' },
+  { code: 'ES', flag: '🇪🇸', label: 'Espanha',         language: 'es-ES' },
+  { code: 'MX', flag: '🇲🇽', label: 'México',          language: 'es-MX' },
+  { code: 'AR', flag: '🇦🇷', label: 'Argentina',       language: 'es-AR' },
+  { code: 'CO', flag: '🇨🇴', label: 'Colômbia',        language: 'es-CO' },
+  { code: 'CL', flag: '🇨🇱', label: 'Chile',           language: 'es-CL' },
+  { code: 'PE', flag: '🇵🇪', label: 'Peru',            language: 'es-PE' },
+  { code: 'FR', flag: '🇫🇷', label: 'França',          language: 'fr-FR' },
+  { code: 'DE', flag: '🇩🇪', label: 'Alemanha',        language: 'de-DE' },
+  { code: 'IT', flag: '🇮🇹', label: 'Itália',          language: 'it-IT' },
 ] as const
+
+export type CountryCode = typeof COUNTRIES[number]['code']
 
 // ── Ícones de agentes (mapeamento slug → nome Lucide) ─────────────────────────
 export const AGENT_ICONS: Record<string, string> = {

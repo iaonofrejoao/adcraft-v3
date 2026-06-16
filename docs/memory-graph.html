@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Graph — AdCraft v3</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d10;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+      color: #ccc;
+    }
+
+    svg { display: block; width: 100vw; height: 100vh; }
+
+    .link {
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 1;
+    }
+
+    .link.strong {
+      stroke: rgba(255, 255, 255, 0.18);
+      stroke-width: 1.5;
+    }
+
+    .node circle {
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+
+    .node circle:hover {
+      filter: brightness(1.4);
+    }
+
+    .node-label {
+      font-size: 11px;
+      fill: rgba(200, 200, 210, 0.75);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .node-label.large {
+      font-size: 13px;
+      fill: rgba(220, 220, 230, 0.9);
+      font-weight: 500;
+    }
+
+    #tooltip {
+      position: fixed;
+      background: rgba(18, 18, 24, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      line-height: 1.6;
+      pointer-events: none;
+      display: none;
+      max-width: 280px;
+      white-space: pre-line;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      z-index: 100;
+    }
+
+    #tooltip .tip-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #eee;
+      margin-bottom: 4px;
+    }
+
+    #tooltip .tip-type {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.5;
+      margin-bottom: 6px;
+    }
+
+    #tooltip .tip-desc {
+      color: #aaa;
+      font-size: 11.5px;
+    }
+
+    .legend {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 12px;
+    }
+
+    .legend h3 {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 7px;
+      color: rgba(200,200,210,0.7);
+    }
+
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .header {
+      position: fixed;
+      top: 20px;
+      left: 24px;
+      color: rgba(255,255,255,0.2);
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+    }
+
+    .controls {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      color: rgba(255,255,255,0.2);
+      font-size: 11px;
+      text-align: right;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">Memory Graph · AdCraft v3 · João Onofre</div>
+  <div class="controls">Scroll para zoom · Arrastar para mover · Hover para detalhes</div>
+
+  <svg id="graph">
+    <defs>
+      <filter id="glow-purple">
+        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+        <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-blue">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+  </svg>
+
+  <div id="tooltip">
+    <div class="tip-type" id="tip-type"></div>
+    <div class="tip-title" id="tip-title"></div>
+    <div class="tip-desc" id="tip-desc"></div>
+  </div>
+
+  <div class="legend">
+    <h3>Tipos de nó</h3>
+    <div class="legend-item"><div class="legend-dot" style="background:#9d8eff"></div>Índice</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4a9eff"></div>Projeto</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff8c42"></div>Feedback</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4ecba0"></div>Skill</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f06292"></div>Usuário</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ffd54f"></div>Agente</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#78909c"></div>Conceito</div>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+    const typeColors = {
+      index:   "#9d8eff",
+      project: "#4a9eff",
+      feedback:"#ff8c42",
+      skill:   "#4ecba0",
+      user:    "#f06292",
+      agent:   "#ffd54f",
+      concept: "#78909c",
+    };
+
+    const typeLabels = {
+      index:   "Índice",
+      project: "Projeto",
+      feedback:"Feedback",
+      skill:   "Skill",
+      user:    "Usuário",
+      agent:   "Agente",
+      concept: "Conceito",
+    };
+
+    const nodes = [
+      // ── Arquivos de memória ──
+      { id: "MEMORY",        label: "MEMORY.md",              type: "index",   size: 22, description: "Índice central de todas as memórias do projeto." },
+      { id: "casal_saas",    label: "SaaS de Casal",          type: "project", size: 17, description: "Novo SaaS de gestão financeira para casais.\nEstágio: pré-MVP · Mercado: Brasil\nEstudo de mercado + GTM gerado em mai/2026." },
+      { id: "ugc_analyzer",  label: "UGC Analyzer",           type: "project", size: 17, description: "Análise automática de vídeos TikTok aprovados.\nGemini Vision extrai 12 campos estratégicos.\nCommit: f6b577d · jun/2026." },
+      { id: "feedback_git",  label: "Git — sem commits",      type: "feedback",size: 13, description: "Claude não faz commit nem push.\nApenas João Onofre opera o git." },
+      { id: "gtm_skill",     label: "go-to-market-engineer",  type: "skill",   size: 13, description: "Skill GTM completo criado em .claude/skills/dev/\nCobre: ICP, posicionamento, pricing, canais, OKRs." },
+
+      // ── Projeto principal ──
+      { id: "adcraft",       label: "AdCraft v3",             type: "project", size: 21, description: "Plataforma de marketing com IA.\nStack: Next.js 14 · Supabase · TypeScript\nBranch atual: feat/delete_old_pages" },
+
+      // ── Usuário ──
+      { id: "joao",          label: "João Onofre",            type: "user",    size: 16, description: "Dono e único operador do repositório git.\nEmail: ia.onofre.joao@gmail.com" },
+
+      // ── Conceitos do SaaS de Casal ──
+      { id: "gestao_fin",    label: "Gestão Financeira",      type: "concept", size: 9,  description: "Core do produto: finanças compartilhadas para casais." },
+      { id: "casais",        label: "Casais",                 type: "concept", size: 9,  description: "Público-alvo: casais que moram juntos.\n53% dos brasileiros: dinheiro = maior causa de brigas." },
+      { id: "open_finance",  label: "Open Finance BR",        type: "concept", size: 8,  description: "61,9M consentimentos ativos no Brasil.\nHabilita integração bancária nativa." },
+      { id: "pricing",       label: "Pricing",                type: "concept", size: 8,  description: "Gratuito / R$19,90 Essencial\nR$34,90 Pro / R$49,90 Família" },
+      { id: "concorrentes",  label: "Concorrentes",           type: "concept", size: 8,  description: "Honeydue (estagnado) · Tandem (seed)\nZeta encerrou mai/2025 — vácuo de mercado." },
+
+      // ── Conceitos do UGC Analyzer ──
+      { id: "tiktok",        label: "TikTok UGC",             type: "concept", size: 10, description: "Vídeos coletados via Apify.\nAprovação dispara análise automática." },
+      { id: "gemini",        label: "Gemini Vision",          type: "concept", size: 9,  description: "gemini-2.0-flash · analisa thumbnail + contexto.\nExtrai: hook_type, visual_style, narrative_angle…" },
+      { id: "pk",            label: "product_knowledge",      type: "concept", size: 11, description: "Tabela Supabase central.\nArmazena artefatos + embeddings de todos os agentes." },
+      { id: "embeddings",    label: "Embeddings",             type: "concept", size: 8,  description: "Vetores via Gemini Embeddings.\nBuscável via scripts/search/vector.ts" },
+
+      // ── Agentes do pipeline ──
+      { id: "angle_gen",     label: "Angle Generator",        type: "agent",   size: 9,  description: "Sintetiza pesquisa + UGC refs para gerar ângulos.\nFase 1 do pipeline." },
+      { id: "script_writer", label: "Script Writer",          type: "agent",   size: 9,  description: "Calibra tom via ugc_references.\nFase 2 do pipeline." },
+      { id: "benchmark",     label: "Benchmark Intelligence", type: "agent",   size: 8,  description: "Usa UGC para benchmark de conteúdo orgânico.\nFase 1 do pipeline." },
+      { id: "keyframe_gen",  label: "Keyframe Generator",     type: "agent",   size: 8,  description: "visual_style e setting vindos de UGC refs.\nFase 2 do pipeline." },
+
+      // ── Conceito de feedback ──
+      { id: "git",           label: "Git",                    type: "concept", size: 9,  description: "Repositório AdCraft v3.\nOperado exclusivamente por João Onofre." },
+    ];
+
+    const links = [
+      // MEMORY → memórias filhas
+      { source: "MEMORY",       target: "casal_saas",   strength: 0.9 },
+      { source: "MEMORY",       target: "ugc_analyzer", strength: 0.9 },
+      { source: "MEMORY",       target: "feedback_git", strength: 0.9 },
+      { source: "MEMORY",       target: "gtm_skill",    strength: 0.9 },
+      { source: "MEMORY",       target: "adcraft",      strength: 0.5 },
+
+      // SaaS de Casal → conceitos
+      { source: "casal_saas",   target: "gestao_fin",   strength: 0.5 },
+      { source: "casal_saas",   target: "casais",       strength: 0.5 },
+      { source: "casal_saas",   target: "open_finance", strength: 0.4 },
+      { source: "casal_saas",   target: "pricing",      strength: 0.4 },
+      { source: "casal_saas",   target: "concorrentes", strength: 0.4 },
+      { source: "casal_saas",   target: "gtm_skill",    strength: 0.6 },
+      { source: "casal_saas",   target: "joao",         strength: 0.5 },
+
+      // UGC Analyzer → conceitos + agentes
+      { source: "ugc_analyzer", target: "tiktok",       strength: 0.6 },
+      { source: "ugc_analyzer", target: "gemini",       strength: 0.6 },
+      { source: "ugc_analyzer", target: "pk",           strength: 0.7 },
+      { source: "ugc_analyzer", target: "embeddings",   strength: 0.5 },
+      { source: "ugc_analyzer", target: "adcraft",      strength: 0.6 },
+      { source: "ugc_analyzer", target: "angle_gen",    strength: 0.4 },
+      { source: "ugc_analyzer", target: "script_writer",strength: 0.4 },
+      { source: "ugc_analyzer", target: "benchmark",    strength: 0.4 },
+      { source: "ugc_analyzer", target: "keyframe_gen", strength: 0.4 },
+
+      // feedback_git → conceitos
+      { source: "feedback_git", target: "joao",         strength: 0.7 },
+      { source: "feedback_git", target: "git",          strength: 0.7 },
+      { source: "feedback_git", target: "adcraft",      strength: 0.3 },
+
+      // AdCraft central
+      { source: "adcraft",      target: "joao",         strength: 0.5 },
+      { source: "adcraft",      target: "pk",           strength: 0.4 },
+
+      // Agentes → product_knowledge
+      { source: "angle_gen",    target: "pk",           strength: 0.4 },
+      { source: "script_writer",target: "pk",           strength: 0.4 },
+      { source: "benchmark",    target: "pk",           strength: 0.3 },
+      { source: "keyframe_gen", target: "pk",           strength: 0.3 },
+      { source: "embeddings",   target: "pk",           strength: 0.5 },
+    ];
+
+    // ── D3 setup ───────────────────────────────────────────────
+    const svg    = d3.select("#graph");
+    const width  = window.innerWidth;
+    const height = window.innerHeight;
+
+    const g = svg.append("g");
+
+    svg.call(
+      d3.zoom()
+        .scaleExtent([0.2, 4])
+        .on("zoom", (event) => g.attr("transform", event.transform))
+    );
+
+    // Links
+    const link = g.append("g")
+      .selectAll("line")
+      .data(links)
+      .join("line")
+      .attr("class", d => d.strength >= 0.7 ? "link strong" : "link");
+
+    // Nodes
+    const node = g.append("g")
+      .selectAll("g")
+      .data(nodes)
+      .join("g")
+      .attr("class", "node")
+      .call(
+        d3.drag()
+          .on("start", dragstarted)
+          .on("drag",  dragged)
+          .on("end",   dragended)
+      );
+
+    // Glow for large nodes
+    node.append("circle")
+      .attr("r", d => d.size * 1.6)
+      .attr("fill", d => typeColors[d.type])
+      .attr("opacity", 0.07)
+      .attr("filter", d => d.size >= 17 ? "url(#glow-blue)" : null);
+
+    // Main circle
+    node.append("circle")
+      .attr("r", d => d.size)
+      .attr("fill", d => typeColors[d.type])
+      .attr("opacity", d => d.size >= 15 ? 0.9 : 0.75)
+      .on("mouseover", showTooltip)
+      .on("mousemove", moveTooltip)
+      .on("mouseout",  hideTooltip);
+
+    // Labels
+    node.append("text")
+      .attr("class", d => d.size >= 15 ? "node-label large" : "node-label")
+      .attr("dy", d => d.size + 13)
+      .attr("text-anchor", "middle")
+      .text(d => d.label);
+
+    // ── Simulation ──────────────────────────────────────────────
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links)
+        .id(d => d.id)
+        .distance(d => {
+          const src = typeof d.source === "object" ? d.source.size : 10;
+          const tgt = typeof d.target === "object" ? d.target.size : 10;
+          return 80 + (src + tgt) * 2.5;
+        })
+        .strength(d => d.strength * 0.4)
+      )
+      .force("charge", d3.forceManyBody().strength(d => -d.size * 25))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide().radius(d => d.size + 18))
+      .on("tick", ticked);
+
+    function ticked() {
+      link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      node.attr("transform", d => `translate(${d.x},${d.y})`);
+    }
+
+    // ── Drag ────────────────────────────────────────────────────
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x; d.fy = d.y;
+    }
+    function dragged(event, d) {
+      d.fx = event.x; d.fy = event.y;
+    }
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null; d.fy = null;
+    }
+
+    // ── Tooltip ─────────────────────────────────────────────────
+    const tooltip = document.getElementById("tooltip");
+
+    function showTooltip(event, d) {
+      document.getElementById("tip-type").textContent  = typeLabels[d.type] || d.type;
+      document.getElementById("tip-title").textContent = d.label;
+      document.getElementById("tip-desc").textContent  = d.description || "";
+      tooltip.style.display = "block";
+      document.getElementById("tip-type").style.color = typeColors[d.type];
+    }
+
+    function moveTooltip(event) {
+      const x = event.clientX + 14;
+      const y = event.clientY - 10;
+      tooltip.style.left = Math.min(x, window.innerWidth  - 300) + "px";
+      tooltip.style.top  = Math.min(y, window.innerHeight - 150) + "px";
+    }
+
+    function hideTooltip() {
+      tooltip.style.display = "none";
+    }
+
+    // ── Resize ──────────────────────────────────────────────────
+    window.addEventListener("resize", () => {
+      simulation.force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2));
+      simulation.alpha(0.3).restart();
+    });
+  </script>
+</body>
+</html>

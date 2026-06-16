@@ -443,3 +443,44 @@ async function _callAgentClaudeImpl(params: CallAgentParams): Promise<CallAgentR
 
   return { output, usage, cost_usd: realCost };
 }
+
+// ── callTextClaude ─────────────────────────────────────────────────────────────
+// Versão simplificada sem tool use — espelha a interface de callTextGemini.
+// Usada por learning-extractor.ts e learning-aggregator.ts.
+// Modelo padrão: Haiku (barato, rápido, suficiente para síntese JSON estruturada).
+
+const TEXT_MODEL = 'claude-haiku-4-5-20251001';
+
+export async function callTextClaude(
+  agentName:    string,
+  systemPrompt: string,
+  userMessage:  string,
+  productId?:   string,
+  nicheId?:     string,
+): Promise<string> {
+  const startedAt = Date.now();
+
+  const response = await anthropic.messages.create({
+    model:      TEXT_MODEL,
+    max_tokens: 1024,
+    system:     systemPrompt,
+    messages:   [{ role: 'user', content: userMessage }],
+  });
+
+  const durationMs  = Date.now() - startedAt;
+  const u           = response.usage;
+  const inputTokens = u.input_tokens ?? 0;
+  const outTokens   = u.output_tokens ?? 0;
+  const realCost    = calcCostClaude(TEXT_MODEL, inputTokens, 0, 0, outTokens);
+
+  const usage: LLMUsage = {
+    input_tokens:  inputTokens,
+    cached_tokens: 0,
+    output_tokens: outTokens,
+  };
+
+  await logCall(agentName, null, productId, nicheId, TEXT_MODEL, usage, realCost, durationMs);
+
+  const textBlock = response.content.find((b) => b.type === 'text');
+  return textBlock && 'text' in textBlock ? textBlock.text : '';
+}

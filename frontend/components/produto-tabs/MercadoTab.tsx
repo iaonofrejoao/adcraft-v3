@@ -171,9 +171,9 @@ export function MercadoTabEmpty({ sku }: { sku: string }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erro ao iniciar pipeline')
-      router.push(`/demandas/${data.pipeline_id}`)
+      router.push(`/products/${sku}`)
     } catch {
-      router.push(`/?msg=@${sku}+/market-research`)
+      // mantém o usuário na página — botão volta a ficar clicável via finally
     } finally {
       setLoading(false)
     }

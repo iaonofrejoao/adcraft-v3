@@ -13,7 +13,7 @@
 | # | Tarefa | Status | Observações |
 |---|--------|--------|-------------|
 | F-05 | Popular cards do dashboard com dados reais | ⬜ PENDENTE | Definir métricas relevantes para cada card (receita estimada, taxa de aprovação de copy, ROI de criativos) e ajustar `/api/dashboard` |
-| F-03 | Mapa neural da memória (estilo Obsidian) | ⬜ PENDENTE | Visualização gráfica dos learnings/conexões do módulo de memória |
+| F-09 | Memory Graph — melhorias v2 | ⬜ PENDENTE | Ver [`docs/memory-graph-melhorias.md`](docs/memory-graph-melhorias.md). Prioridade alta: highlight de vizinhos, painel lateral ao clicar, nó de produto |
 | F-06 | FilterBar reutilizável | ⬜ PENDENTE | Componente genérico de filtro por pills — aplicar em `/products`, `/creatives`, `/insights` e qualquer listagem futura |
 | F-07 | Empty states com CTA em todas as listagens | ⬜ PENDENTE | Telas sem dados devem ter ilustração + botão de ação (ex: "Cadastrar produto", "Rodar pipeline") |
 | F-08 | Skeleton loaders padronizados | ⬜ PENDENTE | Substituir spinners soltos por skeletons consistentes em todas as listagens e tabs de produto |
@@ -44,6 +44,13 @@
   - `ProductDetailHeader.tsx`: `COUNTRIES` migrado para `@/lib/constants`
   - `MercadoTab.tsx`: redirect `/demandas/{id}` corrigido → `/products/{sku}`; catch sem navegação fantasma
   - `useKeyboardShortcuts.ts`: shortcuts mortos `⌘/` (Jarvis) e `g d` (Demandas) removidos; `g h` → Dashboard adicionado
+
+### 2026-06-16 (continuação)
+- F-03 concluído: Memory Graph v1 implementado na aba Grafo de `/insights`
+  - D3 v7 com force-directed layout, zoom/pan, drag, tooltip
+  - `transpilePackages` adicionado ao `next.config.mjs` para ESM do D3
+  - Carregamento lazy via `next/dynamic` (ssr: false)
+  - F-09 criado no backlog com doc de melhorias em `docs/memory-graph-melhorias.md`
 
 ### 2026-06-16
 - I-01 concluído: módulo de memória funcionando end-to-end no frontend (`/insights`)

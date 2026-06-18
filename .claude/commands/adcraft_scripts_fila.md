@@ -5,8 +5,11 @@ Execute o fluxo de processamento da fila de scripts descrito em CLAUDE.md (Fase 
 2. Para cada combinação com `script_status: queued`, spawne em sequência:
    - `.claude/skills/agents/script-writer.md` → salvar artefato `script` com `copy_combination_id`
    - `.claude/skills/agents/character-generator.md` → salvar artefato `character`
+   - `.claude/skills/agents/viral-expert.md` → salvar artefato `viral_brief` com `copy_combination_id`
    - `.claude/skills/agents/keyframe-generator.md` → salvar artefato `keyframes`
+     - Cada keyframe deve ter `scene_type: "persona" | "scene"`, `personas_prompt` (para cenas persona) e `veo3_prompt_en` com `Speaking in [lang]: "..."` embutido
    - `.claude/skills/agents/video-maker.md` → salvar artefato `video_assets`
+     - Output: lista de cenas com `scene_type`, `personas_prompt`, `veo3_prompt_en`, `drive_filename`
 3. Ao final de cada combinação, marque `script_status = 'ready'` via SQL
 4. Registre a atividade em TAREFAS.md
 

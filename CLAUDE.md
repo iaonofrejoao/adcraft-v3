@@ -54,8 +54,11 @@ Fluxo de execução da fila:
 2. Para cada combinação: spawnar agentes em sequência com Agent tool:
    - `.claude/skills/agents/script-writer.md` → salvar artefato `script` com `copy_combination_id`
    - `.claude/skills/agents/character-generator.md` → salvar artefato `character`
+   - `.claude/skills/agents/viral-expert.md` → salvar artefato `viral_brief` com `copy_combination_id`
    - `.claude/skills/agents/keyframe-generator.md` → salvar artefato `keyframes`
-   - `.claude/skills/agents/video-maker.md` → salvar artefato `video_assets` (sem geração de vídeo real)
+     - Cada keyframe inclui: `scene_type` ("persona"/"scene"), `personas_prompt`, `veo3_prompt_en` com narração embutida (`Speaking in [lang]: "..."`)
+   - `.claude/skills/agents/video-maker.md` → salvar artefato `video_assets`
+     - Output: lista de cenas com `drive_filename` e fluxo de geração (sem geração de vídeo real)
 3. Marcar `script_status = 'ready'` via SQL após cada combinação concluída
 
 Salvar artefatos com `copy_combination_id` obrigatório:
@@ -115,6 +118,10 @@ Cada agente tem seu skill em `.claude/skills/agents/<agente>.md` com:
 | `workers/lib/embeddings/gemini-embeddings.ts` | ✅ ATIVO | `npx tsx workers/lib/embeddings/gemini-embeddings.ts` |
 | `workers/lib/learning-extractor.ts` | ✅ ATIVO | Via `scripts/learning/extract.ts` |
 | `workers/cron/learning-aggregator-cron.ts` | ✅ ATIVO | Cron job externo |
+| `scripts/video/setup-character-board.ts` | ✅ ATIVO | `npx tsx scripts/video/setup-character-board.ts --product-id <uuid>` |
+| `scripts/video/generate-scenes.ts` | ✅ ATIVO | `npx tsx scripts/video/generate-scenes.ts --final-video-id <uuid>` |
+| `scripts/video/process-video-queue.ts` | ✅ ATIVO | `npx tsx scripts/video/process-video-queue.ts --product-id <uuid>` |
+| `scripts/video/compose-final.ts` | ⚠️ LEGADO | Não é mais chamado pelo pipeline ativo |
 
 ## Estrutura do projeto
 - `frontend/`                → Next.js 14 App Router

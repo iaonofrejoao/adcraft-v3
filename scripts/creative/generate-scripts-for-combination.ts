@@ -65,7 +65,7 @@ async function fetchCombinationContext(combinationId: string) {
     .select('artifact_type, artifact_data')
     .eq('source_pipeline_id', combo.pipeline_id)
     .is('copy_combination_id', null)
-    .in('artifact_type', ['product', 'avatar', 'angles', 'campaign_strategy'])
+    .in('artifact_type', ['product', 'avatar', 'angles', 'campaign_strategy', 'benchmark'])
     .eq('status', 'fresh')
 
   const ctx: Record<string, unknown> = {}

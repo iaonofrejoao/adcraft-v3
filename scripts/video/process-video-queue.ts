@@ -1,21 +1,24 @@
 /**
  * scripts/video/process-video-queue.ts
  * Orquestrador da fila de vídeos: pega final_videos com status 'queued'
- * e executa o pipeline completo para cada um.
+ * e executa o pipeline Nano Banana + Veo 3 para cada um.
  *
  * Pipeline por vídeo:
- *   1. Verificar / criar persona_assets (setup-persona.ts se necessário)
- *   2. generate-scenes.ts  → gera clips individuais
- *   3. compose-final.ts    → monta, legenda, exporta
+ *   1. Verificar / criar character board (setup-character-board.ts se necessário)
+ *   2. generate-scenes.ts → gera clips via Nano Banana + Veo 3, salva no Drive
  *
  * Uso:
  *   npx tsx scripts/video/process-video-queue.ts \
  *     --product-id <uuid> \
- *     [--limit <n>]           # máx de vídeos a processar (default: 5)
- *     [--final-video-id <id>] # processa apenas este ID específico
- *     [--word-timestamps]     # passa para compose-final (faster-whisper)
- *     [--no-music]            # compõe sem trilha sonora
- *     [--concurrency <n>]     # vídeos em paralelo (default: 1, máx: 3)
+ *     [--limit <n>]            # máx de vídeos a processar (default: 5)
+ *     [--final-video-id <id>]  # processa apenas este ID específico
+ *     [--concurrency <n>]      # vídeos em paralelo (default: 1, máx: 3)
+ *
+ * Variáveis de ambiente:
+ *   GEMINI_API_KEY
+ *   GOOGLE_DRIVE_FOLDER_ID
+ *   GOOGLE_SERVICE_ACCOUNT_JSON ou GOOGLE_SERVICE_ACCOUNT_PATH
+ *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  */
 
 import * as dotenv  from 'dotenv'
@@ -35,7 +38,7 @@ interface QueuedVideo {
   status:              string
 }
 
-interface PersonaStatus {
+interface CharacterBoardStatus {
   exists: boolean
   ready:  boolean
   id?:    string
@@ -68,15 +71,18 @@ async function getSingleVideo(finalVideoId: string): Promise<QueuedVideo> {
   return data as QueuedVideo
 }
 
-async function checkPersonaStatus(productId: string): Promise<PersonaStatus> {
+async function checkCharacterBoardStatus(productId: string): Promise<CharacterBoardStatus> {
   const { data } = await supabase
     .from('persona_assets')
-    .select('id, status')
+    .select('id, status, nano_banana_character_board')
     .eq('product_id', productId)
+    .order('created_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
   if (!data) return { exists: false, ready: false }
-  return { exists: true, ready: data.status === 'ready', id: data.id }
+  const hasBoard = data.nano_banana_character_board != null
+  return { exists: true, ready: data.status === 'ready' && hasBoard, id: data.id }
 }
 
 async function markVideoFailed(finalVideoId: string, reason: string): Promise<void> {
@@ -109,13 +115,7 @@ function runScript(scriptPath: string, args: string[]): { success: boolean; outp
 
 // ── Pipeline por vídeo ────────────────────────────────────────────────────────
 
-async function processVideo(
-  video:           QueuedVideo,
-  opts: {
-    wordTimestamps: boolean
-    noMusic:        boolean
-  },
-): Promise<{ success: boolean; reason?: string }> {
+async function processVideo(video: QueuedVideo): Promise<{ success: boolean; reason?: string }> {
   const { id: finalVideoId, product_id } = video
   const scriptDir = path.resolve(__dirname)
 
@@ -124,34 +124,34 @@ async function processVideo(
   console.log(`[fila] Produto: ${product_id}`)
   console.log(`[fila] Combinação: ${video.copy_combination_id}`)
 
-  // ── Passo 1: Persona ──
-  console.log('\n[PASSO 1] Verificando persona_assets…')
-  const persona = await checkPersonaStatus(product_id)
+  // ── Passo 1: Character Board ──
+  console.log('\n[PASSO 1] Verificando character board (Nano Banana)…')
+  const boardStatus = await checkCharacterBoardStatus(product_id)
 
-  if (!persona.exists || !persona.ready) {
-    if (!persona.exists) {
-      console.log('  persona_assets não encontrada — executando setup-persona…')
-    } else {
-      console.log('  persona_assets com status não-ready — executando setup-persona…')
-    }
+  if (!boardStatus.ready) {
+    const reason = boardStatus.exists
+      ? `  persona_asset existe mas sem character board válido — executando setup-character-board…`
+      : `  Nenhum persona_asset encontrado — executando setup-character-board…`
+    console.log(reason)
 
     const setupResult = runScript(
-      path.join(scriptDir, 'setup-persona.ts'),
+      path.join(scriptDir, 'setup-character-board.ts'),
       ['--product-id', product_id],
     )
 
     if (!setupResult.success) {
-      const reason = `setup-persona falhou: ${setupResult.output.slice(-500)}`
-      console.error(`  ✗ ${reason}`)
-      return { success: false, reason }
+      const msg = `setup-character-board falhou: ${setupResult.output.slice(-500)}`
+      console.error(`  ✗ ${msg}`)
+      await markVideoFailed(finalVideoId, msg)
+      return { success: false, reason: msg }
     }
-    console.log('  ✓ Persona pronta')
+    console.log('  ✓ Character board pronto')
   } else {
-    console.log(`  ✓ Persona já existe (id: ${persona.id})`)
+    console.log(`  ✓ Character board já existe (persona_asset: ${boardStatus.id})`)
   }
 
-  // ── Passo 2: generate-scenes ──
-  console.log('\n[PASSO 2] Gerando clips de cenas…')
+  // ── Passo 2: Gerar cenas ──
+  console.log('\n[PASSO 2] Gerando cenas (Nano Banana + Veo 3 → Drive)…')
 
   const scenesResult = runScript(
     path.join(scriptDir, 'generate-scenes.ts'),
@@ -159,33 +159,13 @@ async function processVideo(
   )
 
   if (!scenesResult.success) {
-    const reason = `generate-scenes falhou: ${scenesResult.output.slice(-500)}`
-    console.error(`  ✗ ${reason}`)
-    await markVideoFailed(finalVideoId, reason)
-    return { success: false, reason }
-  }
-  console.log('  ✓ Clips gerados')
-
-  // ── Passo 3: compose-final ──
-  console.log('\n[PASSO 3] Compondo vídeo final…')
-
-  const composeArgs = ['--final-video-id', finalVideoId]
-  if (opts.wordTimestamps) composeArgs.push('--word-timestamps')
-  if (opts.noMusic)        composeArgs.push('--no-music')
-
-  const composeResult = runScript(
-    path.join(scriptDir, 'compose-final.ts'),
-    composeArgs,
-  )
-
-  if (!composeResult.success) {
-    const reason = `compose-final falhou: ${composeResult.output.slice(-500)}`
-    console.error(`  ✗ ${reason}`)
-    await markVideoFailed(finalVideoId, reason)
-    return { success: false, reason }
+    const msg = `generate-scenes falhou: ${scenesResult.output.slice(-500)}`
+    console.error(`  ✗ ${msg}`)
+    await markVideoFailed(finalVideoId, msg)
+    return { success: false, reason: msg }
   }
 
-  console.log(`  ✓ Vídeo final pronto`)
+  console.log('  ✓ Cenas geradas e salvas no Drive')
   return { success: true }
 }
 
@@ -195,30 +175,26 @@ async function main() {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
-      'product-id':      { type: 'string'  },
-      'final-video-id':  { type: 'string'  },
-      'limit':           { type: 'string'  },
-      'word-timestamps': { type: 'boolean' },
-      'no-music':        { type: 'boolean' },
-      'concurrency':     { type: 'string'  },
+      'product-id':     { type: 'string' },
+      'final-video-id': { type: 'string' },
+      'limit':          { type: 'string' },
+      'concurrency':    { type: 'string' },
     },
   })
 
   const productId     = values['product-id']
   const singleVideoId = values['final-video-id']
-  const limit         = parseInt(values['limit']       ?? '5',  10)
+  const limit         = parseInt(values['limit']       ?? '5', 10)
   const concurrency   = Math.min(parseInt(values['concurrency'] ?? '1', 10), 3)
-  const wordTimestamps = values['word-timestamps'] ?? false
-  const noMusic       = values['no-music']        ?? false
 
   if (!productId && !singleVideoId) {
     throw new Error('--product-id ou --final-video-id é obrigatório')
   }
 
   console.log(`\n${'═'.repeat(60)}`)
-  console.log('[process-video-queue] Iniciando orquestrador')
-  if (productId)     console.log(`  Produto:     ${productId}`)
-  if (singleVideoId) console.log(`  Vídeo único: ${singleVideoId}`)
+  console.log('[process-video-queue] Iniciando orquestrador (Nano Banana + Veo 3)')
+  if (productId)     console.log(`  Produto:      ${productId}`)
+  if (singleVideoId) console.log(`  Vídeo único:  ${singleVideoId}`)
   console.log(`  Concorrência: ${concurrency}`)
   console.log(`  Limite:       ${limit}`)
 
@@ -226,11 +202,11 @@ async function main() {
 
   if (singleVideoId) {
     const video = await getSingleVideo(singleVideoId)
-    // Permite reprocessar vídeos failed além de queued
     if (!['queued', 'failed'].includes(video.status)) {
-      throw new Error(`Vídeo ${singleVideoId} tem status '${video.status}' — apenas 'queued' ou 'failed' podem ser reprocessados.`)
+      throw new Error(
+        `Vídeo ${singleVideoId} tem status '${video.status}' — apenas 'queued' ou 'failed' podem ser reprocessados.`,
+      )
     }
-    // Resetar para queued se era failed
     if (video.status === 'failed') {
       await supabase
         .from('final_videos')
@@ -252,26 +228,24 @@ async function main() {
 
   const results: Array<{ id: string; success: boolean; reason?: string }> = []
 
-  // Processar em lotes de 'concurrency'
   for (let i = 0; i < queue.length; i += concurrency) {
     const batch = queue.slice(i, i + concurrency)
 
     const batchResults = await Promise.all(
       batch.map(video =>
-        processVideo(video, { wordTimestamps, noMusic })
+        processVideo(video)
           .then(r => ({ id: video.id, ...r }))
           .catch(err => ({
             id:      video.id,
             success: false,
             reason:  (err as Error).message,
           }))
-      )
+      ),
     )
 
     results.push(...batchResults)
   }
 
-  // ── Sumário ──
   console.log(`\n${'═'.repeat(60)}`)
   console.log('[process-video-queue] Sumário:')
   const successful = results.filter(r => r.success)

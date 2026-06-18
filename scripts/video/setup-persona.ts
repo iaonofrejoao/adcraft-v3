@@ -1,4 +1,7 @@
 /**
+ * @deprecated Substituído por setup-character-board.ts (Nano Banana + GEMINI_API_KEY).
+ * Mantido para referência histórica. Não é mais chamado pelo pipeline ativo.
+ *
  * scripts/video/setup-persona.ts
  * Setup completo da persona visual e vocal de um produto.
  *

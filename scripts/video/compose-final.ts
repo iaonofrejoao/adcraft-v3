@@ -1,4 +1,9 @@
 /**
+ * @deprecated Não é mais chamado pelo pipeline ativo (Nano Banana + Veo 3).
+ * No novo fluxo, os clips individuais são salvos no Google Drive pelo generate-scenes.ts
+ * e a composição final fica a cargo do editor externo.
+ * Mantido para referência histórica e possível uso manual.
+ *
  * scripts/video/compose-final.ts
  * Composição final de vídeo a partir dos clips gerados pelo generate-scenes.ts.
  *

@@ -1,21 +1,17 @@
 Compõe o vídeo final a partir dos clips gerados para $ARGUMENTS
 
-Pré-condição: `generate-scenes.ts` deve ter concluído e `composition_config` populado.
+> **Nota:** No pipeline atual (Nano Banana + Veo 3), a composição final é feita pelo editor externo.
+> Os clips individuais por cena estão no Google Drive (`final_videos.drive_folder_url`).
+> Este comando é mantido apenas para referência histórica.
 
-Execute:
-```
-npx tsx scripts/video/compose-final.ts --final-video-id <uuid>
+Para verificar onde estão os clips de um vídeo:
+```sql
+SELECT drive_folder_url FROM final_videos WHERE id = '<uuid>';
 ```
 
-O script vai:
-1. Baixar todos os clips do Supabase Storage
-2. Mesclar VO nas cenas 3D
-3. Normalizar todos os clips (1080×1920, H.264, 30fps)
-4. Concatenar em sequência
-5. Queimar legendas (karaoke se faster-whisper disponível, fallback timing)
-6. Adicionar música de fundo com ducking a -18dB
-7. Exportar `final.mp4` + `thumbnail.jpg` → upload para Supabase
-8. Atualizar `final_videos.status = 'ready'`
+Se precisar da pasta Drive:
+```
+final_videos.drive_folder_url → link para a pasta com todos os clips
+```
 
 $ARGUMENTS = final_video_id (UUID).
-Registre a atividade em TAREFAS.md ao concluir.

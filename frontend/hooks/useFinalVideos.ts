@@ -5,6 +5,15 @@ import { createClient } from '@/lib/supabase'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export interface SceneClip {
+  scene_number:   number
+  section:        string
+  local_path:     string
+  drive_filename: string
+  status:         'ok' | 'failed'
+  error?:         string
+}
+
 export type FinalVideoStatus =
   | 'queued'
   | 'generating_persona'
@@ -28,6 +37,7 @@ export interface FinalVideo {
   error_message:       string | null
   created_at:          string
   completed_at:        string | null
+  scenes?:             SceneClip[]
 }
 
 export interface UseFinalVideosReturn {

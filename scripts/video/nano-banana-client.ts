@@ -1,6 +1,6 @@
 /**
  * scripts/video/nano-banana-client.ts
- * Cliente para Nano Banana (Google AI) via GEMINI_API_KEY.
+ * Cliente para Nano Banana (Google AI) via service account (Bearer token).
  *
  * Responsabilidades:
  *   1. generateCharacterBoard — gera imagens de referência do personagem (poses + expressões)
@@ -16,45 +16,60 @@
 import * as dotenv from 'dotenv'
 import * as path   from 'path'
 import { parseArgs } from 'node:util'
+import { getAuthHeaders } from './google-auth'
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
-// TODO: confirmar model ID exato do Nano Banana quando disponível no Google AI Studio
-const NANO_BANANA_MODEL = process.env.NANO_BANANA_MODEL_ID ?? 'nano-banana-generate-preview'
+const NANO_BANANA_MODEL = process.env.NANO_BANANA_MODEL_ID ?? 'gemini-3.1-flash-image'
 const GEMINI_API_BASE   = 'https://generativelanguage.googleapis.com/v1beta'
 const POLL_INTERVAL_MS  = 3_000
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000 // 10 min
 
-// Número de imagens geradas para o character board (poses distintas para consistência)
-const CHARACTER_BOARD_COUNT = 4
+// Uma única imagem de referência para o character board (reutilizada em todas as cenas)
+const CHARACTER_BOARD_COUNT = 1
 
-function apiKey(): string {
-  const key = process.env.GEMINI_API_KEY
-  if (!key) throw new Error('GEMINI_API_KEY não definida')
-  return key
+// ── Usage tracking ────────────────────────────────────────────────────────────
+
+interface UsageMeta {
+  promptTokenCount?:     number
+  candidatesTokenCount?: number
+  totalTokenCount?:      number
 }
 
-function headers() {
-  return {
-    'Content-Type': 'application/json',
-    'x-goog-api-key': apiKey(),
-  }
+const _sessionUsage = { calls: 0, promptTokens: 0, outputTokens: 0 }
+
+function logUsage(context: string, usage: UsageMeta | undefined) {
+  const prompt = usage?.promptTokenCount     ?? 0
+  const output = usage?.candidatesTokenCount ?? 0
+  const total  = usage?.totalTokenCount      ?? (prompt + output)
+  _sessionUsage.calls        += 1
+  _sessionUsage.promptTokens += prompt
+  _sessionUsage.outputTokens += output
+  console.log(`  [nano-banana/usage] ${context} — prompt: ${prompt} | output: ${output} | total: ${total} tokens`)
 }
+
+export function getNanoBananaSessionUsage() {
+  return { ..._sessionUsage, model: NANO_BANANA_MODEL }
+}
+
 
 // ── Polling de Long-Running Operation ────────────────────────────────────────
 
-async function pollOperation(operationName: string, timeoutMs: number): Promise<unknown> {
+async function pollOperation(operationName: string, timeoutMs: number): Promise<{ response: unknown; _usage?: UsageMeta }> {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     await new Promise(r => setTimeout(r, POLL_INTERVAL_MS))
-    const res = await fetch(`${GEMINI_API_BASE}/${operationName}`, { headers: headers() })
+    const res = await fetch(`${GEMINI_API_BASE}/${operationName}`, { headers: await getAuthHeaders() })
     if (!res.ok) {
       const body = await res.text()
       throw new Error(`Erro ao consultar operação Nano Banana: ${res.status} — ${body}`)
     }
-    const op = await res.json() as { done?: boolean; error?: { message: string }; response?: unknown }
+    const op = await res.json() as { done?: boolean; error?: { message: string }; response?: unknown; metadata?: { usageMetadata?: UsageMeta } }
     if (op.error) throw new Error(`Nano Banana falhou: ${op.error.message}`)
-    if (op.done) return op.response
+    if (op.done) {
+      const usage = (op.response as any)?.usageMetadata ?? op.metadata?.usageMetadata
+      return { response: op.response, _usage: usage }
+    }
   }
   throw new Error(`Nano Banana timeout após ${timeoutMs / 1000}s — operação: ${operationName}`)
 }
@@ -80,7 +95,7 @@ async function extractImageBuffers(response: unknown): Promise<Buffer[]> {
     if (part.inlineData?.data) {
       buffers.push(Buffer.from(part.inlineData.data, 'base64'))
     } else if (part.fileData?.fileUri) {
-      const res = await fetch(part.fileData.fileUri, { headers: { 'x-goog-api-key': apiKey() } })
+      const res = await fetch(part.fileData.fileUri, { headers: await getAuthHeaders() })
       if (!res.ok) throw new Error(`Erro ao baixar imagem Nano Banana: ${res.status}`)
       buffers.push(Buffer.from(await res.arrayBuffer()))
     }
@@ -90,23 +105,18 @@ async function extractImageBuffers(response: unknown): Promise<Buffer[]> {
   return buffers
 }
 
-async function generateImages(prompt: string, count: number, timeoutMs: number): Promise<Buffer[]> {
+async function generateOneImage(prompt: string, timeoutMs: number, context = 'generateImage'): Promise<Buffer> {
   const body = {
     model: NANO_BANANA_MODEL,
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
       responseModalities: ['image'],
-      imageConfig: {
-        numberOfImages: count,
-        aspectRatio: '2:3',
-        outputMimeType: 'image/png',
-      },
     },
   }
 
   const res = await fetch(
     `${GEMINI_API_BASE}/models/${NANO_BANANA_MODEL}:generateContent`,
-    { method: 'POST', headers: headers(), body: JSON.stringify(body) },
+    { method: 'POST', headers: await getAuthHeaders(), body: JSON.stringify(body) },
   )
 
   if (!res.ok) {
@@ -116,13 +126,28 @@ async function generateImages(prompt: string, count: number, timeoutMs: number):
 
   const data = await res.json() as unknown
 
-  // Long Running Operation
+  let buffers: Buffer[]
   if (typeof data === 'object' && data !== null && 'name' in data && typeof (data as { name: string }).name === 'string') {
-    const response = await pollOperation((data as { name: string }).name, timeoutMs)
-    return extractImageBuffers(response)
+    const opResult = await pollOperation((data as { name: string }).name, timeoutMs)
+    logUsage(context, opResult._usage)
+    buffers = await extractImageBuffers(opResult.response)
+  } else {
+    const usage = (data as any)?.usageMetadata as UsageMeta | undefined
+    logUsage(context, usage)
+    buffers = await extractImageBuffers(data)
   }
 
-  return extractImageBuffers(data)
+  return buffers[0]
+}
+
+// Gera count imagens com chamadas sequenciais (a API não suporta múltiplas por request)
+async function generateImages(prompt: string, count: number, timeoutMs: number): Promise<Buffer[]> {
+  const results: Buffer[] = []
+  for (let i = 0; i < count; i++) {
+    console.log(`  [nano-banana] Gerando imagem ${i + 1}/${count}...`)
+    results.push(await generateOneImage(prompt, timeoutMs, `character-board img ${i + 1}/${count}`))
+  }
+  return results
 }
 
 // ── API Pública ───────────────────────────────────────────────────────────────
@@ -139,20 +164,13 @@ export async function generateCharacterBoard(
   timeoutMs = DEFAULT_TIMEOUT_MS,
 ): Promise<Buffer[]> {
   const prompt = `
-Generate ${CHARACTER_BOARD_COUNT} reference images of the same character for video production consistency.
-The character must look IDENTICAL across all images — same person, same appearance, same style.
+Generate a single reference image of this character for video production.
+This image will be used as the visual anchor for all scenes — it must be photorealistic and faithful to the description.
 
 Character description:
 ${personasPrompt}
 
-Image requirements:
-- Image 1: Frontal view, neutral expression, looking at camera
-- Image 2: 3/4 angle, slight smile, natural expression
-- Image 3: Close-up face, emotional expression (empathetic / surprised)
-- Image 4: Full body or medium shot, natural posture
-
-Style: UGC style, photorealistic, natural lighting, no filters, authentic
-CRITICAL: All 4 images must depict the SAME PERSON with consistent appearance.
+Requirements: frontal view, neutral expression, looking directly at camera, upper body visible, natural lighting, UGC style, no filters, authentic, photorealistic.
 `.trim()
 
   return generateImages(prompt, CHARACTER_BOARD_COUNT, timeoutMs)
@@ -200,17 +218,12 @@ The image should capture the opening moment of this scene.`.trim(),
     ],
     generationConfig: {
       responseModalities: ['image'],
-      imageConfig: {
-        numberOfImages: 1,
-        aspectRatio: '9:16',
-        outputMimeType: 'image/png',
-      },
     },
   }
 
   const res = await fetch(
     `${GEMINI_API_BASE}/models/${NANO_BANANA_MODEL}:generateContent`,
-    { method: 'POST', headers: headers(), body: JSON.stringify(body) },
+    { method: 'POST', headers: await getAuthHeaders(), body: JSON.stringify(body) },
   )
 
   if (!res.ok) {
@@ -222,9 +235,12 @@ The image should capture the opening moment of this scene.`.trim(),
 
   let buffers: Buffer[]
   if (typeof data === 'object' && data !== null && 'name' in data && typeof (data as { name: string }).name === 'string') {
-    const response = await pollOperation((data as { name: string }).name, timeoutMs)
-    buffers = await extractImageBuffers(response)
+    const opResult = await pollOperation((data as { name: string }).name, timeoutMs)
+    logUsage('first-frame', opResult._usage)
+    buffers = await extractImageBuffers(opResult.response)
   } else {
+    const usage = (data as any)?.usageMetadata as UsageMeta | undefined
+    logUsage('first-frame', usage)
     buffers = await extractImageBuffers(data)
   }
 

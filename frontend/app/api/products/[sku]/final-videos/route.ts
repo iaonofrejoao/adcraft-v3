@@ -57,23 +57,32 @@ export async function GET(
 
     if (videosResult.error) throw new Error(videosResult.error.message)
 
-    // Extrai IDs dos tiktok_videos usados e limpa composition_config da resposta
+    // Extrai IDs dos tiktok_videos usados; expõe scenes locais; remove composition_config bruto
     type RawVideo = Record<string, unknown>
-    type ClipEntry = { tiktok_video_id?: string }
-    type ConfigShape = { clips?: ClipEntry[] }
+    type ClipEntry  = { tiktok_video_id?: string }
+    type SceneEntry = { scene_number: number; section: string; local_path: string; drive_filename: string; status: 'ok' | 'failed'; error?: string }
+    type ConfigShape = { clips?: ClipEntry[]; scenes?: SceneEntry[] }
 
     const usedTikTokIds: string[] = []
     const videos: RawVideo[] = []
 
     for (const v of (videosResult.data ?? []) as unknown as RawVideo[]) {
       const config = v.composition_config as ConfigShape | null
+
       if (config?.clips) {
         for (const clip of config.clips) {
           if (clip.tiktok_video_id) usedTikTokIds.push(clip.tiktok_video_id)
         }
       }
+
       const { composition_config: _cc, ...rest } = v
-      videos.push(rest)
+      const videoOut: RawVideo = { ...rest }
+
+      if (config?.scenes?.length) {
+        videoOut.scenes = config.scenes
+      }
+
+      videos.push(videoOut)
     }
 
     return NextResponse.json({

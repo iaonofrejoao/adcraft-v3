@@ -14,6 +14,7 @@ Converter o pacote de keyframes em instruções de execução prontas para o pip
 
 ## Contexto necessário
 - Artefato `keyframes` (keyframe_generator) — `keyframes[]` com `scene_type`, `personas_prompt`, `veo3_prompt_en`, `camera_angle`, `mood`, `duration_seconds`, `section`, `overlay_suggestion`
+- Artefato `character` (character_generator) — `characters[]` com `image_prompt_en` (usado como `canonical_personas_prompt`)
 - Artefato `script` (script_writer) — `scenes[]` com `section`, `narration` (validação cruzada)
 - Artefato `creative_brief` (creative_director) — `top_combination` para montar o `storyboard_tag`
 - Artefato `campaign_strategy` (campaign_strategy) — `primary_platform`, `format` para `aspect_ratio`
@@ -48,27 +49,40 @@ Verificar que existe um `script.scenes[scene_number]` correspondente. Se não, r
 drive_filename = {sku}_{storyboard_tag}_cena{scene_number:02d}_{section}.mp4
 Exemplo: CITX_v1_H1_B2_C3_VID_cena01_hook.mp4
 ```
+> `drive_filename` é uma convenção de nomenclatura. Os clips são salvos localmente em
+> `{VIDEO_OUTPUT_DIR}/videos/{storyboard_tag}/` — não no Google Drive.
 
-**3c. Verificar personas_prompt:**
-- Se `scene_type = "persona"` e `personas_prompt` está vazio ou ausente → registrar em `production_warnings` e usar `character_anchor` do keyframe como fallback.
+**3c. Classificar scene_type — campo OBRIGATÓRIO:**
+- `"persona"` → cena com ator humano (gerada com Nano Banana → Veo 3 image-to-video)
+- `"scene"` → animação, B-roll de produto, cenas sem persona (gerada com Veo 3 text-to-video direto)
+- **Nunca omitir o campo.** Sem `scene_type`, o pipeline não sabe qual fluxo usar.
+
+**3d. Verificar personas_prompt:**
+- Toda cena `"persona"` DEVE ter `personas_prompt` preenchido com a descrição visual do ator.
+- Usar o `canonical_personas_prompt` (derivado do artefato `character`) como fonte primária.
+- Se `personas_prompt` estiver ausente → registrar em `production_warnings` e usar `canonical_personas_prompt` como fallback.
 
 **3d. Verificar narração no veo3_prompt_en:**
 O keyframe_generator deve ter incluído `Speaking in [lang]: "..."` no final do prompt. Se não estiver, adicionar usando a narração de `script.scenes[scene_number].narration`.
 
-### 4. Identificar o personas_prompt canônico
+### 4. Identificar o canonical_personas_prompt
 
-Todas as cenas `persona` de um mesmo vídeo devem usar o mesmo personagem. Extrair o `personas_prompt` da primeira cena `persona` encontrada — este será o prompt usado para gerar o character board (uma vez, reutilizado em todas as cenas persona).
+O `canonical_personas_prompt` é o prompt que o pipeline usará para gerar o character board do ator (via Nano Banana), reutilizado em todas as cenas `persona` do vídeo.
 
-Se houver mais de um `personas_prompt` distinto entre as cenas `persona`, registrar em `production_warnings` qual foi escolhido como canônico e por quê.
+**Fonte primária:** `character.characters[primary_character_id].image_prompt_en` do artefato `character`.
+**Fallback:** `personas_prompt` da primeira cena `persona` nos keyframes.
+
+Todas as cenas `persona` devem compartilhar o mesmo ator — se houver personagens distintos, usar um por vídeo e registrar em `production_warnings`.
 
 ### 5. Verificar checklist de qualidade
 
 Antes de finalizar:
-- [ ] Todas as cenas têm `scene_type` classificado
-- [ ] Todas as cenas `persona` têm `personas_prompt`
+- [ ] Todas as cenas têm `scene_type` explícito (`"persona"` ou `"scene"`)
+- [ ] Todas as cenas `persona` têm `personas_prompt` preenchido
+- [ ] `canonical_personas_prompt` está preenchido na raiz do artefato
 - [ ] Todos os `veo3_prompt_en` contêm `Speaking in [lang]:`
 - [ ] `storyboard_tag` usa a combinação aprovada
-- [ ] `drive_filename` segue a convenção exata
+- [ ] `drive_filename` segue a convenção exata (nome do arquivo, não URL)
 - [ ] `drive_folder_name` = `storyboard_tag`
 
 ## Sistema de prompt (base)
@@ -77,12 +91,13 @@ Você é o Diretor de Produção de Vídeo da plataforma AdCraft. Sua função �
 
 **REGRAS OBRIGATÓRIAS:**
 1. O `storyboard_tag` deve usar `creative_brief.top_combination + "_VID"`. Nunca inventar uma tag.
-2. O `drive_filename` de cada cena deve seguir exatamente o padrão: `{sku}_{storyboard_tag}_cena{N:02d}_{section}.mp4`
+2. O `drive_filename` de cada cena deve seguir exatamente o padrão: `{sku}_{storyboard_tag}_cena{N:02d}_{section}.mp4` (é o nome do arquivo local, não uma URL do Drive).
 3. `veo3_prompt_en` é copiado do artefato `keyframes` — não reescrever. Se estiver faltando `Speaking in [lang]:`, adicionar ao final.
-4. `personas_prompt` é extraído do artefato `keyframes` — não inventar descrições de personagem.
-5. `drive_folder_name` = `storyboard_tag` (sem extensão, sem espaços).
-6. Cap de 5 storyboards por execução. Acima disso, listar quais seriam gerados e pedir confirmação.
-7. Cenas `scene_type: "scene"` NÃO têm `personas_prompt` — o campo deve ser `null`.
+4. `scene_type` é OBRIGATÓRIO em todas as cenas. Use `"persona"` para cenas com ator humano (Nano Banana → Veo3) e `"scene"` para animações e B-roll (Veo3 direto). **Nunca omitir.**
+5. `personas_prompt` é obrigatório em cenas `"persona"` — usar `canonical_personas_prompt` do artefato `character`. Cenas `"scene"` devem ter `personas_prompt: null`.
+6. `canonical_personas_prompt` é obrigatório na raiz do artefato — vem de `character.characters[primary].image_prompt_en`.
+7. `drive_folder_name` = `storyboard_tag` (sem extensão, sem espaços).
+8. Cap de 5 storyboards por execução. Acima disso, listar quais seriam gerados e pedir confirmação.
 
 ## Output — artifact_type: `video_assets`
 

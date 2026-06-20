@@ -10,28 +10,28 @@
 ## Pendências ativas
 
 ### Frontend
-| # | Tarefa | Status | Observações |
-|---|--------|--------|-------------|
-| F-05 | Popular cards do dashboard com dados reais | ⬜ PENDENTE | Definir métricas relevantes para cada card (receita estimada, taxa de aprovação de copy, ROI de criativos) e ajustar `/api/dashboard` |
-| F-09 | Memory Graph — melhorias v2 | ⬜ PENDENTE | Ver [`docs/memory-graph-melhorias.md`](docs/memory-graph-melhorias.md). Prioridade alta: highlight de vizinhos, painel lateral ao clicar, nó de produto |
-| F-06 | FilterBar reutilizável | ⬜ PENDENTE | Componente genérico de filtro por pills — aplicar em `/products`, `/creatives`, `/insights` e qualquer listagem futura |
-| F-07 | Empty states com CTA em todas as listagens | ⬜ PENDENTE | Telas sem dados devem ter ilustração + botão de ação (ex: "Cadastrar produto", "Rodar pipeline") |
-| F-08 | Skeleton loaders padronizados | ⬜ PENDENTE | Substituir spinners soltos por skeletons consistentes em todas as listagens e tabs de produto |
+| #    | Tarefa                                     | Status     | Observações                                                                                                                                             |
+| ---- | ------------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F-05 | Popular cards do dashboard com dados reais | ⬜ PENDENTE | Definir métricas relevantes para cada card (receita estimada, taxa de aprovação de copy, ROI de criativos) e ajustar `/api/dashboard`                   |
+| F-09 | Memory Graph — melhorias v2                | ⬜ PENDENTE | Ver [`docs/memory-graph-melhorias.md`](docs/memory-graph-melhorias.md). Prioridade alta: highlight de vizinhos, painel lateral ao clicar, nó de produto |
+| F-06 | FilterBar reutilizável                     | ⬜ PENDENTE | Componente genérico de filtro por pills — aplicar em `/products`, `/creatives`, `/insights` e qualquer listagem futura                                  |
+| F-07 | Empty states com CTA em todas as listagens | ⬜ PENDENTE | Telas sem dados devem ter ilustração + botão de ação (ex: "Cadastrar produto", "Rodar pipeline")                                                        |
+| F-08 | Skeleton loaders padronizados              | ⬜ PENDENTE | Substituir spinners soltos por skeletons consistentes em todas as listagens e tabs de produto                                                           |
 
 ### Arquitetura
-| # | Tarefa | Status | Observações |
-|---|--------|--------|-------------|
-| A-01 | Refatoração geral — limpeza e organização | ✅ CONCLUÍDO | 5 itens corrigidos: código morto em `app/page.tsx` (-300 linhas), `KANBAN_COLS` removido, `COUNTRIES` movido para `constants.ts`, rota morta `/demandas/` em `MercadoTab` corrigida, shortcuts mortos (`⌘/`, `g d`) removidos de `useKeyboardShortcuts` |
-| A-02 | Embeddings sem Gemini | ⬜ PENDENTE | Anthropic não tem API de embedding. Opções: Voyage AI (`voyage-3-lite`, 50M tokens/mês grátis, nova chave `VOYAGE_API_KEY`) ou fallback para PostgreSQL full-text search (índices GIN já existem). Sem isso, busca semântica nos learnings retorna vazio |
+| #    | Tarefa                                    | Status      | Observações                                                                                                                                                                                                                                              |
+| ---- | ----------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A-01 | Refatoração geral — limpeza e organização | ✅ CONCLUÍDO | 5 itens corrigidos: código morto em `app/page.tsx` (-300 linhas), `KANBAN_COLS` removido, `COUNTRIES` movido para `constants.ts`, rota morta `/demandas/` em `MercadoTab` corrigida, shortcuts mortos (`⌘/`, `g d`) removidos de `useKeyboardShortcuts`  |
+| A-02 | Embeddings sem Gemini                     | ⬜ PENDENTE  | Anthropic não tem API de embedding. Opções: Voyage AI (`voyage-3-lite`, 50M tokens/mês grátis, nova chave `VOYAGE_API_KEY`) ou fallback para PostgreSQL full-text search (índices GIN já existem). Sem isso, busca semântica nos learnings retorna vazio |
 
 ### Investigação
-| # | Tarefa | Status | Observações |
-|---|--------|--------|-------------|
-| I-02 | Pesquisar pipeline de vídeo com IA — barata e com qualidade | ⬜ PENDENTE | Avaliar alternativas ao stack atual (Replicate/HeyGen/Kling/ElevenLabs) |
+| #    | Tarefa                                                      | Status      | Observações                                                             |
+| ---- | ----------------------------------------------------------- | ----------- | ----------------------------------------------------------------------- |
+| I-02 | Pesquisar pipeline de vídeo com IA — barata e com qualidade | ✅ CONCLUÍDO | Avaliar alternativas ao stack atual (Replicate/HeyGen/Kling/ElevenLabs) |
 
 ### Vídeo
-| # | Tarefa | Status | Observações |
-|---|--------|--------|-------------|
+| #    | Tarefa                                   | Status     | Observações                                             |
+| ---- | ---------------------------------------- | ---------- | ------------------------------------------------------- |
 | V-01 | Criar um vídeo completo do início ao fim | ⬜ PENDENTE | Depende de I-02 — escolher a pipeline antes de executar |
 
 ---

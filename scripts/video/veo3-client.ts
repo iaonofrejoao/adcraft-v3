@@ -9,56 +9,153 @@
 import * as dotenv from 'dotenv'
 import * as path   from 'path'
 import { parseArgs } from 'node:util'
+import { getAuthHeaders, getProjectId } from './google-auth'
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
-// TODO: confirmar model ID exato quando disponível no Google AI Studio
-const VEO3_MODEL    = process.env.VEO3_MODEL_ID ?? 'veo-3.0-generate-preview'
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta'
+const VEO3_MODEL      = process.env.VEO3_MODEL_ID  ?? 'veo-3.0-fast-generate-001'
+const VEO3_LOCATION   = process.env.VEO3_LOCATION  ?? 'us-central1'
+const VERTEX_AI_BASE  = `https://${VEO3_LOCATION}-aiplatform.googleapis.com/v1beta`
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000 // 15 min
 const POLL_INTERVAL_MS   = 5_000
 
-function apiKey(): string {
-  const key = process.env.GEMINI_API_KEY
-  if (!key) throw new Error('GEMINI_API_KEY não definida')
-  return key
+// Vertex AI endpoint para Veo 3 — suporta service account Bearer token end-to-end
+async function getVertexEndpoint(): Promise<string> {
+  const projectId = process.env.GOOGLE_CLOUD_PROJECT ?? await getProjectId()
+  return `${VERTEX_AI_BASE}/projects/${projectId}/locations/${VEO3_LOCATION}/publishers/google/models/${VEO3_MODEL}:predictLongRunning`
 }
 
-function headers() {
-  return {
-    'Content-Type': 'application/json',
-    'x-goog-api-key': apiKey(),
-  }
+// ── Usage tracking ────────────────────────────────────────────────────────────
+
+interface Veo3UsageMeta {
+  promptTokenCount?:     number
+  candidatesTokenCount?: number
+  totalTokenCount?:      number
+  [key: string]: unknown
 }
+
+const _sessionUsage = { calls: 0, promptTokens: 0, outputTokens: 0, videoBytes: 0 }
+
+function logUsage(context: string, usage: Veo3UsageMeta | undefined, videoBytes?: number) {
+  const prompt = usage?.promptTokenCount     ?? 0
+  const output = usage?.candidatesTokenCount ?? 0
+  const total  = usage?.totalTokenCount      ?? (prompt + output)
+  _sessionUsage.calls        += 1
+  _sessionUsage.promptTokens += prompt
+  _sessionUsage.outputTokens += output
+  if (videoBytes) _sessionUsage.videoBytes += videoBytes
+
+  const parts = [`prompt: ${prompt} | output: ${output} | total: ${total} tokens`]
+  if (videoBytes) parts.push(`video: ${(videoBytes / 1024).toFixed(1)} KB`)
+  console.log(`  [veo3/usage] ${context} — ${parts.join(' | ')}`)
+}
+
+export function getVeo3SessionUsage() {
+  return { ..._sessionUsage, model: VEO3_MODEL }
+}
+
 
 // ── Polling de Long-Running Operation ────────────────────────────────────────
 
-async function pollOperation(operationName: string, timeoutMs: number): Promise<unknown> {
+// Vertex AI Veo 3 usa fetchPredictLongRunningOperation (POST) para consultar operações,
+// não o GET genérico de LRO — o ID é UUID, não Long.
+function getModelPath(operationName: string): string | null {
+  const m = operationName.match(/^(projects\/[^/]+\/locations\/[^/]+\/publishers\/[^/]+\/models\/[^/]+)\/operations\//)
+  return m ? m[1] : null
+}
+
+async function pollOperation(operationName: string, timeoutMs: number): Promise<{ response: unknown; usage?: Veo3UsageMeta }> {
+  const modelPath = getModelPath(operationName)
+  const pollEndpoint = modelPath
+    ? `${VERTEX_AI_BASE}/${modelPath}:fetchPredictLongRunningOperation`
+    : `${VERTEX_AI_BASE}/${operationName}`
+  const pollMethod = modelPath ? 'POST' : 'GET'
+  const pollBody   = modelPath ? JSON.stringify({ operationName }) : undefined
+
   const deadline = Date.now() + timeoutMs
+  console.log(`  [veo3] Aguardando operação: ${operationName}`)
   while (Date.now() < deadline) {
     await new Promise(r => setTimeout(r, POLL_INTERVAL_MS))
-    const res = await fetch(`${GEMINI_API_BASE}/${operationName}`, { headers: headers() })
+    const res = await fetch(pollEndpoint, { method: pollMethod, headers: await getAuthHeaders(), body: pollBody })
     if (!res.ok) {
       const body = await res.text()
       throw new Error(`Erro ao consultar operação Veo 3: ${res.status} — ${body}`)
     }
-    const op = await res.json() as { done?: boolean; error?: { message: string }; response?: unknown }
+    const op = await res.json() as { done?: boolean; error?: { message: string }; response?: unknown; metadata?: { usageMetadata?: Veo3UsageMeta } }
     if (op.error) throw new Error(`Veo 3 falhou: ${op.error.message}`)
-    if (op.done) return op.response
+    if (op.done) {
+      const usage = (op.response as any)?.usageMetadata ?? op.metadata?.usageMetadata
+      return { response: op.response, usage }
+    }
+    process.stdout.write('.')
   }
+  console.log()
   throw new Error(`Veo 3 timeout após ${timeoutMs / 1000}s — operação: ${operationName}`)
 }
 
 // ── Extrair vídeo do response ─────────────────────────────────────────────────
 
-async function extractVideoBuffer(response: unknown): Promise<Buffer> {
-  const r = response as { generatedSamples?: Array<{ video?: { uri?: string; mimeType?: string } }> }
-  const uri = r?.generatedSamples?.[0]?.video?.uri
-  if (!uri) throw new Error('Veo 3: nenhum vídeo retornado na resposta')
+async function extractVideoBuffer(response: unknown, context: string, usage?: Veo3UsageMeta): Promise<Buffer> {
+  const r = response as {
+    generateVideoResponse?: {
+      generatedSamples?: Array<{
+        video?: { uri?: string; mimeType?: string }
+      }>
+    }
+    predictions?: Array<{
+      bytesBase64Encoded?: string
+      mimeType?: string
+    }>
+  }
 
-  const videoRes = await fetch(uri, { headers: { 'x-goog-api-key': apiKey() } })
-  if (!videoRes.ok) throw new Error(`Erro ao baixar vídeo Veo 3: ${videoRes.status}`)
-  return Buffer.from(await videoRes.arrayBuffer())
+  let buf: Buffer | null = null
+
+  // Formato 1: generateVideoResponse (Generative Language API)
+  const uri = r?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri
+  if (uri) {
+    const videoRes = await fetch(uri, { headers: await getAuthHeaders() })
+    if (!videoRes.ok) throw new Error(`Erro ao baixar vídeo Veo 3: ${videoRes.status}`)
+    buf = Buffer.from(await videoRes.arrayBuffer())
+  }
+
+  // Formato 2: predictions com base64 (predict API style)
+  if (!buf) {
+    const prediction = r?.predictions?.[0]
+    if (prediction?.bytesBase64Encoded) {
+      buf = Buffer.from(prediction.bytesBase64Encoded, 'base64')
+    }
+  }
+
+  if (!buf) throw new Error(`Veo 3: nenhum vídeo retornado. Resposta: ${JSON.stringify(r).slice(0, 500)}`)
+
+  logUsage(context, usage, buf.byteLength)
+  return buf
+}
+
+// ── Requisição predictLongRunning ─────────────────────────────────────────────
+
+async function predictLongRunning(body: unknown, timeoutMs: number, context: string): Promise<Buffer> {
+  const endpoint = await getVertexEndpoint()
+  const res = await fetch(endpoint, { method: 'POST', headers: await getAuthHeaders(), body: JSON.stringify(body) })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Veo 3 predictLongRunning falhou: ${res.status} — ${text}`)
+  }
+
+  const op = await res.json() as { name?: string; done?: boolean; error?: { message: string }; response?: unknown; metadata?: { usageMetadata?: Veo3UsageMeta } }
+
+  console.log(`  [veo3] Operação criada: ${op.name ?? '(sem nome)'}`)
+  if (op.error) throw new Error(`Veo 3 erro imediato: ${op.error.message}`)
+  if (op.done) {
+    const usage = (op.response as any)?.usageMetadata ?? op.metadata?.usageMetadata
+    return extractVideoBuffer(op.response, context, usage)
+  }
+
+  if (!op.name) throw new Error(`Veo 3: operação sem name. Resposta: ${JSON.stringify(op).slice(0, 500)}`)
+
+  const { response, usage } = await pollOperation(op.name, timeoutMs)
+  return extractVideoBuffer(response, context, usage)
 }
 
 // ── API Pública ───────────────────────────────────────────────────────────────
@@ -69,42 +166,18 @@ async function extractVideoBuffer(response: unknown): Promise<Buffer> {
  */
 export async function textToVideo(
   prompt: string,
-  durationSeconds: number,
+  _durationSeconds: number,
   aspectRatio: '9:16' | '1:1' | '16:9' = '9:16',
   timeoutMs = DEFAULT_TIMEOUT_MS,
 ): Promise<Buffer> {
   const body = {
-    model: VEO3_MODEL,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: {
-      responseModalities: ['video'],
-      videoConfig: {
-        durationSeconds,
-        aspectRatio,
-        generateAudio: true,
-      },
+    instances: [{ prompt }],
+    parameters: {
+      aspectRatio,
+      sampleCount: 1,
     },
   }
-
-  const res = await fetch(
-    `${GEMINI_API_BASE}/models/${VEO3_MODEL}:generateContent`,
-    { method: 'POST', headers: headers(), body: JSON.stringify(body) },
-  )
-
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Veo 3 textToVideo falhou: ${res.status} — ${text}`)
-  }
-
-  const data = await res.json() as { name?: string } | unknown
-  // Se retornou uma operação assíncrona (Long Running Operation)
-  if (typeof data === 'object' && data !== null && 'name' in data && typeof (data as { name: string }).name === 'string') {
-    const response = await pollOperation((data as { name: string }).name, timeoutMs)
-    return extractVideoBuffer(response)
-  }
-
-  // Resposta síncrona (improvável para vídeo, mas tratamos por segurança)
-  return extractVideoBuffer(data)
+  return predictLongRunning(body, timeoutMs, 'text-to-video')
 }
 
 /**
@@ -114,50 +187,26 @@ export async function textToVideo(
 export async function imageToVideo(
   firstFrameBuffer: Buffer,
   prompt: string,
-  durationSeconds: number,
+  _durationSeconds: number,
   aspectRatio: '9:16' | '1:1' | '16:9' = '9:16',
   timeoutMs = DEFAULT_TIMEOUT_MS,
 ): Promise<Buffer> {
-  const imageBase64 = firstFrameBuffer.toString('base64')
-
   const body = {
-    model: VEO3_MODEL,
-    contents: [
+    instances: [
       {
-        role: 'user',
-        parts: [
-          { inlineData: { mimeType: 'image/png', data: imageBase64 } },
-          { text: prompt },
-        ],
+        prompt,
+        image: {
+          bytesBase64Encoded: firstFrameBuffer.toString('base64'),
+          mimeType: 'image/png',
+        },
       },
     ],
-    generationConfig: {
-      responseModalities: ['video'],
-      videoConfig: {
-        durationSeconds,
-        aspectRatio,
-        generateAudio: true,
-      },
+    parameters: {
+      aspectRatio,
+      sampleCount: 1,
     },
   }
-
-  const res = await fetch(
-    `${GEMINI_API_BASE}/models/${VEO3_MODEL}:generateContent`,
-    { method: 'POST', headers: headers(), body: JSON.stringify(body) },
-  )
-
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Veo 3 imageToVideo falhou: ${res.status} — ${text}`)
-  }
-
-  const data = await res.json() as unknown
-  if (typeof data === 'object' && data !== null && 'name' in data && typeof (data as { name: string }).name === 'string') {
-    const response = await pollOperation((data as { name: string }).name, timeoutMs)
-    return extractVideoBuffer(response)
-  }
-
-  return extractVideoBuffer(data)
+  return predictLongRunning(body, timeoutMs, 'image-to-video')
 }
 
 // ── CLI de teste ──────────────────────────────────────────────────────────────
@@ -183,10 +232,11 @@ if (require.main === module) {
     const duration = parseInt(args.duration ?? '5', 10)
     const output   = args.output   ?? '/tmp/veo3-test.mp4'
 
+    console.log(`Modelo: ${VEO3_MODEL}`)
     console.log(`Gerando vídeo: "${prompt}" (${duration}s)`)
     const buf = await textToVideo(prompt, duration)
     const { writeFile } = await import('node:fs/promises')
     await writeFile(output, buf)
-    console.log(`Vídeo salvo em ${output} (${buf.byteLength} bytes)`)
+    console.log(`\nVídeo salvo em ${output} (${buf.byteLength} bytes)`)
   })().catch(e => { console.error(e); process.exit(1) })
 }

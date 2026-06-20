@@ -1,12 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
-  Film, Download, Play, Loader2, AlertCircle,
-  Wifi, Clock, RefreshCw,
+  Film, Download, AlertCircle,
+  Wifi, Clock, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
 import {
   useFinalVideos,
   isVideoActive,
@@ -14,6 +13,7 @@ import {
   STATUS_LABEL,
   type FinalVideo,
   type FinalVideoStatus,
+  type SceneClip,
 } from '@/hooks/useFinalVideos'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -23,12 +23,7 @@ export interface CriativosTabProps {
   productId: string
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatDuration(s: number | null): string {
-  if (s == null) return '—'
-  return `${Math.round(s)}s`
-}
+// ── Progress bar ──────────────────────────────────────────────────────────────
 
 function ProgressBar({ status, step }: { status: FinalVideoStatus; step: string | null }) {
   const pct   = STATUS_PROGRESS[status]
@@ -106,101 +101,156 @@ function QueueRow({ video }: { video: FinalVideo }) {
   )
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const SECTION_PT: Record<string, string> = {
+  hook:      'Hook',
+  problem:   'Problema',
+  agitation: 'Agitação',
+  mechanism: 'Mecanismo',
+  proof:     'Prova',
+  offer:     'Oferta',
+  cta:       'CTA',
+  intro:     'Intro',
+  body:      'Corpo',
+}
+
+function proxyUrl(localPath: string): string {
+  return `/api/video-serve?path=${encodeURIComponent(localPath)}`
+}
+
 // ── Video card (prontos) ──────────────────────────────────────────────────────
 
 function VideoCard({ video }: { video: FinalVideo }) {
-  const [playing, setPlaying] = useState(false)
+  const okScenes  = (video.scenes ?? []).filter(s => s.status === 'ok')
+  const [idx, setIdx] = useState(0)
+  const videoRef      = useRef<HTMLVideoElement>(null)
+
+  const current = okScenes[idx] as SceneClip | undefined
+  const src     = current ? proxyUrl(current.local_path) : null
+
+  const goTo = useCallback((next: number) => {
+    setIdx(next)
+  }, [])
+
+  const handleLoadedMetadata = useCallback(() => {
+    if (videoRef.current) videoRef.current.currentTime = 0.1
+  }, [])
+
+  const hasScenes = okScenes.length > 0
 
   return (
-    <div className="bg-surface-container border border-white/5 rounded-xl overflow-hidden group">
-      {/* Player / Thumbnail */}
+    <div className="bg-surface-container border border-white/5 rounded-xl overflow-hidden">
+
+      {/* ── Player ── */}
       <div className="relative aspect-[9/16] bg-surface-high overflow-hidden">
-        {playing && video.video_url ? (
-          <video
-            src={video.video_url}
-            controls
-            autoPlay
-            className="absolute inset-0 w-full h-full object-cover"
-            onEnded={() => setPlaying(false)}
-          />
-        ) : (
+        {hasScenes && src ? (
           <>
-            {video.thumbnail_url ? (
-              <img
-                src={video.thumbnail_url}
-                alt="Thumbnail"
-                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Film size={32} strokeWidth={1.5} className="text-on-surface-muted" />
-              </div>
-            )}
+            <video
+              ref={videoRef}
+              key={src}
+              src={src}
+              controls
+              preload="metadata"
+              onLoadedMetadata={handleLoadedMetadata}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
 
-            {/* Play overlay */}
-            {video.video_url && (
-              <button
-                onClick={() => setPlaying(true)}
-                className="absolute inset-0 flex items-center justify-center
-                  bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-              >
-                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm
-                  flex items-center justify-center border border-white/30">
-                  <Play size={20} strokeWidth={1.5} className="text-white ml-0.5" fill="white" />
-                </div>
-              </button>
-            )}
+            {/* Badges topo */}
+            <div className="absolute top-2 left-2 flex items-center gap-1 pointer-events-none">
+              <span className="bg-black/60 text-white text-[0.5rem] font-mono px-1.5 py-0.5 rounded">
+                {idx + 1}/{okScenes.length}
+              </span>
+              {current && (
+                <span className="bg-brand/80 text-white text-[0.5rem] px-1.5 py-0.5 rounded">
+                  {SECTION_PT[current.section] ?? current.section}
+                </span>
+              )}
+            </div>
 
-            {/* Duration badge */}
-            {video.duration_seconds != null && (
-              <div className="absolute bottom-2 right-2 bg-black/70 text-white
-                text-[0.5625rem] font-mono px-1.5 py-0.5 rounded flex items-center gap-1">
-                <Clock size={8} strokeWidth={1.5} />
-                {formatDuration(video.duration_seconds)}
-              </div>
+            {/* Navegação prev/next */}
+            {okScenes.length > 1 && (
+              <>
+                <button
+                  onClick={() => goTo(Math.max(0, idx - 1))}
+                  disabled={idx === 0}
+                  className="absolute left-1.5 top-1/2 -translate-y-1/2
+                    w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm border border-white/10
+                    flex items-center justify-center transition-opacity duration-150
+                    disabled:opacity-0 hover:bg-black/70"
+                >
+                  <ChevronLeft size={14} strokeWidth={1.5} className="text-white" />
+                </button>
+                <button
+                  onClick={() => goTo(Math.min(okScenes.length - 1, idx + 1))}
+                  disabled={idx === okScenes.length - 1}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2
+                    w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm border border-white/10
+                    flex items-center justify-center transition-opacity duration-150
+                    disabled:opacity-0 hover:bg-black/70"
+                >
+                  <ChevronRight size={14} strokeWidth={1.5} className="text-white" />
+                </button>
+              </>
             )}
           </>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+            <Film size={28} strokeWidth={1.5} className="text-on-surface-muted" />
+            <span className="text-[0.5625rem] text-on-surface-muted">Sem clips disponíveis</span>
+          </div>
         )}
       </div>
 
-      {/* Footer */}
-      <div className="p-3 space-y-2">
-        <p className="text-[0.625rem] font-mono text-on-surface-muted truncate">
+      {/* ── Footer ── */}
+      <div className="p-3 space-y-2.5">
+
+        {/* Combo tag */}
+        <p className="text-[0.5rem] font-mono text-on-surface-muted truncate">
           {video.copy_combination_id.slice(0, 8)}…
         </p>
 
-        <div className="flex items-center gap-2">
-          {/* Player button */}
-          {video.video_url && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setPlaying(p => !p)}
-              className="flex-1 h-7 text-[0.625rem] text-on-surface-variant hover:text-on-surface hover:bg-surface-high"
-            >
-              {playing
-                ? <><Loader2 size={11} strokeWidth={1.5} className="mr-1" /> Pause</>
-                : <><Play size={11} strokeWidth={1.5} className="mr-1" fill="currentColor" /> Play</>}
-            </Button>
-          )}
+        {/* Seletor de cenas */}
+        {okScenes.length > 1 && (
+          <div className="flex flex-wrap gap-1">
+            {okScenes.map((s, i) => (
+              <button
+                key={s.scene_number}
+                onClick={() => goTo(i)}
+                className={cn(
+                  'text-[0.5rem] font-mono px-1.5 py-0.5 rounded transition-colors duration-100',
+                  i === idx
+                    ? 'bg-brand text-white'
+                    : 'bg-surface-high text-on-surface-muted hover:bg-surface-highest hover:text-on-surface',
+                )}
+              >
+                {s.scene_number}
+              </button>
+            ))}
+          </div>
+        )}
 
-          {/* Download */}
-          {video.video_url && (
-            <a
-              href={video.video_url}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 h-7 px-2.5 rounded-md text-[0.625rem] font-medium
-                bg-surface-high text-on-surface-variant border border-white/5
-                hover:bg-surface-highest hover:text-on-surface transition-all duration-150 shrink-0"
-              title="Baixar vídeo"
-            >
-              <Download size={11} strokeWidth={1.5} />
-              Baixar
-            </a>
-          )}
-        </div>
+        {/* Download da cena atual */}
+        {src && current && (
+          <a
+            href={src}
+            download={current.drive_filename}
+            className="flex items-center justify-center gap-1.5 h-7 px-2.5 rounded-md text-[0.5625rem] font-medium w-full
+              bg-surface-high text-on-surface-variant border border-white/5
+              hover:bg-surface-highest hover:text-on-surface transition-all duration-150"
+          >
+            <Download size={11} strokeWidth={1.5} />
+            Baixar cena {idx + 1}
+          </a>
+        )}
+
+        {/* Cenas com falha */}
+        {(video.scenes ?? []).some(s => s.status === 'failed') && (
+          <div className="flex items-center gap-1.5 text-[0.5rem] text-status-failed-text">
+            <AlertCircle size={10} strokeWidth={1.5} />
+            {(video.scenes ?? []).filter(s => s.status === 'failed').length} cena(s) com falha
+          </div>
+        )}
       </div>
     </div>
   )

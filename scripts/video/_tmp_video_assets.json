@@ -1,0 +1,88 @@
+{
+  "storyboard_tag": "SUEA_v1_H2_B3_C2_VID",
+  "combination_used": "SUEA_v1_H2_B3_C2",
+  "aspect_ratio": "9:16",
+  "drive_folder_name": "SUEA_v1_H2_B3_C2_VID",
+  "total_duration_seconds": 58,
+  "canonical_personas_prompt": "White American woman, early 40s, natural medium brown shoulder-length wavy hair, wearing a soft sage green crew-neck sweatshirt, standing in a clean American suburban kitchen with white cabinets and butcher-block countertop, soft natural side window light, warm-neutral tone, genuine relieved expression with direct eye contact, no makeup filter, photorealistic UGC style, 4k, authentic midwest mom energy",
+  "scenes": [
+    {
+      "scene_number": 1,
+      "section": "hook",
+      "scene_type": "persona",
+      "duration_seconds": 5,
+      "personas_prompt": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, soft natural daylight from left-side window, photorealistic, UGC style",
+      "veo3_prompt_en": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, soft natural daylight from left-side window — starting gaze 15-20 degrees down-left, slowly raising eyes directly to camera as first syllable is spoken, ECU framing with eyes and upper face filling 70% of frame, micro-tremor handheld movement, silence for first 2 seconds then revelation energy builds, UGC style, authentic, no filters, realistic skin texture. Speaking in English: \"Your afternoon cravings are not hunger. They're a broken blood sugar signal.\"",
+      "overlay_suggestion": null,
+      "drive_filename": "SUEA_v1_H2_B3_C2_VID_cena01_hook.mp4"
+    },
+    {
+      "scene_number": 2,
+      "section": "problem",
+      "scene_type": "persona",
+      "duration_seconds": 10,
+      "personas_prompt": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, warm afternoon light, photorealistic, UGC style",
+      "veo3_prompt_en": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, warm afternoon light — sitting at kitchen table with scattered supplement bottles pushed aside, chin resting on hand, tired and defeated expression, gesturing naturally while speaking, empty mug on table suggesting 3PM, medium shot showing upper body and kitchen environment, natural 1-second pause after naming the pain before continuing, static camera, authentic, no filters, realistic skin texture. Speaking in English: \"I've tried everything. Every diet, every supplement that showed up in my feed. Nothing worked. And every single day, it hits me around 3 — this wave of need, like I absolutely have to eat something.\"",
+      "overlay_suggestion": null,
+      "drive_filename": "SUEA_v1_H2_B3_C2_VID_cena02_problem.mp4"
+    },
+    {
+      "scene_number": 3,
+      "section": "agitation",
+      "scene_type": "persona",
+      "duration_seconds": 8,
+      "personas_prompt": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, home desk with laptop visible in background, soft indoor light, photorealistic, UGC style",
+      "veo3_prompt_en": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, home desk with laptop visible in background, soft indoor light — close-up face, eyes looking downward with guilt then lifting directly to camera, eyes holding the lens without blinking on the weakness line, snack wrappers softly visible out of focus in background, guilt-to-frustration emotional arc, slightly unstable handheld camera conveying inner tension, authentic, no filters, realistic skin texture. Speaking in English: \"I thought it was just me being weak. That I didn't have enough discipline. But it happened every single afternoon, like clockwork. And I was exhausted from fighting myself.\"",
+      "overlay_suggestion": null,
+      "drive_filename": "SUEA_v1_H2_B3_C2_VID_cena03_agitation.mp4"
+    },
+    {
+      "scene_number": 4,
+      "section": "mechanism",
+      "scene_type": "persona",
+      "duration_seconds": 12,
+      "personas_prompt": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, soft natural daylight from left-side window, photorealistic, UGC style",
+      "veo3_prompt_en": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, soft natural daylight from left-side window — leaning forward 3-5cm toward camera in conspiratorial revealing tone, gesturing with hands to explain a biological discovery, camera nearly stabilized creating visual weight, slight digital push-in of 0.3 seconds at the moment the mechanism name is spoken, direct intense eye contact with knowing expression, medium shot, UGC style, authentic, no filters, realistic skin texture. Speaking in English: \"Here's what nobody was telling me. After lunch, your blood sugar spikes — and then it crashes. When it crashes, your brain doesn't say you're a little hungry. It fires off an emergency alarm. That's called the Cravings Circuit Reset — it's a real biological signal, not a character flaw. You're not fighting hunger. You're fighting a misfiring blood sugar signal at 3PM. And willpower never had a chance against biology.\"",
+      "overlay_suggestion": null,
+      "drive_filename": "SUEA_v1_H2_B3_C2_VID_cena04_mechanism.mp4"
+    },
+    {
+      "scene_number": 5,
+      "section": "proof",
+      "scene_type": "persona",
+      "duration_seconds": 10,
+      "personas_prompt": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, brighter natural daylight, photorealistic, UGC style",
+      "veo3_prompt_en": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, brighter natural daylight — genuine exhale smile expressing quiet relief, not performative joy, relaxed posture, glass of water beside her, gaze drifting slightly off to the side as if remembering then returning warmly to camera, close-up transitioning to medium within scene, no product bottle visible, static camera, UGC style, authentic, no filters, realistic skin texture. Speaking in English: \"Users who've tried LeanBliss report that their afternoon cravings start to feel quieter — like that urgent pull just stops showing up the same way. That's what blood sugar support may help with. Not willpower. Not discipline. Just giving your body the right signal at the right time.\"",
+      "overlay_suggestion": null,
+      "drive_filename": "SUEA_v1_H2_B3_C2_VID_cena05_proof.mp4"
+    },
+    {
+      "scene_number": 6,
+      "section": "offer",
+      "scene_type": "persona",
+      "duration_seconds": 8,
+      "personas_prompt": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, soft natural daylight from left-side window, photorealistic, UGC style",
+      "veo3_prompt_en": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, soft natural daylight from left-side window — direct confident eye contact with camera, warm but assured expression without broadcaster energy, same kitchen environment with no set change, relaxed upright posture signaling confidence, medium shot, static camera for clarity, UGC style, authentic, no filters, realistic skin texture. Speaking in English: \"LeanBliss is available right now on the official site for $97. And it comes with a full 60-day money-back guarantee — so there's genuinely zero risk in trying it.\"",
+      "overlay_suggestion": "Bold lower-third: LeanBliss | $97 | 60-Day Money-Back Guarantee",
+      "drive_filename": "SUEA_v1_H2_B3_C2_VID_cena06_offer.mp4"
+    },
+    {
+      "scene_number": 7,
+      "section": "cta",
+      "scene_type": "persona",
+      "duration_seconds": 5,
+      "personas_prompt": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, bright natural daylight, photorealistic, UGC style",
+      "veo3_prompt_en": "White American woman, early 40s, medium brown shoulder-length wavy hair, wearing sage green crew-neck sweatshirt, American suburban kitchen with white cabinets and butcher-block countertop, bright natural daylight — close-up direct to camera, woman pointing downward toward link with confident warm energy, then pausing with a genuine curious questioning look as if sincerely asking the viewer a real question, authentic unscripted delivery energy, static camera for directness, UGC style, authentic, no filters, realistic skin texture. Speaking in English: \"Go find out why willpower has nothing to do with it. The link is right below this video. Does this sound like your 3 o'clock?\"",
+      "overlay_suggestion": "Find Out Why → tap the link below",
+      "drive_filename": "SUEA_v1_H2_B3_C2_VID_cena07_cta.mp4"
+    }
+  ],
+  "quality_checklist": {
+    "all_scenes_have_scene_type": true,
+    "all_persona_scenes_have_personas_prompt": true,
+    "all_prompts_have_speaking_line": true,
+    "storyboard_tag_uses_approved_combination": true,
+    "drive_filenames_follow_convention": true
+  },
+  "production_warnings": []
+}

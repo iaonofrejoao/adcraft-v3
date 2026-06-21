@@ -37,6 +37,26 @@
 ---
 
 ## Histórico
+
+### 2026-06-20 — Pipeline LeanBliss (SUEA) — Fase Full completa
+- Pipeline `0b3138ca-e909-4707-9100-903ba2c006c5` executado end-to-end (sem vídeo/imagem)
+- **Produto:** LeanBliss (ClickBank, blood sugar supplement, US market, $97/75% comissão)
+- **Fase 1 — Pesquisa (6/6):** VSL Analysis → Market Research + Avatar Research → Benchmark → Angle Generator → Campaign Strategy
+  - Champion angle: "The Afternoon Cravings Switch — Why Your Brain Gets Hijacked at 3PM"
+  - Mecanismo proprietário criado: "Cravings Circuit Reset" (nenhum concorrente tem mecanismo nomeado)
+- **Fase 2 — Criativo (2/2):** Copywriting → Creative Director (score 93/100)
+  - Top combination: SUEA_v1_H1_B3_C2
+  - Compliance detectou 4 violations críticas (FTC/Meta) → copy auto-corrigida → 27 combinações aprovadas
+- **Fase 3 — Lançamento (6/6):** Compliance + UTM → Facebook Ads + Google Ads → Performance Analysis → Scaling
+  - Facebook: CBO $100/day, 3 ad sets (WeightLoss ToFu + BloodSugar ToFu + Retargeting BoFu), 8 anúncios
+  - Google: Search $40/day, 3 grupos (Direct Purchase Intent + Problem-Solution + Competitors)
+  - Scaling plan: `maintain` (pré-lançamento), gatilhos de escala definidos para Day 7 (27/06) e Day 14 (04/07)
+  - Loop 3 configurado: pipeline criativo filho com ângulo "The Menopause Weight Trap" se hook_rate <15%
+- **Pendências do pipeline:**
+  - `ANTHROPIC_API_KEY` ausente → `scripts/learning/extract.ts` falhou (extração de learnings bloqueada)
+  - Pixel Meta + ClickBank CAPI precisam ser configurados antes do go-live
+
+
 ### 2026-06-15 (continuação)
 - A-01 concluído: refatoração de limpeza e organização
   - `app/page.tsx`: 300 linhas de chat morto removidas (export padrão apenas fazia redirect)

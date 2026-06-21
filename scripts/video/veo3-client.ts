@@ -13,13 +13,15 @@ import { getAuthHeaders, getProjectId } from './google-auth'
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
-const VEO3_MODEL      = process.env.VEO3_MODEL_ID  ?? 'veo-3.0-fast-generate-001'
-const VEO3_LOCATION   = process.env.VEO3_LOCATION  ?? 'us-central1'
-const VERTEX_AI_BASE  = `https://${VEO3_LOCATION}-aiplatform.googleapis.com/v1beta`
+const VEO3_MODEL         = process.env.VEO3_MODEL_ID  ?? 'veo-3.0-fast-generate-001'
+const VEO3_LOCATION      = process.env.VEO3_LOCATION  ?? 'us-central1'
+// v1 (não v1beta) — publisher models Veo 3 só estão acessíveis na v1
+const VERTEX_AI_BASE     = `https://${VEO3_LOCATION}-aiplatform.googleapis.com/v1`
+const GEMINI_API_BASE    = 'https://generativelanguage.googleapis.com/v1beta'
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000 // 15 min
 const POLL_INTERVAL_MS   = 5_000
 
-// Vertex AI endpoint para Veo 3 — suporta service account Bearer token end-to-end
+// Vertex AI endpoint para Veo 3
 async function getVertexEndpoint(): Promise<string> {
   const projectId = process.env.GOOGLE_CLOUD_PROJECT ?? await getProjectId()
   return `${VERTEX_AI_BASE}/projects/${projectId}/locations/${VEO3_LOCATION}/publishers/google/models/${VEO3_MODEL}:predictLongRunning`
@@ -57,18 +59,23 @@ export function getVeo3SessionUsage() {
 
 // ── Polling de Long-Running Operation ────────────────────────────────────────
 
-// Vertex AI Veo 3 usa fetchPredictLongRunningOperation (POST) para consultar operações,
-// não o GET genérico de LRO — o ID é UUID, não Long.
+// Tanto Vertex AI quanto Gemini API usam fetchPredictLongRunningOperation (POST)
+// para consultar operações de vídeo — o GET genérico retorna 403 na Gemini API.
 function getModelPath(operationName: string): string | null {
-  const m = operationName.match(/^(projects\/[^/]+\/locations\/[^/]+\/publishers\/[^/]+\/models\/[^/]+)\/operations\//)
-  return m ? m[1] : null
+  // Vertex AI: projects/.../publishers/.../models/.../operations/...
+  const vertexM = operationName.match(/^(projects\/[^/]+\/locations\/[^/]+\/publishers\/[^/]+\/models\/[^/]+)\/operations\//)
+  if (vertexM) return vertexM[1]
+  // Gemini API: models/model-name/operations/...
+  const geminiM = operationName.match(/^(models\/[^/]+)\/operations\//)
+  if (geminiM) return geminiM[1]
+  return null
 }
 
 async function pollOperation(operationName: string, timeoutMs: number): Promise<{ response: unknown; usage?: Veo3UsageMeta }> {
   const modelPath = getModelPath(operationName)
   const pollEndpoint = modelPath
-    ? `${VERTEX_AI_BASE}/${modelPath}:fetchPredictLongRunningOperation`
-    : `${VERTEX_AI_BASE}/${operationName}`
+    ? `${VERTEX_AI_BASE}/${modelPath}:fetchPredictOperation`
+    : `${GEMINI_API_BASE}/${operationName}` // fallback Gemini API (não usado no fluxo padrão)
   const pollMethod = modelPath ? 'POST' : 'GET'
   const pollBody   = modelPath ? JSON.stringify({ operationName }) : undefined
 
@@ -124,6 +131,13 @@ async function extractVideoBuffer(response: unknown, context: string, usage?: Ve
     if (prediction?.bytesBase64Encoded) {
       buf = Buffer.from(prediction.bytesBase64Encoded, 'base64')
     }
+  }
+
+  // Formato 3: videos[0].bytesBase64Encoded (Vertex AI publisher model style)
+  if (!buf) {
+    const rv = response as { videos?: Array<{ bytesBase64Encoded?: string }> }
+    const encoded = rv?.videos?.[0]?.bytesBase64Encoded
+    if (encoded) buf = Buffer.from(encoded, 'base64')
   }
 
   if (!buf) throw new Error(`Veo 3: nenhum vídeo retornado. Resposta: ${JSON.stringify(r).slice(0, 500)}`)

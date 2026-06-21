@@ -28,6 +28,7 @@ import { supabase }  from '../../workers/lib/db'
 import { generateCharacterBoard, getNanoBananaSessionUsage } from './nano-banana-client'
 import { textToVideo, imageToVideo, getVeo3SessionUsage } from './veo3-client'
 import { saveClip, buildFilename, ensureFolder, loadBoardImages, getOutputDir, savePersonaImage } from './local-storage'
+import { saveVideoClipToDrive } from './google-drive'
 import { run as setupCharacterBoard } from './setup-character-board'
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') })
@@ -82,6 +83,7 @@ interface SceneResult {
   section:       string
   local_path:    string
   drive_filename: string
+  drive_url?:    string
   status:        'ok' | 'failed'
   error?:        string
 }
@@ -387,13 +389,18 @@ async function run(args: {
         : await generateSceneClip(scene, aspect_ratio)
 
       const localPath = await saveClip(clipBuffer, filename, folderPath)
-      console.log(`  ✓ Salvo: ${localPath}\n`)
+      console.log(`  ✓ Salvo localmente: ${localPath}`)
+
+      console.log(`  ⬆ Subindo para o Drive...`)
+      const { directUrl: driveUrl } = await saveVideoClipToDrive(clipBuffer, storyboard_tag, filename)
+      console.log(`  ✓ Drive: ${driveUrl}\n`)
 
       results.push({
         scene_number:   scene.scene_number,
         section:        scene.section,
         local_path:     localPath,
         drive_filename: filename,
+        drive_url:      driveUrl,
         status:         'ok',
       })
     } catch (err) {

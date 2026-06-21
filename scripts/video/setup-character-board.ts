@@ -28,6 +28,7 @@ import { parseArgs } from 'node:util'
 import { supabase }  from '../../workers/lib/db'
 import { generateCharacterBoard } from './nano-banana-client'
 import { savePersonaImages, getOutputDir } from './local-storage'
+import { savePersonaImageToDrive } from './google-drive'
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
@@ -107,13 +108,15 @@ async function getCharacterArtifact(productId: string, pipelineId?: string): Pro
 
 async function saveCharacterBoard(
   personaAssetId: string,
-  imagePaths: string[],
+  imagePaths:     string[],
+  driveUrls?:     string[],
 ): Promise<void> {
   const { error } = await supabase
     .from('persona_assets')
     .update({
       nano_banana_character_board: {
         image_urls:   imagePaths,
+        drive_urls:   driveUrls ?? [],
         generated_at: new Date().toISOString(),
       },
       status:       'ready',
@@ -198,10 +201,19 @@ export async function run(args: {
   const imagePaths = await savePersonaImages(boardImages, sku)
   for (const p of imagePaths) console.log(`  → ${p}`)
 
-  await saveCharacterBoard(asset.id, imagePaths)
+  console.log(`\nSubindo imagens para o Drive em adcraft_files/images/personas/${sku}/...`)
+  const driveUrls: string[] = []
+  for (let i = 0; i < boardImages.length; i++) {
+    const filename = `board-${i + 1}.png`
+    const { directUrl } = await savePersonaImageToDrive(boardImages[i], sku, filename)
+    driveUrls.push(directUrl)
+    console.log(`  → ${filename}: ${directUrl}`)
+  }
+
+  await saveCharacterBoard(asset.id, imagePaths, driveUrls)
   console.log(`\npersona_asset ${asset.id} atualizado — status: ready`)
 
-  return { ...asset, nano_banana_character_board: { image_urls: imagePaths } }
+  return { ...asset, nano_banana_character_board: { image_urls: imagePaths, drive_urls: driveUrls } }
 }
 
 // ── CLI ───────────────────────────────────────────────────────────────────────

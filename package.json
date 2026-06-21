@@ -12,6 +12,7 @@
   "packageManager": "pnpm@10.33.0",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
+    "@google/genai": "^2.9.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.103.0",
     "cheerio": "^1.2.0",

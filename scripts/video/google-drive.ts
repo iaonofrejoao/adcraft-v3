@@ -1,9 +1,10 @@
 /**
  * scripts/video/google-drive.ts
- * Upload de clips de vídeo para o Google Drive com nomenclatura padronizada.
+ * Upload de clips de vídeo/imagem para o Google Drive com nomenclatura padronizada.
  *
- * Auth: Service Account via GOOGLE_SERVICE_ACCOUNT_JSON (JSON string) ou
- *       GOOGLE_SERVICE_ACCOUNT_PATH (caminho para arquivo .json).
+ * Auth (prioridade):
+ *   1. OAuth2 refresh token: GOOGLE_DRIVE_REFRESH_TOKEN + CLIENT_ID_OAUTH + SECRET_CLIENT_KEY_OAUTH
+ *   2. Service Account JWT:  GOOGLE_SERVICE_ACCOUNT_JSON ou GOOGLE_SERVICE_ACCOUNT_PATH
  *
  * Nomenclatura de arquivo:
  *   {sku}_{storyboard_tag}_cena{N:02d}_{section}.mp4
@@ -25,14 +26,9 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3/files'
 const DRIVE_FILES_BASE  = 'https://www.googleapis.com/drive/v3/files'
 const DRIVE_SCOPE       = 'https://www.googleapis.com/auth/drive.file'
+const TOKEN_URI         = 'https://oauth2.googleapis.com/token'
 
-// ── Auth via Service Account ─────────────────────────────────────────────────
-
-interface ServiceAccountKey {
-  client_email: string
-  private_key:  string
-  token_uri?:   string
-}
+// ── Auth ─────────────────────────────────────────────────────────────────────
 
 let _cachedToken: { token: string; expiresAt: number } | null = null
 
@@ -41,21 +37,51 @@ async function getAccessToken(): Promise<string> {
     return _cachedToken.token
   }
 
+  const refreshToken = process.env.GOOGLE_DRIVE_REFRESH_TOKEN
+  if (refreshToken) {
+    return getTokenViaOAuth2(refreshToken)
+  }
+
+  return getTokenViaServiceAccount()
+}
+
+async function getTokenViaOAuth2(refreshToken: string): Promise<string> {
+  const clientId     = process.env.CLIENT_ID_OAUTH
+  const clientSecret = process.env.SECRET_CLIENT_KEY_OAUTH
+  if (!clientId || !clientSecret) {
+    throw new Error('CLIENT_ID_OAUTH e SECRET_CLIENT_KEY_OAUTH precisam estar no .env')
+  }
+
+  const res = await fetch(TOKEN_URI, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    new URLSearchParams({
+      grant_type:    'refresh_token',
+      refresh_token: refreshToken,
+      client_id:     clientId,
+      client_secret: clientSecret,
+    }),
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Falha ao renovar token OAuth2: ${res.status} — ${text}`)
+  }
+
+  const data = await res.json() as { access_token: string; expires_in: number }
+  _cachedToken = { token: data.access_token, expiresAt: Date.now() + data.expires_in * 1000 }
+  return _cachedToken.token
+}
+
+async function getTokenViaServiceAccount(): Promise<string> {
   const key = await loadServiceAccountKey()
 
-  // JWT para OAuth2 token
-  const now        = Math.floor(Date.now() / 1000)
-  const expiry     = now + 3600
-  const tokenUri   = key.token_uri ?? 'https://oauth2.googleapis.com/token'
+  const now      = Math.floor(Date.now() / 1000)
+  const expiry   = now + 3600
+  const tokenUri = key.token_uri ?? TOKEN_URI
 
   const header  = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
-  const payload = btoa(JSON.stringify({
-    iss:   key.client_email,
-    scope: DRIVE_SCOPE,
-    aud:   tokenUri,
-    exp:   expiry,
-    iat:   now,
-  }))
+  const payload = btoa(JSON.stringify({ iss: key.client_email, scope: DRIVE_SCOPE, aud: tokenUri, exp: expiry, iat: now }))
 
   const signingInput = `${header}.${payload}`
   const signature    = await signRS256(signingInput, key.private_key)
@@ -142,24 +168,24 @@ export async function ensureFolder(name: string, parentFolderId: string): Promis
 }
 
 /**
- * Faz upload de um clip de vídeo (Buffer) para o Drive.
- * Retorna a URL pública (webViewLink) do arquivo.
+ * Faz upload de um arquivo (Buffer) para o Drive.
+ * Retorna { fileId, webViewLink, directUrl } — directUrl serve direto em <img>/<video>.
  */
 export async function saveClip(
   clipBuffer: Buffer,
   filename: string,
   parentFolderId: string,
-): Promise<string> {
+  mimeType = 'video/mp4',
+): Promise<{ fileId: string; webViewLink: string; directUrl: string }> {
   const token = await getAccessToken()
 
-  // Multipart upload
   const metadata = JSON.stringify({ name: filename, parents: [parentFolderId] })
-  const boundary = '----VideoBoundary'
+  const boundary = '----FileBoundary'
 
   const body = Buffer.concat([
     Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n`),
     Buffer.from(metadata),
-    Buffer.from(`\r\n--${boundary}\r\nContent-Type: video/mp4\r\n\r\n`),
+    Buffer.from(`\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`),
     clipBuffer,
     Buffer.from(`\r\n--${boundary}--`),
   ])
@@ -188,7 +214,11 @@ export async function saveClip(
     body:    JSON.stringify({ role: 'reader', type: 'anyone' }),
   })
 
-  return file.webViewLink
+  return {
+    fileId:      file.id,
+    webViewLink: file.webViewLink,
+    directUrl:   `https://drive.google.com/uc?export=view&id=${file.id}`,
+  }
 }
 
 /**
@@ -198,6 +228,64 @@ export async function saveClip(
 export function buildFilename(storyboardTag: string, sceneNumber: number, section: string): string {
   const paddedScene = String(sceneNumber).padStart(2, '0')
   return `${storyboardTag}_cena${paddedScene}_${section}.mp4`
+}
+
+// ── Estrutura de pastas padronizada ──────────────────────────────────────────
+//
+// adcraft_files/
+// ├── images/
+// │   ├── personas/{SKU}/          ← character boards
+// │   └── graphics/{nome}/         ← artes futuras
+// └── videos/{storyboard_tag}/     ← clips por criativo
+
+const _folderCache: Record<string, string> = {}
+
+async function resolveFolder(...segments: string[]): Promise<string> {
+  const key      = segments.join('/')
+  if (_folderCache[key]) return _folderCache[key]
+
+  const rootId = process.env.GOOGLE_DRIVE_FOLDER_ID
+  if (!rootId) throw new Error('GOOGLE_DRIVE_FOLDER_ID não definido no .env')
+
+  let parentId = rootId
+  for (const name of segments) {
+    const cacheKey = segments.slice(0, segments.indexOf(name) + 1).join('/')
+    if (_folderCache[cacheKey]) {
+      parentId = _folderCache[cacheKey]
+    } else {
+      parentId = await ensureFolder(name, parentId)
+      _folderCache[cacheKey] = parentId
+    }
+  }
+
+  _folderCache[key] = parentId
+  return parentId
+}
+
+/**
+ * Salva imagem de character board em adcraft_files/images/personas/{sku}/
+ */
+export async function savePersonaImageToDrive(
+  buffer:   Buffer,
+  sku:      string,
+  filename: string,
+): Promise<{ fileId: string; directUrl: string }> {
+  const folderId = await resolveFolder('adcraft_files', 'images', 'personas', sku)
+  const { fileId, directUrl } = await saveClip(buffer, filename, folderId, 'image/png')
+  return { fileId, directUrl }
+}
+
+/**
+ * Salva clip de vídeo em adcraft_files/videos/{storyboardTag}/
+ */
+export async function saveVideoClipToDrive(
+  buffer:        Buffer,
+  storyboardTag: string,
+  filename:      string,
+): Promise<{ fileId: string; directUrl: string }> {
+  const folderId = await resolveFolder('adcraft_files', 'videos', storyboardTag)
+  const { fileId, directUrl } = await saveClip(buffer, filename, folderId, 'video/mp4')
+  return { fileId, directUrl }
 }
 
 // ── CLI de teste ──────────────────────────────────────────────────────────────

@@ -28,6 +28,7 @@ interface RawLearning {
   observation: string;
   evidence:    Record<string, unknown>;
   confidence:  number;
+  tags:        string[];
 }
 
 interface PipelineSummary {
@@ -209,6 +210,11 @@ async function persistLearnings(
 
     const learningId = randomUUID();
 
+    const validTagPattern = /^#(avatar|dor|mecanismo|mercado|formato|canal|fase)\/[\w-]+$/;
+    const tags = Array.isArray(raw.tags)
+      ? raw.tags.filter((t: unknown) => typeof t === 'string' && validTagPattern.test(t)).slice(0, 5)
+      : [];
+
     await db.insert(executionLearnings).values({
       id:          learningId,
       pipeline_id: summary.pipeline_id,
@@ -218,6 +224,7 @@ async function persistLearnings(
       observation: raw.observation.trim(),
       evidence:    raw.evidence ?? {},
       confidence:  String(confidence),
+      tags,
       status:      'active',
     });
 

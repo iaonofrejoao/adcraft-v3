@@ -34,17 +34,32 @@ export async function GET(
 
     const productId = (product as { id: string }).id;
 
-    const { data: persona, error } = await supabase
-      .from('persona_assets')
-      .select('id, status, photos, heygen_avatar_id, elevenlabs_voice_id, error_message, created_at, completed_at')
-      .eq('product_id', productId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const [{ data: persona, error }, { data: characterRow }] = await Promise.all([
+      supabase
+        .from('persona_assets')
+        .select('id, status, photos, heygen_avatar_id, elevenlabs_voice_id, error_message, created_at, completed_at, nano_banana_character_board, character_boards_by_persona')
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      // Mesmo critério do setup-character-board.ts: mais recente, qualquer combination
+      supabase
+        .from('product_knowledge')
+        .select('artifact_data')
+        .eq('product_id', productId)
+        .eq('artifact_type', 'character')
+        .eq('status', 'fresh')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    return NextResponse.json({ persona: persona ?? null });
+    return NextResponse.json({
+      persona:           persona ?? null,
+      characterArtifact: (characterRow as { artifact_data: unknown } | null)?.artifact_data ?? null,
+    });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }

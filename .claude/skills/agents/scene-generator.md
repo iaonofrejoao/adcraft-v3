@@ -2,11 +2,11 @@
 name: scene-generator
 description: >
   Geração de clips individuais por cena via Nano Banana + Veo 3.
-  Executado pelo script generate-scenes.ts — NÃO é um agente LLM.
+  Executado pelo script generate-scenes.ts, NÃO é um agente LLM.
   Documentação de referência do fluxo de geração.
 ---
 
-# Scene Generator — Fluxo Nano Banana + Veo 3
+# Scene Generator, Fluxo Nano Banana + Veo 3
 
 > **Este não é um agente LLM.** A geração de cenas é executada diretamente pelo script
 > `scripts/video/generate-scenes.ts`, que chama as APIs do Google via `GEMINI_API_KEY`.
@@ -38,7 +38,7 @@ scene_type='scene':
   Drive       → saveClip(clip, drive_filename, folderId)
 ```
 
-O `veo3_prompt_en` inclui a narração embutida (`Speaking in [lang]: "..."`) — o Veo 3 gera vídeo + áudio nativamente.
+O `veo3_prompt_en` inclui a narração embutida (`Speaking in [lang]: "..."`), o Veo 3 gera vídeo + áudio nativamente.
 
 ## Resultado
 

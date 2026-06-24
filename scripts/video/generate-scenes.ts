@@ -88,6 +88,105 @@ interface SceneResult {
   error?:        string
 }
 
+// ── Limite Veo 3: 8 segundos fixos por clip ───────────────────────────────────
+
+const MAX_NARRATION_WORDS = 20  // 8s × 2,5 palavras/s — máximo por clip Veo 3
+
+/**
+ * Divide a narração em chunks respeitando limites naturais de fala:
+ * prioridade 1 → fim de frase (.!?), prioridade 2 → pausa de cláusula (;,),
+ * último recurso → corte forçado em maxWords (nunca no meio de uma frase se houver pausa disponível).
+ */
+function splitAtSpeechBoundaries(narration: string, maxWords: number): string[] {
+  const words = narration.trim().split(/\s+/)
+  if (words.length <= maxWords) return [narration]
+
+  const chunks: string[] = []
+  let start = 0
+  const minWords = Math.max(4, Math.floor(maxWords * 0.4))
+
+  while (start < words.length) {
+    const remaining = words.slice(start)
+    if (remaining.length <= maxWords) {
+      chunks.push(remaining.join(' '))
+      break
+    }
+
+    let splitAt = -1
+    const searchEnd = Math.min(maxWords - 1, remaining.length - 1)
+
+    // Prioridade 1: fim de frase (.!?)
+    for (let i = searchEnd; i >= minWords - 1; i--) {
+      if (/[.!?]$/.test(remaining[i])) { splitAt = i; break }
+    }
+
+    // Prioridade 2: pausa de cláusula (;,)
+    if (splitAt < 0) {
+      for (let i = searchEnd; i >= minWords - 1; i--) {
+        if (/[;,]$/.test(remaining[i])) { splitAt = i; break }
+      }
+    }
+
+    // Último recurso: corte forçado no limite de palavras
+    if (splitAt < 0) splitAt = searchEnd
+
+    chunks.push(remaining.slice(0, splitAt + 1).join(' '))
+    start += splitAt + 1
+  }
+
+  return chunks.filter(c => c.trim().length > 0)
+}
+
+/**
+ * Expande cenas cuja narração excede MAX_NARRATION_WORDS em múltiplas sub-cenas.
+ * Cada sub-cena recebe scene_number = original + idx×0.1 (ex: 4 → 4, 4.1, 4.2).
+ * A quebra SEMPRE ocorre em limites naturais de fala (fim de frase ou pausa de cláusula),
+ * nunca no meio de uma sentença, garantindo que cada clip começa e termina uma fala completa.
+ * Aplicado após o filtro --scene para que --scene 4 gere TODOS os clips da cena 4.
+ */
+function expandScenes(
+  scenes: (VideoScene & { _resolvedType: SceneType })[],
+): (VideoScene & { _resolvedType: SceneType })[] {
+  const result: (VideoScene & { _resolvedType: SceneType })[] = []
+
+  for (const scene of scenes) {
+    const m = scene.veo3_prompt_en.match(/^([\s\S]+?)\s+(Speaking in [^:]+: ")([\s\S]+?)(")$/)
+    if (!m) {
+      result.push(scene)
+      continue
+    }
+
+    const [, visualBase, speakPrefix, narration] = m
+    const words = narration.trim().split(/\s+/)
+
+    if (words.length <= MAX_NARRATION_WORDS) {
+      result.push(scene)
+      continue
+    }
+
+    const narrationChunks = splitAtSpeechBoundaries(narration, MAX_NARRATION_WORDS)
+
+    console.warn(
+      `  [⚠ split] Cena ${scene.scene_number} [${scene.section}]: ` +
+      `${words.length} palavras → ${narrationChunks.length} clips (por limite de fala)`,
+    )
+
+    for (let idx = 0; idx < narrationChunks.length; idx++) {
+      const chunk = narrationChunks[idx]
+      const continuationNote = idx > 0 ? ', continuing naturally from previous shot' : ''
+      const newPrompt = `${visualBase}${continuationNote} ${speakPrefix}${chunk}"`
+      result.push({
+        ...scene,
+        scene_number:     parseFloat((scene.scene_number + idx * 0.1).toFixed(1)),
+        veo3_prompt_en:   newPrompt,
+        duration_seconds: 8,
+      })
+    }
+  }
+
+  return result
+}
+
 // ── Inferência de scene_type para artefatos legados ───────────────────────────
 
 /**
@@ -174,13 +273,27 @@ async function saveSceneResults(
   results: SceneResult[],
   localFolderPath: string,
 ): Promise<void> {
+  // Busca cenas existentes para fazer merge (suporta --scene N sem apagar outras cenas)
+  const { data: current } = await supabase
+    .from('final_videos')
+    .select('composition_config')
+    .eq('id', finalVideoId)
+    .single()
+
+  const existing: SceneResult[] = (current?.composition_config as { scenes?: SceneResult[] } | null)?.scenes ?? []
+  const newNums = new Set(results.map(r => r.scene_number))
+  const merged = [
+    ...existing.filter(s => !newNums.has(s.scene_number)),
+    ...results,
+  ].sort((a, b) => a.scene_number - b.scene_number)
+
   await supabase
     .from('final_videos')
     .update({
-      status:            'ready',
-      drive_folder_url:  localFolderPath,   // path local da pasta com os clips
-      composition_config: { scenes: results },
-      completed_at:      new Date().toISOString(),
+      status:             'ready',
+      drive_folder_url:   localFolderPath,
+      composition_config: { scenes: merged },
+      completed_at:       new Date().toISOString(),
     })
     .eq('id', finalVideoId)
 }
@@ -306,9 +419,12 @@ async function run(args: {
     _resolvedType: inferSceneType(s, canonical_personas_prompt ?? null),
   }))
 
-  const targetScenes = sceneFilter != null
+  const filteredScenes = sceneFilter != null
     ? resolvedScenes.filter(s => s.scene_number === sceneFilter)
     : resolvedScenes
+
+  // Expande cenas com narração > 20 palavras em sub-clips de ≤8s cada
+  const targetScenes = expandScenes(filteredScenes)
 
   console.log(`Storyboard: ${storyboard_tag}`)
   console.log(`SKU: ${sku}`)
@@ -352,7 +468,9 @@ async function run(args: {
         ? ` persona='${scene.persona_id ?? '__legacy__'}'`
         : ''
       const flow = type === 'persona' ? 'imagem de referência → Veo 3 image-to-video' : 'Veo 3 text-to-video'
-      console.log(`  Cena ${scene.scene_number} [${scene.section}] (${type}${personaLabel}, ${origin}): ${flow}`)
+      const isSubClip = !Number.isInteger(scene.scene_number)
+      const label = isSubClip ? `${scene.scene_number} [sub-clip]` : scene.scene_number
+      console.log(`  Cena ${label} [${scene.section}] (${type}${personaLabel}, ${origin}): ${flow}`)
       console.log(`    Duração: ${scene.duration_seconds}s`)
       console.log(`    Arquivo: ${buildFilename(storyboard_tag, scene.scene_number, scene.section)}`)
       console.log(`    Prompt: "${scene.veo3_prompt_en.slice(0, 80)}..."`)

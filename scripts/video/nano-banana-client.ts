@@ -170,7 +170,9 @@ This image will be used as the visual anchor for all scenes — it must be photo
 Character description:
 ${personasPrompt}
 
-Requirements: frontal view, neutral expression, looking directly at camera, upper body visible, natural lighting, UGC style, no filters, authentic, photorealistic.
+Requirements: frontal view, neutral expression, looking directly at camera, upper body visible (from waist up), natural lighting, UGC style, no filters, authentic, photorealistic.
+Output: 9:16 vertical aspect ratio (portrait orientation, tall frame), PNG format.
+The character must fill the full height of the frame with headroom at the top and waist visible at the bottom.
 `.trim()
 
   return generateImages(prompt, CHARACTER_BOARD_COUNT, timeoutMs)

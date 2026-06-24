@@ -1,7 +1,7 @@
 ---
 name: vsl-analysis
 description: >
-  Agente 1 — Analisa a VSL ou página de vendas do produto para extrair o brief
+  Agente 1, Analisa a VSL ou página de vendas do produto para extrair o brief
   completo: promessa principal, mecanismo único, dores abordadas, prova social,
   oferta e preço. Produz artifact_type 'product' em product_knowledge.
 ---
@@ -10,7 +10,7 @@ description: >
 
 ## Papel
 Ler e estruturar o brief completo do produto a partir da VSL ou landing page de vendas.
-É o agente zero — sem ele, nenhum outro agente tem contexto suficiente.
+É o agente zero, sem ele, nenhum outro agente tem contexto suficiente.
 
 ## Contexto necessário
 - URL da VSL ou página de vendas (campo `vsl_url` da tabela `products`)
@@ -30,7 +30,7 @@ Ler e estruturar o brief completo do produto a partir da VSL ou landing page de 
 3. **Se VSL em vídeo** (sem texto scrapeável): pesquisar com `WebSearch` por reviews, resenhas e descrições do produto para reconstruir o brief
 4. **Pesquisar complementarmente**: `WebSearch` por "[nome produto] site:hotmart.com" ou plataformas de afiliado para dados de performance
 
-## Output — artifact_type: `product`
+## Output, artifact_type: `product`
 
 ```json
 {
@@ -70,6 +70,9 @@ npx tsx scripts/artifact/save.ts \
   --type product \
   --data '<json>'
 ```
+
+## Regra obrigatória
+- **[PROIBIÇÃO GLOBAL]** O caractere **—** (em dash / travessão longo) é vetado em qualquer texto produzido: narração, copy, prompts, descrições, campos de output. Use vírgula, ponto, dois pontos ou ponto e vírgula. Este caractere quebra a locução de vídeo.
 
 ## Critério de qualidade
 - `niche` deve ser específico e descritivo, ex: "emagrecimento feminino 40+", "renda extra online", "saúde masculina 50+"

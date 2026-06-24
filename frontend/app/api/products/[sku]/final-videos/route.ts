@@ -41,7 +41,7 @@ export async function GET(
         .from('final_videos')
         .select(
           'id, product_id, pipeline_id, copy_combination_id, status, progress_step, ' +
-          'video_url, thumbnail_url, duration_seconds, error_message, created_at, completed_at, ' +
+          'drive_folder_url, thumbnail_url, duration_seconds, error_message, created_at, completed_at, ' +
           'composition_config',
         )
         .eq('product_id', productId)
@@ -60,7 +60,7 @@ export async function GET(
     // Extrai IDs dos tiktok_videos usados; expõe scenes locais; remove composition_config bruto
     type RawVideo = Record<string, unknown>
     type ClipEntry  = { tiktok_video_id?: string }
-    type SceneEntry = { scene_number: number; section: string; local_path: string; drive_filename: string; status: 'ok' | 'failed'; error?: string }
+    type SceneEntry = { scene_number: number; section: string; local_path: string; drive_filename: string; drive_url?: string; status: 'ok' | 'failed'; error?: string }
     type ConfigShape = { clips?: ClipEntry[]; scenes?: SceneEntry[] }
 
     const usedTikTokIds: string[] = []

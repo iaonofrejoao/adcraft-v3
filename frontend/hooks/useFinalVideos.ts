@@ -10,6 +10,7 @@ export interface SceneClip {
   section:        string
   local_path:     string
   drive_filename: string
+  drive_url?:     string
   status:         'ok' | 'failed'
   error?:         string
 }
@@ -31,7 +32,7 @@ export interface FinalVideo {
   copy_combination_id: string
   status:              FinalVideoStatus
   progress_step:       string | null
-  video_url:           string | null
+  drive_folder_url:    string | null
   thumbnail_url:       string | null
   duration_seconds:    number | null
   error_message:       string | null
@@ -142,7 +143,10 @@ export function useFinalVideos(sku: string, productId?: string): UseFinalVideosR
               return [inserted, ...prev]
             })
           } else if (payload.eventType === 'UPDATE') {
-            const updated = payload.new as FinalVideo
+            const raw    = payload.new as Record<string, unknown>
+            const config = raw.composition_config as { scenes?: SceneClip[] } | null
+            const updated = { ...(raw as unknown as FinalVideo) }
+            if (config?.scenes?.length) updated.scenes = config.scenes
             setVideos(prev =>
               prev.map(v => v.id === updated.id ? { ...v, ...updated } : v),
             )
@@ -177,7 +181,7 @@ export function useFinalVideos(sku: string, productId?: string): UseFinalVideosR
       copy_combination_id: copyCombinationId,
       status:              'queued',
       progress_step:       null,
-      video_url:           null,
+      drive_folder_url:    null,
       thumbnail_url:       null,
       duration_seconds:    null,
       error_message:       null,

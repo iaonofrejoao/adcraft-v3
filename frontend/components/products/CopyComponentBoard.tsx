@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { Download } from 'lucide-react'
 import { Toggle } from '@/components/ui/Toggle'
 import {
   useCopyBoard,
@@ -24,6 +25,45 @@ const COLS: { type: ColType; label: string; icon: string }[] = [
   { type: 'cta',  label: 'CTAs',   icon: '👆' },
 ]
 
+async function downloadCopiesZip(
+  sku: string,
+  hooks: CopyComponent[],
+  bodies: CopyComponent[],
+  ctas: CopyComponent[],
+  combinations: CopyCombination[],
+) {
+  const JSZip = (await import('jszip')).default
+  const zip = new JSZip()
+
+  const folders: Record<string, CopyComponent[]> = {
+    hooks,
+    bodies,
+    ctas,
+  }
+
+  for (const [folder, items] of Object.entries(folders)) {
+    for (const item of items) {
+      if (!item.content) continue
+      zip.file(`${folder}/${item.tag}.txt`, item.content)
+    }
+  }
+
+  if (combinations.length > 0) {
+    for (const combo of combinations) {
+      if (!combo.full_text) continue
+      zip.file(`combinacoes/${combo.tag}.txt`, combo.full_text)
+    }
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `copies-${sku}.zip`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export function CopyComponentBoard({ sku, pipelineId, productId }: CopyComponentBoardProps) {
   const {
     hooks, bodies, ctas, combinations,
@@ -47,8 +87,26 @@ export function CopyComponentBoard({ sku, pipelineId, productId }: CopyComponent
   const allApproved = (type: ColType) =>
     colItems[type].every((c) => c.approval_status === 'approved')
 
+  const totalComponents = hooks.length + bodies.length + ctas.length
+  const hasContent = totalComponents > 0
+
   return (
     <div className="space-y-6">
+      {/* Toolbar */}
+      {hasContent && (
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => downloadCopiesZip(sku, hooks, bodies, ctas, combinations)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+              border border-white/5 bg-surface-container text-on-surface-variant
+              hover:bg-surface-high hover:text-on-surface transition-colors duration-150"
+          >
+            <Download size={14} strokeWidth={1.5} />
+            Baixar ZIP
+          </button>
+        </div>
+      )}
+
       {/* 3 colunas de componentes */}
       <div className="grid grid-cols-3 gap-4">
         {COLS.map(({ type, label, icon }) => {

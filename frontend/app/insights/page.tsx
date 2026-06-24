@@ -28,9 +28,39 @@ const CATEGORY_PILLS: FilterOption[] = [
   { value: 'other',      label: 'Outros'      },
 ]
 
-// ── Constantes ────────────────────────────────────────────────────────────────
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+const TAG_NS_COLOR: Record<string, string> = {
+  avatar:    '#ec4899',
+  dor:       '#ef4444',
+  mecanismo: '#8b5cf6',
+  mercado:   '#0ea5e9',
+  formato:   '#22c55e',
+  canal:     '#f59e0b',
+  fase:      '#64748b',
+}
+
+function tagColor(tag: string): string {
+  const ns = tag.replace('#', '').split('/')[0]
+  return TAG_NS_COLOR[ns] ?? '#94a3b8'
+}
+
+function TagChips({ tags }: { tags: string[] }) {
+  if (!tags || tags.length === 0) return null
+  return (
+    <div className="flex flex-wrap gap-1 mt-2">
+      {tags.map(tag => (
+        <span
+          key={tag}
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono"
+          style={{ background: tagColor(tag) + '22', color: tagColor(tag) }}
+        >
+          {tag}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 function confidenceColor(c: number): string {
   if (c >= 0.7) return 'text-status-done-text'
@@ -131,6 +161,7 @@ function PatternCard({ pattern }: { pattern: Pattern }) {
         </span>
       </div>
       <p className="text-[13px] text-on-surface leading-relaxed">{pattern.pattern_text}</p>
+      <TagChips tags={pattern.tags} />
       <p className="text-[10px] text-on-surface-muted mt-2">
         {pattern.supporting_count} learnings · atualizado {formatDate(pattern.updated_at)}
       </p>
@@ -193,6 +224,8 @@ function LearningCard({ learning, onValidate }: {
               {JSON.stringify(learning.evidence, null, 2)}
             </pre>
           )}
+
+          <TagChips tags={learning.tags} />
         </div>
 
         {learning.validated_by_user === null && (
@@ -239,7 +272,7 @@ interface RefreshResult {
 
 export default function InsightsPage() {
   const {
-    learnings, patterns, insights,
+    learnings, patterns, insights, products, niches,
     isLoading,
     categoryFilter, setCategoryFilter,
     searchQuery, setSearchQuery,
@@ -377,7 +410,13 @@ export default function InsightsPage() {
       {/* Tab: Grafo (fora do ScrollArea — precisa de altura 100%) */}
       {activeTab === 'grafo' && (
         <div className="flex-1 min-h-0">
-          <MemoryGraph learnings={learnings} patterns={patterns} insights={insights} />
+          <MemoryGraph
+            learnings={learnings}
+            patterns={patterns}
+            insights={insights}
+            products={products}
+            niches={niches}
+          />
         </div>
       )}
 

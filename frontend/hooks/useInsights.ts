@@ -5,27 +5,30 @@ import { createClient } from '@/lib/supabase'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface Learning {
-  id:               string
-  category:         string
-  observation:      string
-  confidence:       number
-  evidence:         Record<string, unknown> | null
-  product_id:       string | null
-  niche_id:         string | null
+  id:                string
+  category:          string
+  observation:       string
+  confidence:        number
+  evidence:          Record<string, unknown> | null
+  product_id:        string | null
+  niche_id:          string | null
+  tags:              string[]
   validated_by_user: boolean | null
-  created_at:       string
+  created_at:        string
 }
 
 export interface Pattern {
-  id:               string
-  pattern_text:     string
-  category:         string | null
-  niche_id:         string | null
-  supporting_count: number
-  confidence:       number
-  status:           string
-  created_at:       string
-  updated_at:       string
+  id:                      string
+  pattern_text:            string
+  category:                string | null
+  niche_id:                string | null
+  supporting_learning_ids: string[] | null
+  supporting_count:        number
+  confidence:              number
+  tags:                    string[]
+  status:                  string
+  created_at:              string
+  updated_at:              string
 }
 
 export interface Insight {
@@ -34,23 +37,34 @@ export interface Insight {
   body:              string
   importance:        number
   source:            string
+  tags:              string[]
   validated_by_user: boolean
   created_at:        string
 }
 
+export interface ProductRef {
+  id:       string
+  name:     string
+  niche_id: string | null
+}
+
+export interface NicheRef {
+  id:   string
+  name: string
+  slug: string
+}
+
 export interface UseInsightsReturn {
-  // Dados
   learnings:     Learning[]
   patterns:      Pattern[]
   insights:      Insight[]
-  // Estado
+  products:      ProductRef[]
+  niches:        NicheRef[]
   isLoading:     boolean
-  // Filtros
   categoryFilter: string | null
   setCategoryFilter: (c: string | null) => void
   searchQuery:    string
   setSearchQuery: (q: string) => void
-  // Ações
   validateLearning:   (id: string, valid: boolean) => Promise<void>
   validateInsight:    (id: string, valid: boolean) => Promise<void>
   reload:             () => void
@@ -62,6 +76,8 @@ export function useInsights(): UseInsightsReturn {
   const [learnings,      setLearnings]      = useState<Learning[]>([])
   const [patterns,       setPatterns]       = useState<Pattern[]>([])
   const [insightsList,   setInsightsList]   = useState<Insight[]>([])
+  const [products,       setProducts]       = useState<ProductRef[]>([])
+  const [niches,         setNiches]         = useState<NicheRef[]>([])
   const [isLoading,      setIsLoading]      = useState(true)
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
   const [searchQuery,    setSearchQuery]    = useState('')
@@ -71,10 +87,10 @@ export function useInsights(): UseInsightsReturn {
   const fetchAll = useCallback(async () => {
     setIsLoading(true)
     try {
-      // Learnings (últimos 50, status active, confiança ≥ 0.4)
+      // ── Round 1: learnings, patterns, insights em paralelo ────────────
       let learningsQ = supabase
         .from('execution_learnings')
-        .select('id, category, observation, confidence, evidence, product_id, niche_id, validated_by_user, created_at')
+        .select('id, category, observation, confidence, evidence, product_id, niche_id, tags, validated_by_user, created_at')
         .eq('status', 'active')
         .or('validated_by_user.is.null,validated_by_user.eq.true')
         .gte('confidence', '0.4')
@@ -84,27 +100,24 @@ export function useInsights(): UseInsightsReturn {
       if (categoryFilter) learningsQ = learningsQ.eq('category', categoryFilter)
       if (searchQuery.trim()) {
         learningsQ = learningsQ.textSearch('observation', searchQuery.trim(), {
-          type: 'websearch',
-          config: 'portuguese',
+          type: 'websearch', config: 'portuguese',
         })
       }
 
-      // Patterns (top 20 por confiança)
       let patternsQ = supabase
         .from('learning_patterns')
-        .select('id, pattern_text, category, niche_id, supporting_count, confidence, status, created_at, updated_at')
+        .select('id, pattern_text, category, niche_id, supporting_learning_ids, supporting_count, confidence, tags, status, created_at, updated_at')
         .eq('status', 'active')
         .order('confidence', { ascending: false })
         .limit(20)
 
       if (categoryFilter) patternsQ = patternsQ.eq('category', categoryFilter)
 
-      // Insights (top 10 por importância)
       const insightsQ = supabase
         .from('insights')
-        .select('id, title, body, importance, source, validated_by_user, created_at')
+        .select('id, title, body, importance, source, tags, validated_by_user, created_at')
         .order('importance', { ascending: false })
-        .order('created_at', { ascending: false })
+        .order('created_at',  { ascending: false })
         .limit(10)
 
       const [
@@ -114,42 +127,62 @@ export function useInsights(): UseInsightsReturn {
       ] = await Promise.all([learningsQ, patternsQ, insightsQ])
 
       if (lErr) console.error('[useInsights] learnings error:', lErr)
-      if (pErr) console.error('[useInsights] patterns error:', pErr)
-      if (iErr) console.error('[useInsights] insights error:', iErr)
+      if (pErr) console.error('[useInsights] patterns error:',  pErr)
+      if (iErr) console.error('[useInsights] insights error:',  iErr)
 
-      setLearnings((lData ?? []).map((l: Record<string, unknown>) => ({
+      const parsedLearnings = ((lData ?? []) as Record<string, unknown>[]).map(l => ({
         ...l,
         confidence: parseFloat(l.confidence as string),
-      })) as Learning[])
+        tags: Array.isArray(l.tags) ? l.tags : [],
+      })) as Learning[]
 
-      setPatterns((pData ?? []).map((p: Record<string, unknown>) => ({
+      const parsedPatterns = ((pData ?? []) as Record<string, unknown>[]).map(p => ({
         ...p,
         confidence: parseFloat(p.confidence as string),
-      })) as Pattern[])
+        tags: Array.isArray(p.tags) ? p.tags : [],
+      })) as Pattern[]
 
-      setInsightsList((iData ?? []) as Insight[])
+      setLearnings(parsedLearnings)
+      setPatterns(parsedPatterns)
+      setInsightsList(((iData ?? []) as Record<string, unknown>[]).map(i => ({
+        ...i,
+        tags: Array.isArray(i.tags) ? i.tags : [],
+      })) as Insight[])
+
+      // ── Round 2: produtos e nichos referenciados nos dados ────────────
+      const productIds = [...new Set(
+        parsedLearnings.map(l => l.product_id).filter((id): id is string => !!id)
+      )]
+      const nicheIds = [...new Set([
+        ...parsedLearnings.map(l => l.niche_id),
+        ...parsedPatterns.map(p => p.niche_id),
+      ].filter((id): id is string => !!id))]
+
+      const [prodsResult, nichesResult] = await Promise.all([
+        productIds.length > 0
+          ? supabase.from('products').select('id, name, niche_id').in('id', productIds)
+          : Promise.resolve({ data: [] as ProductRef[], error: null }),
+        nicheIds.length > 0
+          ? supabase.from('niches').select('id, name, slug').in('id', nicheIds)
+          : Promise.resolve({ data: [] as NicheRef[], error: null }),
+      ])
+
+      setProducts((prodsResult.data ?? []) as ProductRef[])
+      setNiches((nichesResult.data ?? []) as NicheRef[])
     } finally {
       setIsLoading(false)
     }
   }, [categoryFilter, searchQuery])
 
-  useEffect(() => {
-    fetchAll()
-  }, [fetchAll])
+  useEffect(() => { fetchAll() }, [fetchAll])
 
   const validateLearning = useCallback(async (id: string, valid: boolean) => {
-    await supabase
-      .from('execution_learnings')
-      .update({ validated_by_user: valid })
-      .eq('id', id)
+    await supabase.from('execution_learnings').update({ validated_by_user: valid }).eq('id', id)
     fetchAll()
   }, [fetchAll])
 
   const validateInsight = useCallback(async (id: string, valid: boolean) => {
-    await supabase
-      .from('insights')
-      .update({ validated_by_user: valid })
-      .eq('id', id)
+    await supabase.from('insights').update({ validated_by_user: valid }).eq('id', id)
     fetchAll()
   }, [fetchAll])
 
@@ -157,6 +190,8 @@ export function useInsights(): UseInsightsReturn {
     learnings,
     patterns,
     insights:         insightsList,
+    products,
+    niches,
     isLoading,
     categoryFilter,
     setCategoryFilter,

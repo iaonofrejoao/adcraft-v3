@@ -8,12 +8,11 @@ import {
 } from '@/components/detalhes-produto'
 import type { Product } from '@/components/detalhes-produto'
 import { CriativosTab } from '@/components/produto-tabs/CriativosTab'
-import { ScrollArea } from '@/components/ui/scroll-area'
 
 export default function CriativosPage() {
-  const { sku }    = useParams<{ sku: string }>()
-  const [product,  setProduct]  = useState<Product | null>(null)
-  const [loading,  setLoading]  = useState(true)
+  const { sku }   = useParams<{ sku: string }>()
+  const [product, setProduct]  = useState<Product | null>(null)
+  const [loading, setLoading]  = useState(true)
 
   useEffect(() => {
     if (!sku) return
@@ -35,14 +34,11 @@ export default function CriativosPage() {
   }
 
   return (
-    <ScrollArea className="h-full bg-surface">
-      <div className="flex flex-col">
-        <ProductDetailHeader product={product} sku={sku!} />
-
-        <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-7 pb-12">
-          <CriativosTab sku={sku!} productId={product.id} />
-        </section>
+    <div className="flex flex-col h-full overflow-hidden bg-surface">
+      <ProductDetailHeader product={product} sku={sku!} />
+      <div className="flex-1 overflow-hidden min-h-0">
+        <CriativosTab sku={sku!} productId={product.id} />
       </div>
-    </ScrollArea>
+    </div>
   )
 }

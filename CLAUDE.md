@@ -92,6 +92,27 @@ Antes de spawnar **qualquer** subagente, injetar no prompt:
 ```
 Obter os valores com: `SELECT target_country, target_language FROM products WHERE id = 'PRODUCT_UUID';`
 
+### Memória relevante — injetar antes de cada agente (OBRIGATÓRIO)
+
+Antes de spawnar cada subagente, buscar memórias do nicho e injetar no prompt:
+```bash
+npx tsx scripts/memory/query.ts \
+  --tags "#mercado/<country>,#dor/<dor-principal>" \
+  --niche-id <niche_uuid> \
+  --include-patterns \
+  --limit 8
+```
+O output (Markdown) deve ser colado no prompt do agente sob o bloco `## Memória relevante`.
+
+Tags obrigatórias por tipo de agente:
+| Agente | Tags sugeridas |
+|--------|---------------|
+| Persona / Avatar | `#avatar/<perfil>,#dor/<dor>` |
+| Angle Generator | `#mecanismo/<tipo>,#dor/<dor>` |
+| Copywriting | `#formato/<tipo>,#mecanismo/<tipo>,#fase/<fase>` |
+| Compliance Check | `#canal/<canal>,#mercado/<pais>` |
+| Facebook / Google Ads | `#canal/facebook` ou `#canal/google`, `#mercado/<pais>` |
+
 ### Scripts disponíveis
 | Script | Uso |
 |--------|-----|
@@ -104,6 +125,8 @@ Obter os valores com: `SELECT target_country, target_language FROM products WHER
 | `scripts/copy/update-compliance.ts` | Atualiza status de compliance por tag |
 | `scripts/learning/extract.ts` | Extrai learnings pós-pipeline |
 | `scripts/search/vector.ts` | Busca semântica nos learnings do nicho |
+| `scripts/memory/query.ts` | **Busca memórias por tags + vetor — injetar antes de cada agente** |
+| `scripts/memory/auto-tag.ts` | Tagger retroativo: `--dump` lista sem tags, `--apply=arquivo` grava |
 
 ### Skills dos agentes
 Cada agente tem seu skill em `.claude/skills/agents/<agente>.md` com:

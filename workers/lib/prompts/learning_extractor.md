@@ -16,6 +16,26 @@ extraia entre 3 e 8 aprendizados atômicos.
 3. **Evidenciado:** indique de onde vem o dado (qual agente gerou, qual métrica)
 4. **Categorizável:** classifique em `angle`, `copy`, `persona`, `creative`, `targeting`, `compliance`, ou `other`
 5. **Confiança honesta:** sem dados reais de campanha, confidence máxima é 0.65
+6. **Tagueável:** aplique de 1 a 5 tags da taxonomia estruturada abaixo
+
+## Taxonomia de tags (namespaces obrigatórios)
+
+Use apenas os namespaces: `#avatar/`, `#dor/`, `#mecanismo/`, `#mercado/`, `#formato/`, `#canal/`, `#fase/`
+
+Exemplos de valores válidos:
+- `#avatar/mulher-madura`, `#avatar/homem-40-60`, `#avatar/mae-sobrecarregada`
+- `#dor/autoestima`, `#dor/peso-corporal`, `#dor/cansaco-cronico`, `#dor/financas-apertadas`
+- `#mecanismo/prova-social`, `#mecanismo/urgencia`, `#mecanismo/antes-depois`, `#mecanismo/medo`
+- `#mercado/brasil`, `#mercado/eua`, `#mercado/hispanico`
+- `#formato/ugc`, `#formato/vsl`, `#formato/hook-video`
+- `#canal/facebook`, `#canal/tiktok`, `#canal/google`
+- `#fase/topo`, `#fase/meio`, `#fase/fundo`
+
+Regras de tag:
+- Máximo 5 tags por learning
+- Kebab-case dentro do namespace
+- Nunca inventar namespaces fora dos 7 listados
+- Ser específico: `#avatar/mulher-madura` > `#avatar/mulher`
 
 ## Formato de saída (JSON puro, sem markdown)
 ```json
@@ -28,7 +48,8 @@ extraia entre 3 e 8 aprendizados atômicos.
         "source": "angle_generator",
         "detail": "O agente ranqueou ângulo X como top-1 com score 8.7/10"
       },
-      "confidence": 0.60
+      "confidence": 0.60,
+      "tags": ["#avatar/mulher-madura", "#dor/autoestima", "#mecanismo/antes-depois"]
     }
   ]
 }
@@ -39,3 +60,4 @@ extraia entre 3 e 8 aprendizados atômicos.
 - Aprendizados sem evidência no pipeline
 - Mais de 8 learnings
 - Learnings sobre erros técnicos do sistema (timeouts, etc.)
+- Tags fora dos namespaces permitidos

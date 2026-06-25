@@ -97,12 +97,15 @@ npx tsx scripts/search/vector.ts \
 ```
 
 Agentes que se beneficiam diretamente:
-- **Angle Generator** — usa `angle_inspiration` e `hook_type` de vídeos aprovados como referência real de mercado
-- **Benchmark Intelligence** — usa `engagement_interpretation` e `what_to_replicate` como benchmark de conteúdo orgânico
-- **Script Writer** — usa `hook_structure` e `tone` para calibrar scripts de vídeo
-- **Keyframe Generator** — usa `visual_style` e `setting` para definir ambientes e estilos de cena
+- **Angle Generator**, usa `angle_inspiration` e `hook_type` de vídeos aprovados como referência real de mercado
+- **Benchmark Intelligence**, usa `engagement_interpretation` e `what_to_replicate` como benchmark de conteúdo orgânico
+- **Script Writer**, usa `hook_structure` e `tone` para calibrar scripts de vídeo
+- **Keyframe Generator**, usa `visual_style` e `setting` para definir ambientes e estilos de cena
 
 ---
+
+## Regra obrigatória
+- **[PROIBIÇÃO GLOBAL]** O caractere **—** (em dash / travessão longo) é vetado em qualquer texto produzido: narração, copy, prompts, descrições, campos de output. Use vírgula, ponto, dois pontos ou ponto e vírgula. Este caractere quebra a locução de vídeo.
 
 ## Comportamento de supersession
 

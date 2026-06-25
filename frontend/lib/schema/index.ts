@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, varchar, jsonb, integer, boolean, numeric, timestamp, bigint, customType, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, varchar, jsonb, integer, boolean, numeric, timestamp, bigint, doublePrecision, customType, uniqueIndex } from "drizzle-orm/pg-core";
 
 const vector = customType<{ data: number[]; driverData: string }>({
   dataType() {
@@ -239,6 +239,49 @@ export const insights = pgTable("insights", {
   validated_by_user: boolean("validated_by_user").default(false),
   created_at:        timestamp("created_at").defaultNow(),
   updated_at:        timestamp("updated_at").defaultNow(),
+});
+
+// ── Canvas Criativos ──────────────────────────────────────────────────────────
+
+export const creativeCanvases = pgTable("creative_canvases", {
+  id:                  uuid("id").primaryKey().defaultRandom(),
+  product_id:          uuid("product_id").notNull().references(() => products.id),
+  copy_combination_id: uuid("copy_combination_id").notNull().references(() => copyCombinations.id).unique(),
+  created_at:          timestamp("created_at").defaultNow(),
+  updated_at:          timestamp("updated_at").defaultNow(),
+});
+
+export const canvasNodes = pgTable("canvas_nodes", {
+  id:                uuid("id").primaryKey().defaultRandom(),
+  canvas_id:         uuid("canvas_id").notNull().references(() => creativeCanvases.id),
+  type:              text("type").notNull(), // 'copy'|'personagem'|'cenario'|'produto'|'adicional'|'frame'|'video'
+  label:             text("label"),
+  position_x:        doublePrecision("position_x").notNull().default(0),
+  position_y:        doublePrecision("position_y").notNull().default(0),
+  prompt:            text("prompt"),
+  config:            jsonb("config").default({}), // { count, aspect_ratio, model, scene_index? }
+  generation_status: text("generation_status").default('idle'), // 'idle'|'generating'|'done'|'error'
+  error_message:     text("error_message"),
+  created_at:        timestamp("created_at").defaultNow(),
+  updated_at:        timestamp("updated_at").defaultNow(),
+});
+
+export const canvasEdges = pgTable("canvas_edges", {
+  id:             uuid("id").primaryKey().defaultRandom(),
+  canvas_id:      uuid("canvas_id").notNull().references(() => creativeCanvases.id),
+  source_node_id: uuid("source_node_id").notNull().references(() => canvasNodes.id),
+  target_node_id: uuid("target_node_id").notNull().references(() => canvasNodes.id),
+  created_at:     timestamp("created_at").defaultNow(),
+});
+
+export const canvasNodeOutputs = pgTable("canvas_node_outputs", {
+  id:           uuid("id").primaryKey().defaultRandom(),
+  node_id:      uuid("node_id").notNull().references(() => canvasNodes.id),
+  output_type:  text("output_type").notNull(), // 'image'|'video'
+  drive_file_id: text("drive_file_id"),
+  drive_url:    text("drive_url"),
+  is_active:    boolean("is_active").default(true),
+  created_at:   timestamp("created_at").defaultNow(),
 });
 
 export const llmCalls = pgTable("llm_calls", {

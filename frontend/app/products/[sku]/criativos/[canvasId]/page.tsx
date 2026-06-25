@@ -9,10 +9,10 @@ import {
 import type { Product } from '@/components/detalhes-produto'
 import { CriativosTab } from '@/components/produto-tabs/CriativosTab'
 
-export default function CriativosPage() {
-  const { sku }   = useParams<{ sku: string }>()
-  const [product, setProduct]  = useState<Product | null>(null)
-  const [loading, setLoading]  = useState(true)
+export default function CriativosCanvasPage() {
+  const { sku, canvasId } = useParams<{ sku: string; canvasId: string }>()
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!sku) return
@@ -37,7 +37,7 @@ export default function CriativosPage() {
     <div className="flex flex-col h-full overflow-hidden bg-surface">
       <ProductDetailHeader product={product} sku={sku!} />
       <div className="flex-1 overflow-hidden min-h-0">
-        <CriativosTab sku={sku!} productId={product.id} />
+        <CriativosTab sku={sku!} productId={product.id} initialCanvasId={canvasId} />
       </div>
     </div>
   )

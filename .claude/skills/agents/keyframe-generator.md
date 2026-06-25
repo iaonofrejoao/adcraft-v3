@@ -184,7 +184,9 @@ Sua missão é traduzir cada cena do roteiro em um prompt visual preciso que, qu
 | Um keyframe por cena do script (podendo gerar mais por splits) | sim, contagem deve bater |
 | `scene_type` classificado em todas as cenas | sim |
 | `character_anchor` presente em prompts de cenas `persona` | sim |
-| `personas_prompt` presente em todas as cenas `persona` | sim |
+| `character_id` e `character_name` em todas as cenas | sim |
+| `frame_prompt` em todas as cenas (sem Speaking) | sim |
+| `video_prompt` em todas as cenas (com Speaking, abre com âncora de frame) | sim |
 | `speech_tone` definido na raiz do artefato | sim |
 | `veo3_prompt_en` inclui `Speaking in [lang] [speech_tone]: "..."` em todas as cenas | sim |
 | `speech_tone` IDÊNTICO em todos os clips | sim, crítico para consistência de tom |
@@ -230,6 +232,33 @@ Sua missão é traduzir cada cena do roteiro em um prompt visual preciso que, qu
 
 ## Output, artifact_type: `keyframes`
 
+**Campos novos obrigatórios por cena (versão atual):**
+
+| Campo | Gerado por | Enviado para | Conteúdo |
+|-------|-----------|-------------|---------|
+| `character_id` | pipeline | canvas | "A" ou "B" — qual personagem aparece na cena |
+| `character_name` | pipeline | canvas | Nome real do personagem (ex: "Ana", "Carlos") |
+| `narration` | keyframe-generator | storyboard (exibição) | Apenas o texto falado pelo personagem nesta cena, sem qualquer wrapper. Mesmo conteúdo do `Speaking: "..."` do `video_prompt`, extraído como campo separado para leitura rápida no storyboard. Não remover do `video_prompt`. |
+| `frame_prompt` | keyframe-generator | Nano Banana (imagem) | Descrição visual do personagem na cena, sem narração. Inclui instrução de âncora à imagem de referência. |
+| `video_prompt` | keyframe-generator | Veo 3 (vídeo) | Prompt completo para animar o frame gerado. Inclui ação, câmera, narração (Speaking). Inclui instrução de âncora ao frame. |
+
+**Regra para `frame_prompt` (imagem com referência do personagem):**
+```
+Using the provided character reference image as visual anchor, maintain exact appearance and generate:
+[character_anchor] [key_expression_from_emotion_cue] [key_action_from_visual_direction] [composition] [lighting] [style_suffix]
+```
+- NÃO incluir "Speaking in..." — frame_prompt é para geração de imagem estática
+- Máximo 60 palavras
+
+**Regra para `video_prompt` (vídeo a partir do frame gerado):**
+```
+Animate the provided reference frame maintaining character consistency:
+[character_anchor] [action_from_visual_direction] [viral_production_directive] [emotion] [camera_angle] [camera_movement] [no-zoom clause se persona] [lighting] [style_suffix] Speaking in [target_language] [speech_tone]: "[narração]"
+```
+- A instrução `"Animate the provided reference frame maintaining character consistency:"` deve abrir todos os `video_prompt` de cenas `persona`
+- O Veo 3 receberá o frame gerado como `firstFrameBuffer` + este prompt como texto
+- Para cenas `scene` (B-roll sem personagem): omitir a instrução de âncora, usar texto puro
+
 ```json
 {
   "aspect_ratio": "9:16",
@@ -242,8 +271,11 @@ Sua missão é traduzir cada cena do roteiro em um prompt visual preciso que, qu
       "section": "hook",
       "scene_type": "persona",
       "duration_seconds": 8,
-      "personas_prompt": "Brazilian woman, 42 years old, dark brown shoulder-length hair, wearing white t-shirt, bright modern kitchen background, soft natural window light, photorealistic, UGC style",
-      "veo3_prompt_en": "Brazilian woman, 42 years old, dark brown shoulder-length hair, wearing white t-shirt, bright modern kitchen, soft natural window light, looking directly at camera with wide expressive eyes and slightly open mouth, conveying urgency and revelation, close-up framing chest and above, slight handheld movement, camera locked-off, no zoom, no push-in, no dolly, UGC style, authentic, no filters, realistic skin texture. Speaking in Portuguese in a natural, conversational tone, as if talking to a close friend: \"Eu não conseguia perder nem um quilo.\"",
+      "character_id": "A",
+      "character_name": "Ana",
+      "narration": "Eu não conseguia perder nem um quilo.",
+      "frame_prompt": "Using the provided character reference image as visual anchor, maintain exact appearance and generate: Brazilian woman, 42 years old, dark brown shoulder-length hair, wearing white t-shirt, bright modern kitchen background, soft natural window light, looking directly at camera with wide expressive eyes and slightly open mouth, conveying urgency, close-up framing chest and above, UGC style, authentic, no filters, realistic skin texture",
+      "video_prompt": "Animate the provided reference frame maintaining character consistency: Brazilian woman, 42 years old, dark brown shoulder-length hair, wearing white t-shirt, bright modern kitchen, soft natural window light, looking directly at camera with wide expressive eyes and slightly open mouth, conveying urgency and revelation, close-up framing chest and above, slight handheld movement, camera locked-off, no zoom, no push-in, no dolly, UGC style, authentic, no filters, realistic skin texture. Speaking in Portuguese in a natural, conversational tone, as if talking to a close friend: \"Eu não conseguia perder nem um quilo.\"",
       "camera_angle": "close-up",
       "camera_movement": "handheld",
       "lighting": "soft natural window light, warm tone",
@@ -256,8 +288,11 @@ Sua missão é traduzir cada cena do roteiro em um prompt visual preciso que, qu
       "section": "problem",
       "scene_type": "persona",
       "duration_seconds": 8,
-      "personas_prompt": "Brazilian woman, 42 years old, dark brown shoulder-length hair, wearing white t-shirt, bright modern kitchen background, soft natural window light, photorealistic, UGC style",
-      "veo3_prompt_en": "Brazilian woman, 42 years old, dark brown shoulder-length hair, wearing white t-shirt, bright modern kitchen, soft natural window light, sitting at kitchen table, looking down with a tired and frustrated expression, hands resting on table, medium shot showing upper body and kitchen environment, camera locked-off, no zoom, no push-in, no dolly, warm natural light, UGC style, authentic, no filters, realistic. Speaking in Portuguese in a natural, conversational tone, as if talking to a close friend: \"Tentei tudo. Dieta, academia, remédio...\"",
+      "character_id": "A",
+      "character_name": "Ana",
+      "narration": "Tentei tudo. Dieta, academia, remédio...",
+      "frame_prompt": "Using the provided character reference image as visual anchor, maintain exact appearance and generate: Brazilian woman, 42 years old, dark brown shoulder-length hair, wearing white t-shirt, bright modern kitchen background, soft natural window light, sitting at kitchen table, looking down with a tired and frustrated expression, hands resting on table, medium shot showing upper body, UGC style, authentic, no filters, realistic",
+      "video_prompt": "Animate the provided reference frame maintaining character consistency: Brazilian woman, 42 years old, dark brown shoulder-length hair, wearing white t-shirt, bright modern kitchen, soft natural window light, sitting at kitchen table, looking down with a tired and frustrated expression, hands resting on table, medium shot showing upper body and kitchen environment, camera locked-off, no zoom, no push-in, no dolly, warm natural light, UGC style, authentic, no filters, realistic. Speaking in Portuguese in a natural, conversational tone, as if talking to a close friend: \"Tentei tudo. Dieta, academia, remédio...\"",
       "camera_angle": "medium",
       "camera_movement": "static",
       "lighting": "soft natural window light, warm tone",
